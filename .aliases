@@ -1,0 +1,101 @@
+# Suggestions from StackOverflow:
+# 1. functions and aliasses should go in ~/.bashrc and ~/.bash_profile or ~/.profile should source ~/.bashrc
+# 2. sourcing one from the other makes life much easier. For safety, I have my .bash_profile check first, like this: if [ -f ~/.bashrc ]; then . ~/.bashrc; fi
+
+# Alias formats
+alias la='ls -aO'
+alias ll='ls -aOlh'
+alias lt='ls -lt'
+lll () { ls -aOlh "$@" | less ; }
+
+# ls long with acl's
+#lll () { ls -aOle "$@" | less ; }
+
+# ls for resources fork
+lsr () { ls -lh "$@"/..namedfork/rsrc ; }
+
+alias h=history 1
+alias md=mkdir
+
+kd ()  { open -a kdiff3 --args "$PWD/$1" "$PWD/$2"; }
+kdm ()  { open -a kdiff3 --args "$PWD/$1" "$PWD/$2" --output "$(PWD)/$1.merged";}
+
+alias killdoc='killall -KILL Dock'
+
+# imported from sample file
+# From http://hayne.net/MacDev/Bash/aliases.bash
+
+#--------------------------------------------
+# Aliases and this file:
+#--------------------------------------------
+# showa: to remind yourself of an alias (given some part of it)
+showa () { grep -i -a1 $@ ~/.aliases | grep -v '^\s*$' ; }
+
+# sourcea: to source this file (to make changes active after editing)
+alias sourcea='source ~/.aliases'
+
+#----------------
+# Command history
+#----------------
+
+# history (paged)
+hh ()  { history 1 "$@" | less ; }
+
+# grep in command history
+#hgrep () { grep -i "$1" ~/.zsh_history ; }
+alias hgrep='history 1 | grep -i'
+
+#--------------------------
+# File & folder management:
+#--------------------------
+
+# ls long format
+#ll ()  { ls -aOl "$@" | less ; }
+
+# ls long with acl's
+#lll () { ls -aOle "$@" | less ; }
+
+# ls with time 
+#lt ()  { ls -lt "$@" | less ; }
+
+# ls for resources fork
+#lsr () { ls -l "$@"/..namedfork/rsrc ; }
+
+#-----------
+# Searching:
+#-----------
+# ff:  to find a file under the current directory
+ff () { find . -name "$@" ; }
+
+# ffs: to find a file whose name starts with a given string
+ffs () { find . -name "$@"'*' ; }
+
+# ffe: to find a file whose name ends with a given string
+ffe () { find . -name '*'"$@" ; }
+
+gr() { grep --line-number --recursive --include=*.{m,h,xib} "$1" * ; }
+gri() { grep --line-number --recursive --ignore-case --include=*.{m,h,xib} "$1" * ; }
+
+# ---------
+# Developer
+# ---------
+
+xcode ()  { open /Applications/Xcode.app "$@" ; }
+sim () { open /Applications/Xcode.app/Contents/Developer/Applications/Simulator.app ; }
+
+# --------------------
+# KDiff diff and merge
+# --------------------
+kdiff3() { open "/Applications/kdiff3.app" "$@" ; }
+
+# kdiff two files
+kd ()  { open -a kdiff3 --args "$PWD/$1" "$PWD/$2"; }
+
+# kdiff merge two files to using a .merged output file
+km () { open -a kdiff3 --args "$PWD/$1" "$PWD/$2" --output "$(PWD)/$1.merged";}
+
+# kdiff merge two files in place (overwrites first file)
+kdm () { open -a kdiff3 --args "$PWD/$1" "$PWD/$2" --output "$(PWD)/$1"; }
+
+# Change Mac terminal name
+term() { echo -n -e "\033]0;$@\007" ; }
