@@ -4,11 +4,13 @@
 	helper = /usr/local/share/gcm-core/git-credential-manager
 [credential "https://dev.azure.com"]
 	useHttpPath = true
+[credential "https://github.com"]
+	username = raltman2_uhg
 
 #Personal
 [user]
 	name = Robert Altman
-	email = robert@AltmanSoftwareDesign.com
+	email = robert_altman@optum.com
 [core]
 	excludesfile = ~/.gitignore_global
 [difftool "sourcetree"]
@@ -29,3 +31,5 @@
 	unstage = reset HEAD --
 	undo = reset --soft HEAD~1
 	changes = diff
+	incoming = "!git remote update -p; git log ..@{u}"
+	outgoing = log @{u}..
