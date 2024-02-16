@@ -13,10 +13,20 @@
 ;; C-x x t to toggle this ad hoc
 (setq-default truncate-lines 1)
 
+;; Add undo/redo capability
+;; https://www.emacswiki.org/emacs/UndoTree
+(require 'undo-tree)
+(global-undo-tree-mode)
+(setq-default undo-tree-auto-save-history nil)
+
 ;; mac keyb mapping
 ;; default -- (setq mac-command-modifier 'meta)
 ;; default -- (setq mac-option-modifier (:function alt :mouse alt))
 
 (setq mac-option-modifier 'meta)
 (setq mac-command-modifier 'hyper)
+
+;; Add Mac-friendly kbd
+(keymap-global-set "H-z" 'undo-tree-undo)
+(keymap-global-set "H-y" 'undo-tree-redo)
 
