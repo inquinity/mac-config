@@ -16,6 +16,7 @@ lsr () { ls -lh "$@"/..namedfork/rsrc ; }
 
 alias h=history 1
 alias md=mkdir
+alias showpath='echo "$PATH" | tr ":" "\n" | nl'
 
 kd ()  { open -a kdiff3 --args "$PWD/$1" "$PWD/$2"; }
 kdm ()  { open -a kdiff3 --args "$PWD/$1" "$PWD/$2" --output "$(PWD)/$1.merged";}

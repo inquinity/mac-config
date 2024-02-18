@@ -4,13 +4,13 @@
 	helper = /usr/local/share/gcm-core/git-credential-manager
 [credential "https://dev.azure.com"]
 	useHttpPath = true
-[credential "https://github.com"]
-	username = raltman2_uhg
+#[credential "https://github.com"]
+#	username = raltman2_uhg
 
 #Personal
 [user]
 	name = Robert Altman
-	email = robert_altman@optum.com
+	email = robert@AltmanSoftwareDesign.com
 [core]
 	excludesfile = ~/.gitignore_global
 [difftool "sourcetree"]
