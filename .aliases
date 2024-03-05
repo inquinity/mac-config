@@ -2,7 +2,13 @@
 # 1. functions and aliasses should go in ~/.bashrc and ~/.bash_profile or ~/.profile should source ~/.bashrc
 # 2. sourcing one from the other makes life much easier. For safety, I have my .bash_profile check first, like this: if [ -f ~/.bashrc ]; then . ~/.bashrc; fi
 
-# Alias formats
+# imported from sample file
+# From http://hayne.net/MacDev/Bash/aliases.bash
+
+#-----------------
+# Directory / list
+#-----------------
+
 alias la='ls -aO'
 alias ll='ls -aOlh'
 alias lt='ls -lt'
@@ -11,24 +17,20 @@ lll () { ls -aOlh "$@" | less ; }
 # ls long with acl's
 #lll () { ls -aOle "$@" | less ; }
 
-# ls for resources fork
+# ls for resources MacOS fork
 lsr () { ls -lh "$@"/..namedfork/rsrc ; }
 
-alias h=history 1
+#--------------
+# Folder / Path
+#-------------
+
 alias md=mkdir
 alias showpath='echo "$PATH" | tr ":" "\n" | nl'
 
-kd ()  { open -a kdiff3 --args "$PWD/$1" "$PWD/$2"; }
-kdm ()  { open -a kdiff3 --args "$PWD/$1" "$PWD/$2" --output "$(PWD)/$1.merged";}
+#--------
+# Aliases
+#--------
 
-alias killdoc='killall -KILL Dock'
-
-# imported from sample file
-# From http://hayne.net/MacDev/Bash/aliases.bash
-
-#--------------------------------------------
-# Aliases and this file:
-#--------------------------------------------
 # showa: to remind yourself of an alias (given some part of it)
 showa () { grep -i -a1 $@ ~/.aliases | grep -v '^\s*$' ; }
 
@@ -38,6 +40,8 @@ alias sourcea='source ~/.aliases'
 #----------------
 # Command history
 #----------------
+
+alias h=history 1
 
 # history (paged)
 hh ()  { history 1 "$@" | less ; }
@@ -74,12 +78,20 @@ ffs () { find . -name "$@"'*' ; }
 # ffe: to find a file whose name ends with a given string
 ffe () { find . -name '*'"$@" ; }
 
+# -------------------
+# MacOS & Development
+# -------------------
+
+alias killdoc='killall -KILL Dock'
+alias python=python3
+#alias python=python3.11
+
+# Change Mac terminal name
+term() { echo -n -e "\033]0;$@\007" ; }
+
+# Objective-C / NIB searches
 gr() { grep --line-number --recursive --include=*.{m,h,xib} "$1" * ; }
 gri() { grep --line-number --recursive --ignore-case --include=*.{m,h,xib} "$1" * ; }
-
-# ---------
-# Developer
-# ---------
 
 xcode ()  { open /Applications/Xcode.app "$@" ; }
 sim () { open /Applications/Xcode.app/Contents/Developer/Applications/Simulator.app ; }
@@ -98,5 +110,17 @@ km () { open -a kdiff3 --args "$PWD/$1" "$PWD/$2" --output "$(PWD)/$1.merged";}
 # kdiff merge two files in place (overwrites first file)
 kdm () { open -a kdiff3 --args "$PWD/$1" "$PWD/$2" --output "$(PWD)/$1"; }
 
-# Change Mac terminal name
-term() { echo -n -e "\033]0;$@\007" ; }
+# ------
+# docker
+# ------
+
+alias docker-sha="docker images --no-trunc --quiet"
+alias docker-ls='docker image ls --format "table {{.Repository}}:{{.Tag}}\t{{.CreatedAt}}"'
+
+#----------
+# Optum/UHG
+# ---------
+
+prisma() { echo Enter Password: ; twistcli images scan --address https://containersecurity.optum.com --user ms\\raltman2 --details $1 | sed -r "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2};?)?)?[mGK]//g" > $(date +%Y-%m-%d)_$1:t:r.txt }
+
+scancode() { docker run --platform linux/x86-64 -v $pwd/:/project scancode-toolkit $@ ; }

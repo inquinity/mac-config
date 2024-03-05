@@ -19,6 +19,9 @@
 (global-undo-tree-mode)
 (setq-default undo-tree-auto-save-history nil)
 
+;; Hide the toolbar at the top of the window
+(tool-bar-mode -1)
+
 ;; mac keyb mapping
 ;; default -- (setq mac-command-modifier 'meta)
 ;; default -- (setq mac-option-modifier (:function alt :mouse alt))
@@ -29,4 +32,3 @@
 ;; Add Mac-friendly kbd
 (keymap-global-set "H-z" 'undo-tree-undo)
 (keymap-global-set "H-y" 'undo-tree-redo)
-
