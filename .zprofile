@@ -4,9 +4,4 @@ if [[ $(uname -m) == 'arm64' ]]; then
   if [ -d /opt/homebrew/opt/mysql-client/bin ]; then
       export PATH="/opt/homebrew/opt/mysql-client/bin:$PATH"
   fi
-else
-  if [ -d /opt/homebrew/opt/mysql-client/bin ]; then
-      export PATH="/opt/homebrew/opt/mysql-client/bin:$PATH"
-  fi
-    
 fi

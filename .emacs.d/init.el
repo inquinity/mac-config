@@ -20,7 +20,7 @@
 (setq-default undo-tree-auto-save-history nil)
 
 ;; Hide the toolbar at the top of the window
-(tool-bar-mode -1)
+;;(tool-bar-mode -1)
 
 ;; mac keyb mapping
 ;; default -- (setq mac-command-modifier 'meta)
