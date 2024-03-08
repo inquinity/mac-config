@@ -32,3 +32,8 @@
 ;; Add Mac-friendly kbd
 (keymap-global-set "H-z" 'undo-tree-undo)
 (keymap-global-set "H-y" 'undo-tree-redo)
+
+;; macro shortcuts
+(keymap-global-set "H-1" 'kmacro-start-macro)
+(keymap-global-set "H-2" 'kmacro-end-macro)
+(keymap-global-set "H-3" 'kmacro-end-and-call-macro)

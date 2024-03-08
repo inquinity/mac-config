@@ -78,13 +78,17 @@ ffs () { find . -name "$@"'*' ; }
 # ffe: to find a file whose name ends with a given string
 ffe () { find . -name '*'"$@" ; }
 
-# -------------------
-# MacOS & Development
-# -------------------
+# -----------
+# Development
+# -----------
 
 alias killdoc='killall -KILL Dock'
 alias python=python3
 #alias python=python3.11
+
+# ------------------------
+# Mac OS & iOS Development
+# ------------------------
 
 # Change Mac terminal name
 term() { echo -n -e "\033]0;$@\007" ; }
