@@ -84,7 +84,14 @@ ffe () { find . -name '*'"$@" ; }
 
 alias killdoc='killall -KILL Dock'
 alias python=python3
-#alias python=python3.11
+
+node-18() { brew unlink node ; brew unlink node@20 ; brew link --overwrite node@18 ; node --version ; }
+node-20() { brew unlink node ; brew unlink node@18 ; brew link --overwrite node@20 ; node --version ; }
+node-latest() { brew unlink node@18 ; brew unlink node@20 ; brew link --overwrite node ; node --version ; }
+
+python-311() { alias python3 >/dev/null 2>&1 || alias python3=/opt/homebrew/bin/python3.11 ; eval 'python3 --version' ; }
+python-312() { alias python3 >/dev/null 2>&1 && unalias python3 ; eval 'python3 --version' ; }
+alias py=python3
 
 # ------------------------
 # Mac OS & iOS Development
@@ -103,6 +110,7 @@ sim () { open /Applications/Xcode.app/Contents/Developer/Applications/Simulator.
 # --------------------
 # KDiff diff and merge
 # --------------------
+
 kdiff3() { open "/Applications/kdiff3.app" "$@" ; }
 
 # kdiff two files
@@ -118,8 +126,9 @@ kdm () { open -a kdiff3 --args "$PWD/$1" "$PWD/$2" --output "$(PWD)/$1"; }
 # docker
 # ------
 
-alias docker-sha="docker images --no-trunc --quiet"
-alias docker-ls='docker image ls --format "table {{.Repository}}:{{.Tag}}\t{{.CreatedAt}}"'
+#alias docker-sha="docker images --no-trunc --quiet"
+docker-sha() { docker inspect "$1" | jq '"Image: "+.[0].Id, "Repository: "+.[0].RepoDigests[0]' ; }
+alias docker-ls='docker image ls --format "table {{.Repository}}:{{.Tag}}\t{{.CreatedAt}}\t{{.ID}}"'
 docker-run() { docker run --rm -it "$1" sh ; }
 
 #----------

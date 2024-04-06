@@ -1,18 +1,18 @@
-# Optum configured authentication
 [credential]
-	helper = 
 	helper = /usr/local/share/gcm-core/git-credential-manager
 [credential "https://dev.azure.com"]
 	useHttpPath = true
 [credential "https://github.com"]
 	username = raltman2_uhg
-
-#Personal
+[credential "https://github.com/Open-Lens"]
+	username = inquinity
+[credential "https://github.com/inquinity"]
+	username = inquinity
 [user]
 	name = Robert Altman
-	email = robert@AltmanSoftwareDesign.com
+	email = robert_altman@optum.com
 [core]
-	excludesfile = ~/.gitignore_global
+	excludesfile = /Users/raltman2/.gitignore_global
 [difftool "sourcetree"]
 	cmd = opendiff \"$LOCAL\" \"$REMOTE\"
 	path = 
@@ -20,6 +20,7 @@
 	cmd = /Applications/Sourcetree.app/Contents/Resources/opendiff-w.sh \"$LOCAL\" \"$REMOTE\" -ancestor \"$BASE\" -merge \"$MERGED\"
 	trustExitCode = true
 [commit]
+	template = /Users/raltman2/.stCommitMsg
 #	template = /Users/robert/.stCommitMsg
 [alias]
 	co = checkout
@@ -28,7 +29,7 @@
 	st = status
 	last = log -l HEAD --
 	alias = config --get-regexp ^alias\\.
-	unstage = reset HEAD --
+	unstage = restore --staged
 	undo = reset --soft HEAD~1
 	changes = diff
 	incoming = "!git remote update -p; git log ..@{u}"
