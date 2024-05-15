@@ -5,16 +5,27 @@
 # Good source of info: https://zsh.sourceforge.io/Guide/zshguide02.html#l17
 # HISTFILE set in /etc/zshrc
 # HISTSIZE set in /etc/zshrc
-# SAVEHISTset in /etc/zshrc
+# SAVEHIST set in /etc/zshrc
 
-setopt APPEND_HISTORY
+setopt INC_APPEND_HISTORY
 
-# This wil cause all session to share history (immediately) - it makes it difficult to work in multiple terminal windows and divide tasks
-#setopt SHARE_HISTORY
+# APPEND_HISTORY             # append the new history to the old, when shell exits
+# INC_APPEND_HISTORY         # each line is added to the history when it is executed
+# SHARE_HISTORY              # save history immediately, between shells -- makes it difficult to work in multiple terminal windows
 
 # prevent duplicates when hitting the up arrow in the shell
-#setopt HIST_IGNORE_DUPS
-setopt HIST_IGNORE_ALL_DUPS
+# HIST_IGNORE_DUPS           # which tells the shell not to store a history line if it's the same as the previous one
+# HIST_IGNORE_ALL_DUPS       # removes copies of lines still in the history list, keeping the newly added one
+# HIST_EXPIRE_DUPS_FIRST     # it preferentially removes duplicates when the history fills up
+# HIST_SAVE_NO_DUPS          # for the current session, the shell is not to save duplicated lines more than once
+# HIST_FIND_NO_DUPS          # even if duplicate lines have been saved, searches backwards with editor commands don't show them more than once
+
+setopt HIST_IGNORE_ALL_DUPS  # simply removes copies of lines still in the history list, keeping the newly added one
+
+# history ignore commands
+setopt HIST_IGNORE_SPACE     # do not save command beginning with a space
+setopt HIST_NO_STORE         # tells the shell not to store history or fc commands
+setopt HIST_NO_FUNCTIONS     # tells it not to store function definitions
 
 # set the prompt to be bash-like
 PROMPT='%m %@ %# %/: '
