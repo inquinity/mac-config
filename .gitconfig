@@ -10,7 +10,7 @@
 	username = inquinity
 [user]
 	name = Robert Altman
-	email = robert_altman@optum.com
+	email = robert.altman@optum.com
 [core]
 	excludesfile = ~/.gitignore_global
 [difftool "sourcetree"]

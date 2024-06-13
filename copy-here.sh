@@ -7,10 +7,12 @@ diff ~/.zprofile .zprofile
 diff ~/.zshenv .zshenv
 diff ~/.zshrc .zshrc
 read -s -k '?Press any key to continue.'
-cp ~/.aliases .
-cp ~/.emacs.d/init.el .emacs.d
-cp ~/.gitconfig .
-cp ~/.gitignore_global .
-cp ~/.zprofile .
-cp ~/.zshenv .
-cp ~/.zshrc .
+cp -v ~/.aliases .
+cp -v ~/.emacs.d/init.el .emacs.d
+cp -v -R ~/.emacs.d/el .emacs.d
+cp -v -R ~/.emacs.d/elpa .emacs.d
+cp -v ~/.gitconfig .
+cp -v ~/.gitignore_global .
+cp -v ~/.zprofile .
+cp -v ~/.zshenv .
+cp -v ~/.zshrc .

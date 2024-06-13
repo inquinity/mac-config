@@ -19,6 +19,13 @@
 (global-undo-tree-mode)
 (setq-default undo-tree-auto-save-history nil)
 
+;; Bookmarks
+(add-to-list 'load-path "~/.emacs.d/el/bm/")
+(require 'bm)
+(keymap-global-set "H-b" 'bm-toggle)
+(keymap-global-set "H-n" 'bm-next)
+(keymap-global-set "H-p" 'bm-previous)
+
 ;; Hide the toolbar at the top of the window
 ;;(tool-bar-mode -1)
 
