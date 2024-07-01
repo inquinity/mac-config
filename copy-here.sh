@@ -16,4 +16,4 @@ cp -v ~/.gitignore_global .
 cp -v ~/.zprofile .
 cp -v ~/.zshenv .
 cp -v ~/.zshrc .
-cp -v -R /opt/usrbin/* ./opt/usrbin
+#cp -v -R /opt/usrbin/* ./opt/usrbin
