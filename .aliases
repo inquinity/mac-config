@@ -5,6 +5,8 @@
 # imported from sample file
 # From http://hayne.net/MacDev/Bash/aliases.bash
 
+#echo Sourcing .aliases
+
 #-----------------
 # Directory / list
 #-----------------

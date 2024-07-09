@@ -1,5 +1,11 @@
-#.zshrc
-# Interactive shells
+# .zshrc is for interactive shells. You set options for the interactive shell there with the setopt and unsetopt commands.
+# You can also load shell modules, set your history options, change your prompt, set up zle and completion, et cetera.
+# You also set any variables that are only used in the interactive shell (e.g. $LS_COLORS).
+
+# After .zshenv .zprofile
+# Before .zlogin
+
+#echo Sourcing .zshrc
 
 # History options
 # Good source of info: https://zsh.sourceforge.io/Guide/zshguide02.html#l17
@@ -30,7 +36,11 @@ setopt HIST_NO_FUNCTIONS     # tells it not to store function definitions
 # set the prompt to be bash-like
 PROMPT='%m %@ %# %/: '
 
+# Load UHG specific settings
+. ~/.uhg-zshrc
+
 #aliases
 . ~/.aliases
 
-#cd ~/dev
+
+
