@@ -29,6 +29,17 @@
 ;; Hide the toolbar at the top of the window
 ;;(tool-bar-mode -1)
 
+;; Adjust JSON indent level
+(setq js-indent-level 2)
+
+;; Markdown mode
+;; https://jblevins.org/projects/markdown-mode/
+(require 'package)
+(add-to-list 'package-archives '("melpa-stable" . "https://stable.melpa.org/packages/"))
+(package-initialize)
+;; then: M-x package-install RET markdown-mode RET
+
+
 ;; mac keyb mapping
 ;; default -- (setq mac-command-modifier 'meta)
 ;; default -- (setq mac-option-modifier (:function alt :mouse alt))
@@ -52,3 +63,15 @@
 ;; Comments
 ;;(keymap-global-set "H-." 'uncomment-region)
 ;;(keymap-global-set "H-/" 'comment-region)
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(package-selected-packages '(markdown-mode undo-tree bind-key)))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )
