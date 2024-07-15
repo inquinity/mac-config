@@ -19,3 +19,6 @@ if [[ $(uname -m) == 'arm64' ]]; then
 fi
 
 SHELL_SESSIONS_DISABLE=1
+
+# Load UHG specific settings (if file exists)
+. ~/.zshenv-uhg 2> /dev/null

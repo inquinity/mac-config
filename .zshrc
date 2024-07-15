@@ -36,8 +36,8 @@ setopt HIST_NO_FUNCTIONS     # tells it not to store function definitions
 # set the prompt to be bash-like
 PROMPT='%m %@ %# %/: '
 
-# Load UHG specific settings
-. ~/.uhg-zshrc
+# Load UHG specific settings (if file exists)
+#. ~/.zshrc-uhg 2> /dev/null
 
 #aliases
 . ~/.aliases
