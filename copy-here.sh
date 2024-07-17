@@ -1,21 +1,13 @@
 #! zsh
-#diff ~/.aliases .aliases
-#diff ~/.emacs.d/init.el .emacs.d
-#diff ~/.gitconfig .gitconfig
-#diff ~/.gitignore_global .gitignore_global
-#diff ~/.zprofile .zprofile
-#diff ~/.zshenv .zshenv
-#diff ~/.zshrc .zshrc
-#read -s -k '?Press enter to continue.'
-cp -v ~/.zshenv .
-cp -v ~/.zprofile .
-cp -v ~/.zshrc .
-cp -v ~/.zlogin .
-cp -v ~/.aliases .
-# do NOT copy .uhg-zshrc
-cp -v ~/.emacs.d/init.el .emacs.d
-cp -v -R ~/.emacs.d/el .emacs.d
-cp -v -R ~/.emacs.d/elpa .emacs.d
-cp -v ~/.gitconfig .
-cp -v ~/.gitignore_global .
-#cp -v -R /opt/usrbin/* ./opt/usrbin
+
+# NOTE: do NOT copy .*-uhg
+rsync --out-format="%f" --update ~/.zshenv .
+rsync --out-format="%f" --update ~/.zprofile .
+rsync --out-format="%f" --update ~/.zshrc .
+rsync --out-format="%f" --update ~/.zlogin .
+rsync --out-format="%f" --update ~/.aliases .
+rsync --out-format="%f" --update ~/.gitconfig .
+rsync --out-format="%f" --update ~/.gitignore_global .
+rsync --out-format="%f" --update ~/.emacs.d/init.el .emacs.d
+rsync --delete --out-format="%f" --update --recursive ~/.emacs.d/el .emacs.d
+rsync --delete --out-format="%f" --update --recursive ~/.emacs.d/elpa .emacs.d
