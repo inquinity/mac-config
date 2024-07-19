@@ -39,7 +39,6 @@
 (package-initialize)
 ;; then: M-x package-install RET markdown-mode RET
 
-
 ;; mac keyb mapping
 ;; default -- (setq mac-command-modifier 'meta)
 ;; default -- (setq mac-option-modifier (:function alt :mouse alt))
@@ -60,18 +59,11 @@
 ;; Compare
 (keymap-global-set "H-4" 'compare-windows)
 
+;; Window-sizing commands
+(keymap-global-set "H-{" 'shrink-window-horizontally)
+(keymap-global-set "H-}" 'enlarge-window-horizontally)
+
+
 ;; Comments
 ;;(keymap-global-set "H-." 'uncomment-region)
 ;;(keymap-global-set "H-/" 'comment-region)
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(package-selected-packages '(markdown-mode undo-tree bind-key)))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )
