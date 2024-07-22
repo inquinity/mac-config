@@ -34,7 +34,8 @@ setopt HIST_NO_STORE         # tells the shell not to store history or fc comman
 setopt HIST_NO_FUNCTIONS     # tells it not to store function definitions
 
 # set the prompt to be bash-like
-PROMPT='%m %@ %# %/: '
+PROMPT='%B%F{240}%~%f%b %@ %# '
+RPROMPT='%* on %D'
 
 # Load UHG specific settings (if file exists)
 #. ~/.zshrc-uhg 2> /dev/null
