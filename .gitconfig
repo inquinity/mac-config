@@ -1,7 +1,3 @@
-[credential]
-	helper = /usr/local/share/gcm-core/git-credential-manager
-[credential "https://dev.azure.com"]
-	useHttpPath = true
 [credential "https://github.com"]
 	username = raltman2_uhg
 [credential "https://github.com/Open-Lens"]
@@ -10,9 +6,9 @@
 	username = inquinity
 [user]
 	name = Robert Altman
-	email = robert.altman@optum.com
+	email = robert_altman@optum.com
 [core]
-	excludesfile = ~/.gitignore_global
+	excludesfile = /Users/raltman2/.gitignore_global
 [difftool "sourcetree"]
 	cmd = opendiff \"$LOCAL\" \"$REMOTE\"
 	path = 
@@ -33,3 +29,8 @@
 	changes = diff
 	incoming = "!git remote update -p; git log ..@{u}"
 	outgoing = log @{u}..
+[credential]
+	helper = 
+	helper = /usr/local/share/gcm-core/git-credential-manager
+[credential "https://dev.azure.com"]
+	useHttpPath = true
