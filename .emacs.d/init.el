@@ -1,13 +1,24 @@
+;; Auto-reload changed files
+(global-auto-revert-mode 1)
+
 ;; Add shortcut arrow keys for moving between windows
 ;; Shift-arrow moves in that direction
-(when (fboundp 'windmove-default-keybindings)
-  (windmove-default-keybindings))
+(when (fboundp 'windmove-default-keybindings) (windmove-default-keybindings))
 
 ;; Stop creating filename~ files
 (setq make-backup-files nil)
 
+;; Stop creating #file# backups
+(setq auto-save-default nil)
+
+;; Turn off .#files
+(setq create-lockfiles nil)
+
 ;; Display line numbers
 (global-display-line-numbers-mode 1)
+
+;; show cursor position within line
+(column-number-mode 1)
 
 ;; Turn off display line wrapping
 ;; C-x x t to toggle this ad hoc
@@ -46,7 +57,7 @@
 (setq mac-option-modifier 'meta)
 (setq mac-command-modifier 'hyper)
 
-;; Add Mac-friendly kbd
+;; Add Mac-friendly keyboard mappings
 (keymap-global-set "H-z" 'undo-tree-undo)
 (keymap-global-set "H-y" 'undo-tree-redo)
 (keymap-global-set "C-/" nil)
@@ -60,9 +71,8 @@
 (keymap-global-set "H-4" 'compare-windows)
 
 ;; Window-sizing commands
-(keymap-global-set "H-{" 'shrink-window-horizontally)
-(keymap-global-set "H-}" 'enlarge-window-horizontally)
-
+(keymap-global-set "H-[" 'shrink-window-horizontally)
+(keymap-global-set "H-]" 'enlarge-window-horizontally)
 
 ;; Comments
 ;;(keymap-global-set "H-." 'uncomment-region)
