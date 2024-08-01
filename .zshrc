@@ -33,9 +33,21 @@ setopt HIST_IGNORE_SPACE     # do not save command beginning with a space
 setopt HIST_NO_STORE         # tells the shell not to store history or fc commands
 setopt HIST_NO_FUNCTIONS     # tells it not to store function definitions
 
-# set the prompt to be bash-like
-PROMPT='%B%F{240}%~%f%b %@ %# '
-RPROMPT='%* on %D'
+# Load colors
+#autoload -U colors && colors
+
+# Add git stuff
+# https://www.themoderncoder.com/add-git-branch-information-to-your-zsh-prompt/
+setopt PROMPT_SUBST
+autoload -Uz vcs_info
+precmd() { vcs_info }
+
+# Format the vcs_info_msg_0_ variable
+zstyle ':vcs_info:git:*' formats "%F{green}%b%f branch"
+
+# set the prompt
+PROMPT='%B%F{240}%~%f%b %F{red}%@ %#%f '
+RPROMPT='${vcs_info_msg_0_}'
 
 # Load UHG specific settings (if file exists)
 #. ~/.zshrc-uhg 2> /dev/null
