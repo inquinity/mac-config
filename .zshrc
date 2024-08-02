@@ -48,8 +48,21 @@ zstyle ':vcs_info:*' enable git cvs
 zstyle ':vcs_info:git:*' formats "%F{green}%b%f branch"
 
 precmd() {
+    # check for untracked files; unstaged changes; staged changes
     if [[ `git status --porcelain` ]] 2> /dev/null ; then
-	zstyle ':vcs_info:git:*' formats "%F{red}%b%f branch"
+
+	# check for unstaged changes
+	if ! git diff-files --quiet --ignore-submodules -- ; then
+	    zstyle ':vcs_info:git:*' formats "%F{red}%b%f branch"
+	else
+	    # no unstaged changes; so check for staged changes
+	    if ! git diff-index --cached --quiet HEAD --ignore-submodules -- ; then
+		zstyle ':vcs_info:git:*' formats "%F{blue}%b%f branch"
+	    else
+		# if we have changes, but no unstaged or staged, it must be new files
+		zstyle ':vcs_info:git:*' formats "%F{red}%b%f branch"
+	    fi
+	fi
     else
         zstyle ':vcs_info:git:*' formats "%F{green}%b%f branch"
     fi
