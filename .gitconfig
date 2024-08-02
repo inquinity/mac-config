@@ -1,12 +1,16 @@
+[credential]
+	helper = /usr/local/share/gcm-core/git-credential-manager
 [credential "https://github.com"]
 	username = raltman2_uhg
 [credential "https://github.com/Open-Lens"]
 	username = inquinity
 [credential "https://github.com/inquinity"]
 	username = inquinity
+[credential "https://dev.azure.com"]
+	useHttpPath = true
 [user]
 	name = Robert Altman
-	email = robert_altman@optum.com
+	email = robert.altman@optum.com
 [core]
 	excludesfile = /Users/raltman2/.gitignore_global
 [difftool "sourcetree"]
@@ -19,6 +23,7 @@
 	template = ~/.stCommitMsg
 [alias]
 	co = checkout
+	sw = switch
 	br = branch
 	ci = commit
 	st = status
@@ -29,8 +34,3 @@
 	changes = diff
 	incoming = "!git remote update -p; git log ..@{u}"
 	outgoing = log @{u}..
-[credential]
-	helper = 
-	helper = /usr/local/share/gcm-core/git-credential-manager
-[credential "https://dev.azure.com"]
-	useHttpPath = true
