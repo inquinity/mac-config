@@ -36,14 +36,25 @@ setopt HIST_NO_FUNCTIONS     # tells it not to store function definitions
 # Load colors
 #autoload -U colors && colors
 
-# Add git stuff
-# https://www.themoderncoder.com/add-git-branch-information-to-your-zsh-prompt/
+# Enable prompt substitution (used for vcs_info)
 setopt PROMPT_SUBST
-autoload -Uz vcs_info
-precmd() { vcs_info }
 
-# Format the vcs_info_msg_0_ variable
+# Enable vcs_info
+# https://zsh.sourceforge.io/Doc/Release/User-Contributions.html#Version-Control-Information
+autoload -Uz vcs_info
+
+# We only need git and hg; all others will be disabled
+zstyle ':vcs_info:*' enable git cvs
 zstyle ':vcs_info:git:*' formats "%F{green}%b%f branch"
+
+precmd() {
+    if [[ `git status --porcelain` ]] 2> /dev/null ; then
+	zstyle ':vcs_info:git:*' formats "%F{red}%b%f branch"
+    else
+        zstyle ':vcs_info:git:*' formats "%F{green}%b%f branch"
+    fi
+    vcs_info
+}
 
 # set the prompt
 PROMPT='%B%F{240}%~%f%b %F{red}%@ %#%f '
@@ -54,6 +65,3 @@ RPROMPT='${vcs_info_msg_0_}'
 
 #aliases
 . ~/.aliases
-
-
-
