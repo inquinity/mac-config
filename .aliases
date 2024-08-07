@@ -143,5 +143,6 @@ docker-exec() { docker exec --interactive --tty $1 sh ; }
 # Optum/UHG
 # ---------
 
-#prisma() { echo Enter Password: ; twistcli images scan --address https://containersecurity.optum.com --user ms\\raltman2 --details $1 | sed -r "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2};?)?)?[mGK]//g" > $(date +%Y-%m-%d)_$1:t:r.txt ; }
-#scancode() { docker run --platform linux/x86-64 -v $pwd/:/project scancode-toolkit $@ ; }
+if test -f ~/team/Docker/Scripts/prisma.sh; then alias prisma='~/team/Docker/Scripts/prisma.sh'; fi
+if test -f ~/team/Docker/Scripts/container-extract.sh; then alias container-extract='~/team/Docker/Scripts/container-extract.sh'; fi
+if test -f ~/team/Docker/Scripts/image-extract.sh; then alias image-extract='~/team/Docker/Scripts/image-extract.sh'; fi
