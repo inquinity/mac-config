@@ -2,7 +2,7 @@
 
 # This script is authored by Robert Altman, OptumRx
 # robert.altman@optum.com
-# Version 1.1.0
+# Version 1.1.1
 # https://github.com/optum-rx-tech-ops/devsecops-team/blob/main/Docker/Scripts/container-extract.sh
 
 # Requirements:
@@ -34,16 +34,41 @@ mkdir -p ${image_folder}
 # start docker image and container in background; captute the new container ID
 echo Starting container for image ${image_name}
 container_id=$(docker run --rm --interactive --detach --entrypoint="sh" "${image_name}" )
-echo Container ID: $container_id
+if [ $? -ne 0 ] 
+then
+    echo Container could not be started; exiting
+    exit $?
+else 
+    echo Container ID: $container_id
+fi
 
 # Export the file system to a tar file
 echo Writing filesystem to ${image_tar}
 docker export --output="${image_tar}" ${container_id}
+if [ $? -ne 0 ] 
+then
+    echo Export failed; exiting
+    exit $?
+fi
 
 # Stop the container; no cleanup needed since we used the --rm flag
 echo Stopping container ${contained_id}
 docker stop $container_id
+docker export --output="${image_tar}" ${container_id}
+if [ $? -ne 0 ] 
+then
+    echo Error stopping the conatainer; continuing anyway
+fi
 
 # Extract the tar file
 echo Extracting image to disk...
 tar -xvf "${image_tar}" -C "${image_folder}"
+if [ $? -ne 0 ] 
+then
+    echo Error unarchive tar file: ${image_tar}
+    exit $?
+else 
+    echo Container ID: $container_id
+fi
+
+exit 0

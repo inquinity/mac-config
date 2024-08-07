@@ -2,7 +2,7 @@
 
 # This script is authored by Robert Altman, OptumRx
 # robert.altman@optum.com
-# Version 1.1.0
+# Version 1.1.1
 # https://github.com/optum-rx-tech-ops/devsecops-team/blob/main/Docker/Scripts/image-extract.sh
 
 # Requirements:
@@ -62,6 +62,11 @@ mkdir -p ${image_folder}
 if [ -z "$(docker images -q ${image_name} 2> /dev/null)" ]; then
     echo Pulling image ${image_name}
     docker pull "${image_name}"
+    if [ $? -ne 0 ]
+    then
+	echo Could not pull docker image; exiting
+	exit $?
+    fi
 fi
 
 # Display layer info (visual nicety)
@@ -71,10 +76,21 @@ docker history --no-trunc --format 'table {{.ID}}\t{{printf "%.10s" .CreatedAt}}
 # Export the image
 echo Exporting image ...
 docker save "${image_name}" -o "${image_tar}"
+if [ $? -ne 0 ] 
+then
+    echo Save failed; exiting
+    exit $?
+fi
 
 # Extract image
 echo Extracting image ...
 tar -xvf "${image_tar}" -C "${image_folder}"
+if [ $? -ne 0 ] 
+then
+    echo Error unarchive tar file: ${image_tar}
+    exit $?
+fi
+
 cd "${image_folder}"
 
 # Get the config file and rename it
