@@ -11,25 +11,28 @@ do
         dev|all)
 	    echo dev
 	    kubectl config use-context anthos-orx-dso-tools-np
-	    kubectl describe deployment azure-nsg-logs-data-api-dev 2>/dev/null | grep Image | sed 's![[:blank:]]*Image:[[:blank:]]*docker.*api/!!g'
-	    kubectl describe deployment azure-nsg-logs-splunk-search-api-dev 2>/dev/null | grep Image | sed 's![[:blank:]]*Image:[[:blank:]]*docker.*api/!!g'
-	    kubectl describe deployment azure-nsg-logs-ui-dev 2>/dev/null | grep Image | sed 's![[:blank:]]*Image:[[:blank:]]*docker.*ui/!!g'
+	    kubectl describe deployment azure-nsg-logs-data-api-dev 2>/dev/null | grep Image | sed 's!^[[:blank:]]*Image:[[:blank:]]*!!g'
+	    kubectl describe deployment azure-nsg-logs-splunk-search-api-dev 2>/dev/null | grep Image | sed 's!^[[:blank:]]*Image:[[:blank:]]*!!g'
+	    kubectl describe deployment azure-nsg-logs-ui-dev 2>/dev/null | grep Image | sed 's!^[[:blank:]]*Image:[[:blank:]]*!!g'
+	    kubectl describe cronjob cnsla-database-backup-dev 2>/dev/null | grep Image | sed 's!^[[:blank:]]*Image:[[:blank:]]*!!g'
 	    valid_arg_found=1
             ;|
        test|all)
 	    echo test
 	    kubectl config use-context anthos-orx-dso-tools-np
-	    kubectl describe deployment azure-nsg-logs-data-api-test 2>/dev/null | grep Image | sed 's![[:blank:]]*Image:[[:blank:]]*docker.*api/!!g'
-	    kubectl describe deployment azure-nsg-logs-splunk-search-api-test 2>/dev/null | grep Image | sed 's![[:blank:]]*Image:[[:blank:]]*docker.*api/!!g'
-	    kubectl describe deployment azure-nsg-logs-ui-test 2>/dev/null | grep Image | sed 's![[:blank:]]*Image:[[:blank:]]*docker.*ui/!!g'
+	    kubectl describe deployment azure-nsg-logs-data-api-test 2>/dev/null | grep Image | sed 's!^[[:blank:]]*Image:[[:blank:]]*!!g'
+	    kubectl describe deployment azure-nsg-logs-splunk-search-api-test 2>/dev/null | grep Image | sed 's!^[[:blank:]]*Image:[[:blank:]]*!!g'
+	    kubectl describe deployment azure-nsg-logs-ui-test 2>/dev/null | grep Image | sed 's!^[[:blank:]]*Image:[[:blank:]]*!!g'
+	    kubectl describe cronjob cnsla-database-backup-test 2>/dev/null | grep Image | sed 's!^[[:blank:]]*Image:[[:blank:]]*!!g'
 	    valid_arg_found=1
             ;|
 	prod|all)
 	    echo prod
 	    kubectl config use-context anthos-orx-dso-tools-p
-	    kubectl describe deployment azure-nsg-logs-data-api-prod 2>/dev/null | grep Image | sed 's![[:blank:]]*Image:[[:blank:]]*docker.*api/!!g'
-	    kubectl describe deployment azure-nsg-logs-splunk-search-api-prod 2>/dev/null | grep Image | sed 's![[:blank:]]*Image:[[:blank:]]*docker.*api/!!g'
-	    kubectl describe deployment azure-nsg-logs-ui-prod 2>/dev/null | grep Image | sed 's![[:blank:]]*Image:[[:blank:]]*docker.*ui/!!g' 
+	    kubectl describe deployment azure-nsg-logs-data-api-prod 2>/dev/null | grep Image | sed 's!^[[:blank:]]*Image:[[:blank:]]*!!g'
+	    kubectl describe deployment azure-nsg-logs-splunk-search-api-prod 2>/dev/null | grep Image | sed 's!^[[:blank:]]*Image:[[:blank:]]*!!g'
+	    kubectl describe deployment azure-nsg-logs-ui-prod 2>/dev/null | grep Image | sed 's!^[[:blank:]]*Image:[[:blank:]]*!!g' 
+	    kubectl describe cronjob cnsla-database-backup-prod 2>/dev/null | grep Image | sed 's!^[[:blank:]]*Image:[[:blank:]]*!!g'
 	    kubectl config use-context anthos-orx-dso-tools-np
 	    valid_arg_found=1
 	    ;;
