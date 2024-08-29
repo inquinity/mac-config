@@ -2,7 +2,7 @@
 
 # This script is authored by Robert Altman, OptumRx
 # robert.altman@optum.com
-# Version 1.1.0
+# Version 1.1.2
 # https://github.com/optum-rx-tech-ops/devsecops-team/blob/main/Docker/Scripts/prisma.sh
 
 # Requirements:
@@ -19,16 +19,15 @@ image_name="${1}"
 username=${USER}
 datestr="$(date +%Y-%m-%d)"
 basestr=$(echo "$(basename ${image_name})" | sed -r "s/:/--/g" )
-scan_results="${datestr}_${basestr}.txt"
+scan_results="${datestr}_${basestr}_prisma.txt"
 
 #echo image_name: ${image_name}
-#echo datepart: ${datepart}
-#echo base: ${base}
+#echo datestr: ${datestr}
+#echo basestr: ${basestr}
 #echo username: ${username}
 #echo scan_results: ${scan_results}
 
 if [ -f "${scan_results}" ] ; then
-   printf "Removing old results file\n"
    rm "${scan_results}"
 fi
 

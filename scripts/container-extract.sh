@@ -54,7 +54,6 @@ fi
 # Stop the container; no cleanup needed since we used the --rm flag
 echo Stopping container ${contained_id}
 docker stop $container_id
-docker export --output="${image_tar}" ${container_id}
 if [ $? -ne 0 ] 
 then
     echo Error stopping the conatainer; continuing anyway
