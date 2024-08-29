@@ -7,14 +7,19 @@
 
 #echo Sourcing .zshenv
 
+# define addpath() here since this is the first sourced file
+addpath() {
+    DIR=$1
+    if [[ ":$PATH:" != *":$DIR:"* ]]; then
+	export PATH="$DIR:$PATH"
+    fi
+}
+
 if [[ $(uname -m) == 'arm64' ]]; then
   eval "$(/opt/homebrew/bin/brew shellenv)"
-  export PATH="/opt/bin:$PATH"
-  if [ -d /opt/usrbin ]; then
-    export PATH="/opt/usrbin:$PATH"
-  fi
+  addpath "/opt/bin"
   if [ -d /opt/homebrew/opt/mysql-client/bin ]; then
-    export PATH="/opt/homebrew/opt/mysql-client/bin:$PATH"
+      addpath "/opt/homebrew/opt/mysql-client/bin"
   fi
 fi
 
