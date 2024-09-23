@@ -13,10 +13,10 @@
 # HISTSIZE set in /etc/zshrc
 # SAVEHIST set in /etc/zshrc
 
-setopt INC_APPEND_HISTORY
+setopt APPEND_HISTORY
 
 # APPEND_HISTORY             # append the new history to the old, when shell exits
-# INC_APPEND_HISTORY         # each line is added to the history when it is executed
+# INC_APPEND_HISTORY         # each line is added to the history when it is executed -- makes hgrep more difficult
 # SHARE_HISTORY              # save history immediately, between shells -- makes it difficult to work in multiple terminal windows
 
 # prevent duplicates when hitting the up arrow in the shell
@@ -94,3 +94,6 @@ zstyle :compinstall filename '/Users/raltman2/.zshrc'
 autoload -Uz compinit
 compinit
 # End of lines added by compinstall
+
+# This will disable MicroTemplate Husky hooks
+export HUSKY=0
