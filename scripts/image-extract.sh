@@ -2,7 +2,7 @@
 
 # This script is authored by Robert Altman, OptumRx
 # robert.altman@optum.com
-# Version 1.1.1
+# Version 1.2.0
 # https://github.com/optum-rx-tech-ops/devsecops-team/blob/main/Docker/Scripts/image-extract.sh
 
 # Requirements:
@@ -12,9 +12,9 @@
 # Format a JSON file; tests file existence and type, so it is safe to use on any filename
 jq_format_file()
 {
-    # Validate paramters
+    # Validate parameters
     if [ -z "$1" ]; then
-	return 0
+	  return 0
     fi
 
     tmp_file=jq-temp.json
@@ -22,9 +22,20 @@ jq_format_file()
 
     # Check if the file is JSON; if it is, format it to a temp file and then replace the original with the formatted file; clean up afterwards
     if file --brief "${the_file}" | grep -q "JSON"; then
-	echo Formatting ${the_file} as JSON
-	jq "." "${the_file}" > "${tmp_file}" && cp -f "${tmp_file}" "${the_file}" && rm "${tmp_file}"
+	  echo Formatting ${the_file} as JSON
+	  jq "." "${the_file}" > "${tmp_file}" && cp -f "${tmp_file}" "${the_file}" && rm "${tmp_file}"
     fi
+}
+
+is_sha256()
+{
+    # Validate parameters
+    if [ -z "$1" ]; then
+      return 0
+    fi
+
+    [[ "$1" =~ ^[a-f0-9]{12}$|^[a-f0-9]{64}$ ]]
+    return $?
 }
 
 # Validate parameters
@@ -39,10 +50,10 @@ image_tar="${image_folder}".tar
 blobs_path="blobs/sha256/"
 blobs_path_len=${#blobs_path}
 
-#echo image_name: ${image_name}
-#echo image_folder: ${image_folder}
-#echo image_tar: ${image_tar}
-#echo tmp_file: ${tmp_file}
+echo image_name: ${image_name}
+echo image_folder: ${image_folder}
+echo image_tar: ${image_tar}
+echo tmp_file: ${tmp_file}
 
 # Check if folder exists; if it does, query user and remove it
 # TBD - query user before continuing
@@ -54,31 +65,32 @@ fi
 # Create image folder
 mkdir -p ${image_folder}
 
-# Clear display
-#read -s -k '?Press enter to continue.'
-#clear
-
-# Check for the docker image and download if needed
-if [ -z "$(docker images -q ${image_name} 2> /dev/null)" ]; then
-    echo Pulling image ${image_name}
-    docker pull "${image_name}"
-    if [ $? -ne 0 ]
-    then
-	echo Could not pull docker image; exiting
-	exit $?
+if is_sha256 "${image_name}"; then
+      echo "Image name is a sha256 hash"
+    else
+    # Check for the docker image and download if needed
+    if [ -z "$(docker image ls -q ${image_name} 2> /dev/null)" ]; then
+      echo Pulling image ${image_name}
+      docker image pull "${image_name}"
+      if [ $? -ne 0 ]; then
+	    echo Could not pull docker image; exiting
+	    rm -rf "${image_folder}"
+	    exit $?
+      fi
     fi
 fi
 
 # Display layer info (visual nicety)
-docker history ${image_name}
-docker history --no-trunc --format 'table {{.ID}}\t{{printf "%.10s" .CreatedAt}}\t{{.Size}}\t{{.Comment}}\n{{.CreatedBy}}\n' "${image_name}" > "${image_folder}/${image_folder}"_history.txt
+docker image history ${image_name}
+docker image history --no-trunc --format 'table {{.ID}}\t{{printf "%.10s" .CreatedAt}}\t{{.Size}}\t{{.Comment}}\n{{.CreatedBy}}\n' "${image_name}" > "${image_folder}/${image_folder}"_history.txt
 
 # Export the image
 echo Exporting image ...
-docker save "${image_name}" -o "${image_tar}"
+docker image save "${image_name}" -o "${image_tar}"
 if [ $? -ne 0 ] 
 then
     echo Save failed; exiting
+    rm -rf "${image_folder}"
     exit $?
 fi
 
