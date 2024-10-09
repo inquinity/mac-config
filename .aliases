@@ -174,42 +174,51 @@ docker-exec() { docker exec --interactive --tty $1 sh ; }
 # ----------
 encryption_extenstion="encrypted"
 encrypt() {
-    encrypted_name="$1.$encryption_extenstion"
-    if [ ! -f "$1" ]; then
-	  echo ${1} not found
-      exit 1
-    fi 
+    # Prompt for password
+    IFS= read -rs 'password?Please enter a password: '
+    echo
 
-    if [ -f "$encrypted_name" ]; then
-      rm "$encrypted_name";
-    fi
-    echo Encrypting	$1 to $encrypted_name
-    openssl aes-256-cbc -in "$1" -out $encrypted_name
+    for file in "$@"; do
+        encrypted_name="$file.$encryption_extenstion"
+        if [ ! -f "$file" ]; then
+            echo "${file} not found"
+            continue
+        fi 
+
+        if [ -f "$encrypted_name" ]; then
+            rm "$encrypted_name"
+        fi
+        echo "Encrypting $file to $encrypted_name"
+        openssl aes-256-cbc -in "$file" -out "$encrypted_name" -pass pass:"$password"
+    done
 }
 
 decrypt() {
-    echo $1
-    if [ ! -f "$1" ]; then
-      echo ${1} not found
-      exit 1
-    fi
+    # Prompt for password
+    IFS= read -rs 'password?Please enter a password: '
+    echo
 
-    # ensure the file ends with encryption_extenstion
-    if [[ ! "$1" == *.$encryption_extenstion ]]; then
-      echo "${1} does not end with .$encryption_extenstion"
-      exit 2
-    else
-      echo Correct ending identified
-    fi
+    for file in "$@"; do
+        # ensure the file exists
+        if [ ! -f "$file" ]; then
+          echo "${file} not found"
+          continue
+        fi
 
-    # decrypt the file
-    decrypted_name="${1%.$encryption_extenstion}"
-    if [ -f "$decrypted_name" ]; then
-      rm "$decrypted_name";
-    fi
-    echo Decrypting $1 to $decrypted_name
-	echo openssl aes-256-cbc -d -in "$1" -out $decrypted_name
-	openssl aes-256-cbc -d -in "$1" -out $decrypted_name
+        # ensure the file ends with encryption_extenstion
+        if [[ ! "$file" == *.$encryption_extenstion ]]; then
+          echo "${file} does not end with .$encryption_extenstion"
+          continue
+        fi
+
+        # decrypt the file
+        decrypted_name="${file%.$encryption_extenstion}"
+        if [ -f "$decrypted_name" ]; then
+          rm "$decrypted_name";
+        fi
+        echo Decrypting $file to $decrypted_name
+        openssl aes-256-cbc -d -in "$file" -out "$decrypted_name" -pass pass:"$password"
+    done
 }
 
 # ---------
