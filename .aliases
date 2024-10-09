@@ -145,7 +145,7 @@ convert-video() {
 
    echo Converting "${source_file}" to "${destination_file}"
    ffmpeg -i "${source_file}" -vcodec h264 -acodec aac "${destination_file}"
- }
+}
 
 # ------
 # docker
@@ -169,8 +169,50 @@ docker-run() { docker run --rm --interactive --tty --entrypoint "sh" --user root
 docker-os() { docker run --rm --interactive --tty --entrypoint "sh" --user root  "$1" -c "grep ^ID= /etc/os-release | cut -c 4-" ; }
 docker-exec() { docker exec --interactive --tty $1 sh ; }
 
+# ----------
+# Encryption
+# ----------
+encryption_extenstion="encrypted"
+encrypt() {
+    encrypted_name="$1.$encryption_extenstion"
+    if [ ! -f "$1" ]; then
+	  echo ${1} not found
+      exit 1
+    fi 
 
-#----------
+    if [ -f "$encrypted_name" ]; then
+      rm "$encrypted_name";
+    fi
+    echo Encrypting	$1 to $encrypted_name
+    openssl aes-256-cbc -in "$1" -out $encrypted_name
+}
+
+decrypt() {
+    echo $1
+    if [ ! -f "$1" ]; then
+      echo ${1} not found
+      exit 1
+    fi
+
+    # ensure the file ends with encryption_extenstion
+    if [[ ! "$1" == *.$encryption_extenstion ]]; then
+      echo "${1} does not end with .$encryption_extenstion"
+      exit 2
+    else
+      echo Correct ending identified
+    fi
+
+    # decrypt the file
+    decrypted_name="${1%.$encryption_extenstion}"
+    if [ -f "$decrypted_name" ]; then
+      rm "$decrypted_name";
+    fi
+    echo Decrypting $1 to $decrypted_name
+	echo openssl aes-256-cbc -d -in "$1" -out $decrypted_name
+	openssl aes-256-cbc -d -in "$1" -out $decrypted_name
+}
+
+# ---------
 # Optum/UHG
 # ---------
 
