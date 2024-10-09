@@ -74,6 +74,32 @@
 (keymap-global-set "H-[" 'shrink-window-horizontally)
 (keymap-global-set "H-]" 'enlarge-window-horizontally)
 
-;; Comments
+;; sort-buffer
+(defun sort-buffer ()
+  "Select all text in the buffer and sort it."
+  (interactive)
+  (save-excursion
+    (mark-whole-buffer)
+    (sort-lines nil (point-min) (point-max))))
+
+(keymap-global-set "H-5" 'sort-buffer)
+
+(defun sort-region ()
+  "Sort all lines in the selected region."
+  (interactive)
+  (if (use-region-p)
+      (let ((start (region-beginning))
+            (end (region-end)))
+        (goto-char start)
+        (beginning-of-line)
+        (set-mark (point))
+        (goto-char end)
+        (end-of-line)
+        (sort-lines nil (region-beginning) (region-end)))
+    (message "No region selected")))
+
+(keymap-global-set "H-6" 'sort-region)
+
+;; Comments - Not working the way it should
 ;;(keymap-global-set "H-." 'uncomment-region)
 ;;(keymap-global-set "H-/" 'comment-region)
