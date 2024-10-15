@@ -5,6 +5,10 @@
 # Sourced first
 # Before .zprofile .zshrc .zlogin
 
+# Other path sources:
+# /etc/paths
+# /etc/paths.d
+
 #echo Sourcing .zshenv
 
 # define addpath() here since this is the first sourced file
