@@ -255,3 +255,4 @@ if test -f ~/team/Docker/Scripts/prisma.sh; then alias prisma='~/team/Docker/Scr
 if test -f ~/team/Docker/Scripts/xray.sh; then alias xray='~/team/Docker/Scripts/xray.sh'; fi
 if test -f ~/team/Docker/Scripts/container-extract.sh; then alias container-extract='~/team/Docker/Scripts/container-extract.sh'; fi
 if test -f ~/team/Docker/Scripts/image-extract.sh; then alias image-extract='~/team/Docker/Scripts/image-extract.sh'; fi
+if test -f ~/team/scripts/ghcp-usage.sh; then alias ghcp='pushd ~/team/scripts; ./ghcp-usage.sh; popd'; fi
