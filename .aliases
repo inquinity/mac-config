@@ -172,24 +172,43 @@ docker-exec() { docker exec --interactive --tty $1 sh ; }
 # ----------
 # Encryption
 # ----------
-encryption_extenstion="encrypted"
+
+encryption_extension="encrypted"
+
 encrypt() {
     # Prompt for password
     IFS= read -rs 'password?Please enter a password: '
     echo
 
-    for file in "$@"; do
-        encrypted_name="$file.$encryption_extenstion"
-        if [ ! -f "$file" ]; then
-            echo "${file} not found"
-            continue
-        fi 
+    # make sure we don't encrypt the same file twice
+    seen_files=()
 
-        if [ -f "$encrypted_name" ]; then
-            rm "$encrypted_name"
-        fi
-        echo "Encrypting $file to $encrypted_name"
-        openssl aes-256-cbc -in "$file" -out "$encrypted_name" -pass pass:"$password"
+    # walk through the files and encrypt them
+    for pattern in "$@"; do
+        for file in ${pattern}; do
+            # space are needed in the comparison to avoid matching substrings
+            if [[ ! " ${seen_files[*]} " =~ " ${file} " ]]; then
+                # skip files that already end with .encrypted
+                if [[ "${file}" == *.${encryption_extension} ]]; then
+                    echo "Skipping ${file} as it already ends with .${encryption_extension}"
+                    continue
+                fi
+                # create the encrypted file name
+                encrypted_name="${file}.${encryption_extension}"
+                echo "Encrypting ${file} to ${encrypted_name}"
+                # remove the encrypted file if it exists
+                if [ -f "${encrypted_name}" ]; then
+                    rm "${encrypted_name}"
+                fi
+                # encrypt the file
+                if ! openssl aes-256-cbc -in "${file}" -out "${encrypted_name}" -pass pass:"${password}"; then
+                    echo "Error encrypting ${file}"
+                    [ -f "${encrypted_name}" ] && rm "${encrypted_name}"
+                fi
+                # add the file to the seen files
+                seen_files+=("${file}")
+            fi
+        done
     done
 }
 
@@ -198,26 +217,33 @@ decrypt() {
     IFS= read -rs 'password?Please enter a password: '
     echo
 
-    for file in "$@"; do
-        # ensure the file exists
-        if [ ! -f "$file" ]; then
-          echo "${file} not found"
-          continue
-        fi
+    # make sure we don't decrypt the same file twice
+    seen_files=()
 
-        # ensure the file ends with encryption_extenstion
-        if [[ ! "$file" == *.$encryption_extenstion ]]; then
-          echo "${file} does not end with .$encryption_extenstion"
-          continue
-        fi
-
-        # decrypt the file
-        decrypted_name="${file%.$encryption_extenstion}"
-        if [ -f "$decrypted_name" ]; then
-          rm "$decrypted_name";
-        fi
-        echo Decrypting $file to $decrypted_name
-        openssl aes-256-cbc -d -in "$file" -out "$decrypted_name" -pass pass:"$password"
+    # walk through the files and decrypt them
+    for pattern in "$@"; do
+        for file in ${pattern}; do
+            # space are needed in the comparison to avoid matching substrings
+            if [[ ! " ${seen_files[*]} " =~ " ${file} " ]]; then
+                # ensure the file ends with encryption_extension
+                if [[ ! "${file}" == *.${encryption_extension} ]]; then
+                    echo "${file} does not end with .${encryption_extension}"
+                else
+                    # decrypt the file
+                    decrypted_name="${file%.$encryption_extension}"
+                    # remove the decrypted file if it exists
+                    if [ -f "${decrypted_name}" ]; then
+                        rm "${decrypted_name}"
+                    fi
+                    echo "Decrypting ${file} to ${decrypted_name}"
+                    if ! openssl aes-256-cbc -d -in "${file}" -out "${decrypted_name}" -pass pass:"${password}"; then
+                        echo "Error decrypting ${file}"
+                        [ -f "${decrypted_name}" ] && rm "${decrypted_name}"
+                    fi
+                fi
+                seen_files+=("${file}")
+            fi
+        done
     done
 }
 
