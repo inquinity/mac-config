@@ -1,13 +1,9 @@
-[credential]
-	helper = /usr/local/share/gcm-core/git-credential-manager
 [credential "https://github.com"]
 	username = raltman2_uhg
 [credential "https://github.com/Open-Lens"]
 	username = inquinity
 [credential "https://github.com/inquinity"]
 	username = inquinity
-[credential "https://dev.azure.com"]
-	useHttpPath = true
 [user]
 	name = Robert Altman
 	email = robert.altman@optum.com
@@ -34,3 +30,8 @@
 	changes = diff
 	incoming = "!git remote update -p; git log ..@{u}"
 	outgoing = log @{u}..
+[credential]
+	helper = 
+	helper = /usr/local/share/gcm-core/git-credential-manager
+[credential "https://dev.azure.com"]
+	useHttpPath = true
