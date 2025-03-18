@@ -14,17 +14,16 @@
 alias la='ls -aO'
 alias ll='ls -aOlh'
 alias lt='ls -lt'
-lll () { ls -aOlh "$@" | less ; }
 
-# ls long with acl's
-#lll () { ls -aOle "$@" | less ; }
+# list recrusive -- this requires quoted arquments
+lr () { for pattern in "$@"; do find . -name "$pattern" -type f ; done ; }
 
 # ls for resources MacOS fork
 lsr () { ls -lh "$@"/..namedfork/rsrc ; }
 
 #--------------
 # Folder / Path
-#-------------
+#--------------
 
 alias md=mkdir
 alias showpath='echo "$PATH" | tr ":" "\n" | nl'
@@ -52,21 +51,6 @@ hh ()  { history 1 "$@" | less ; }
 #hgrep () { grep -i "$1" ~/.zsh_history ; }
 alias hgrep='history 1 | grep -i'
 
-#--------------------------
-# File & folder management:
-#--------------------------
-
-# ls long format
-#ll ()  { ls -aOl "$@" | less ; }
-
-# ls long with acl's
-#lll () { ls -aOle "$@" | less ; }
-
-# ls with time 
-#lt ()  { ls -lt "$@" | less ; }
-
-# ls for resources fork
-#lsr () { ls -l "$@"/..namedfork/rsrc ; }
 
 #-----------
 # Searching:
@@ -87,9 +71,10 @@ ffe () { find . -name '*'"$@" ; }
 alias killdoc='killall -KILL Dock'
 alias python=python3
 
-node-18() { brew unlink node ; brew unlink node@20 ; brew link --overwrite node@18 ; node --version ; }
-node-20() { brew unlink node ; brew unlink node@18 ; brew link --overwrite node@20 ; node --version ; }
-node-latest() { brew unlink node@18 ; brew unlink node@20 ; brew link --overwrite node ; node --version ; }
+node-18() { brew unlink node ; brew unlink node@20 ; brew unlink node@22; brew link --overwrite node@18 ; node --version ; }
+node-20() { brew unlink node ; brew unlink node@18 ; brew unlink node@22; brew link --overwrite node@20 ; node --version ; }
+node-22() { brew unlink node ; brew unlink node@18 ; brew unlink node@20; brew link --overwrite node@20 ; node --version ; }
+node-latest() { brew unlink node@18 ; brew unlink node@20 ; brew unlink node@22; brew link --overwrite node ; node --version ; }
 
 python-311() { alias python3 >/dev/null 2>&1 || if [[ $(uname -m) == 'arm64' ]]; then
     alias python3=/opt/homebrew/bin/python3.11 ; export npm_config_python=/opt/homebrew/bin/python3.11
@@ -179,6 +164,13 @@ encrypt() {
     # Prompt for password
     IFS= read -rs 'password?Please enter a password: '
     echo
+    IFS= read -rs 'password2?Please re-enter the password: '
+    echo
+
+    if [ "$password" != "$password2" ]; then
+        echo "Passwords do not match. Exiting."
+        exit 1
+    fi
 
     # make sure we don't encrypt the same file twice
     seen_files=()
@@ -250,6 +242,9 @@ decrypt() {
 # ---------
 # Optum/UHG
 # ---------
+
+# microproduct template cli
+alias mpt='npx @optum-rx-platform/cli@latest'
 
 if test -f ~/team/Docker/Scripts/prisma.sh; then alias prisma='~/team/Docker/Scripts/prisma.sh'; fi
 if test -f ~/team/Docker/Scripts/xray.sh; then alias xray='~/team/Docker/Scripts/xray.sh'; fi
