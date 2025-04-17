@@ -73,7 +73,7 @@ alias python=python3
 
 node-18() { brew unlink node ; brew unlink node@20 ; brew unlink node@22; brew link --overwrite node@18 ; node --version ; }
 node-20() { brew unlink node ; brew unlink node@18 ; brew unlink node@22; brew link --overwrite node@20 ; node --version ; }
-node-22() { brew unlink node ; brew unlink node@18 ; brew unlink node@20; brew link --overwrite node@20 ; node --version ; }
+node-22() { brew unlink node ; brew unlink node@18 ; brew unlink node@20; brew link --overwrite node@22 ; node --version ; }
 node-latest() { brew unlink node@18 ; brew unlink node@20 ; brew unlink node@22; brew link --overwrite node ; node --version ; }
 
 python-311() { alias python3 >/dev/null 2>&1 || if [[ $(uname -m) == 'arm64' ]]; then
@@ -138,6 +138,7 @@ convert-video() {
 
 #alias docker-sha="docker images --no-trunc --quiet"
 docker-sha() { docker inspect "$1" | jq '"Image: "+.[0].Id, "Repository: "+.[0].RepoDigests[0]' ; }
+docker-manifest() { docker manifest inspect "$1" | jq '"Manifest digest: "+.config.digest' ; }
 docker-ls() {
     format_args="{{.Repository}}:{{.Tag}}\t{{.CreatedAt}}\t{{.ID}}\t{{.Size}}"
     if [ -n "$1" ]; then
@@ -250,4 +251,8 @@ if test -f ~/team/Docker/Scripts/prisma.sh; then alias prisma='~/team/Docker/Scr
 if test -f ~/team/Docker/Scripts/xray.sh; then alias xray='~/team/Docker/Scripts/xray.sh'; fi
 if test -f ~/team/Docker/Scripts/container-extract.sh; then alias container-extract='~/team/Docker/Scripts/container-extract.sh'; fi
 if test -f ~/team/Docker/Scripts/image-extract.sh; then alias image-extract='~/team/Docker/Scripts/image-extract.sh'; fi
+if test -f ~/team/Docker/Scripts/hcc-get-digests.sh; then alias hcc-get-digests='~/team/Docker/Scripts/hcc-get-digests.sh'; fi
+
 if test -f ~/team/scripts/ghcp-usage.sh; then alias ghcp='pushd ~/team/scripts; ./ghcp-usage.sh; popd'; fi
+
+if test -f ~/docker/update-golden-images.sh; then alias update-golden-images='~/docker/update-golden-images.sh'; fi
