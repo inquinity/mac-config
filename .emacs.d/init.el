@@ -103,3 +103,14 @@
 ;; Comments - Not working the way it should
 ;;(keymap-global-set "H-." 'uncomment-region)
 ;;(keymap-global-set "H-/" 'comment-region)
+
+;; using ls-lisp with these settings gives case-insensitive sorting on MacOS
+(require 'ls-lisp)
+(setq dired-listing-switches "-alhG")
+(setq ls-lisp-use-insert-directory-program nil)
+(setq ls-lisp-ignore-case t)
+(setq ls-lisp-use-string-collate nil)
+;; customise the appearance of the listing
+(setq ls-lisp-verbosity '(links uid))
+(setq ls-lisp-format-time-list '("%b %e %H:%M" "%b %e  %Y"))
+(setq ls-lisp-use-localized-time-format t)
