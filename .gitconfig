@@ -8,12 +8,14 @@
 	name = Robert Altman
 	email = robert.altman@optum.com
 [core]
-	excludesfile = /Users/raltman2/.gitignore_global
+	excludesfile = ~/.gitignore_global
 [difftool "sourcetree"]
 	cmd = opendiff \"$LOCAL\" \"$REMOTE\"
 	path = 
 [mergetool "sourcetree"]
 	cmd = /Applications/Sourcetree.app/Contents/Resources/opendiff-w.sh \"$LOCAL\" \"$REMOTE\" -ancestor \"$BASE\" -merge \"$MERGED\"
+	trustExitCode = true
+[mergetool "bc"]
 	trustExitCode = true
 [commit]
 	template = ~/.stCommitMsg
