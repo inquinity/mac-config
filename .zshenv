@@ -19,6 +19,7 @@ addpath() {
     fi
 }
 
+# this is repeated in zprofile to ensure correct path ordering so brew folders come before /usr/*/bin
 if [[ $(uname -m) == 'arm64' ]]; then
   eval "$(/opt/homebrew/bin/brew shellenv)"
   addpath "/opt/bin"

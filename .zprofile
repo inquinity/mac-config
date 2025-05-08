@@ -8,8 +8,16 @@
 
 #echo Sourcing .zprofile
 
+# This is the easiest way to "fix" the path ordering issue and make sure that homebrew is search before /usr/*/bin
+if [[ $(uname -m) == 'arm64' ]]; then
+  eval "$(/opt/homebrew/bin/brew shellenv)"
+  addpath "/opt/bin"
+  if [ -d /opt/homebrew/opt/mysql-client/bin ]; then
+      addpath "/opt/homebrew/opt/mysql-client/bin"
+  fi
+fi
+
 #kubectl autocompletion
 #autoload -Uz compinit
 #compinit
 #source <(kubectl completion zsh)
-
