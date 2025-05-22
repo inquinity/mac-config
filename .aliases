@@ -33,7 +33,7 @@ alias showpath='echo "$PATH" | tr ":" "\n" | nl'
 #--------
 
 # showa: to remind yourself of an alias (given some part of it)
-showa () { grep -i -a1 $@ ~/.aliases | grep -v '^\s*$' ; }
+alias showa='whence -f'
 
 # sourcea: to source this file (to make changes active after editing)
 alias sourcea='source ~/.aliases'
