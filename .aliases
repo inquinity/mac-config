@@ -25,7 +25,7 @@ lsr () { ls -lh "$@"/..namedfork/rsrc ; }
 # Folder / Path
 #--------------
 
-alias md=mkdir
+alias md='mkdir -p'
 alias showpath='echo "$PATH" | tr ":" "\n" | nl'
 
 #--------
@@ -69,20 +69,23 @@ ffe () { find . -name '*'"$@" ; }
 # -----------
 
 alias killdoc='killall -KILL Dock'
-alias python=python3
 
-node-18() { brew unlink node ; brew unlink node@20 ; brew unlink node@22; brew link --overwrite node@18 ; node --version ; }
-node-20() { brew unlink node ; brew unlink node@18 ; brew unlink node@22; brew link --overwrite node@20 ; node --version ; }
-node-22() { brew unlink node ; brew unlink node@18 ; brew unlink node@20; brew link --overwrite node@22 ; node --version ; }
-node-latest() { brew unlink node@18 ; brew unlink node@20 ; brew unlink node@22; brew link --overwrite node ; node --version ; }
+node-20() { brew unlink node ; brew unlink node@22 ; brew unlink node; brew link --overwrite node@20 ; node --version ; }
+node-22() { brew unlink node ; brew unlink node@20 ; brew unlink node; brew link --overwrite node@22 ; node --version ; }
+node-latest() { brew unlink node@20 ; brew unlink node@22 ; brew link --overwrite node ; node --version ; }
+
+alias python=python3
+alias py=python3
 
 python-311() { alias python3 >/dev/null 2>&1 || if [[ $(uname -m) == 'arm64' ]]; then
     alias python3=/opt/homebrew/bin/python3.11 ; export npm_config_python=/opt/homebrew/bin/python3.11
 else
     alias python3=/usr/local/bin/python3.11 ; export npm_config_python=/usr/local/bin/python3.11
 fi; eval 'python3 --version' ; }
+
 python-312() { alias python3 >/dev/null 2>&1 && unalias python3 ; unset npm_config_python ; eval 'python3 --version' ; }
-alias py=python3
+
+alias ghcp='gh copilot'
 
 # ------------------------
 # Mac OS & iOS Development
@@ -258,12 +261,12 @@ decrypt() {
 # microproduct template cli
 alias mpt='npx @optum-rx-platform/cli@latest'
 
-if test -f ~/team/Docker/Scripts/prisma.sh; then alias prisma='~/team/Docker/Scripts/prisma.sh'; fi
-if test -f ~/team/Docker/Scripts/xray.sh; then alias xray='~/team/Docker/Scripts/xray.sh'; fi
-if test -f ~/team/Docker/Scripts/container-extract.sh; then alias container-extract='~/team/Docker/Scripts/container-extract.sh'; fi
-if test -f ~/team/Docker/Scripts/image-extract.sh; then alias image-extract='~/team/Docker/Scripts/image-extract.sh'; fi
-if test -f ~/team/Docker/Scripts/hcc-get-digests.sh; then alias hcc-get-digests='~/team/Docker/Scripts/hcc-get-digests.sh'; fi
+if test -f ~/team/docker/scripts/prisma.sh; then alias prisma='~/team/docker/scripts/prisma.sh'; fi
+if test -f ~/team/docker/scripts/xray.sh; then alias xray='~/team/docker/scripts/xray.sh'; fi
+if test -f ~/team/docker/scripts/container-extract.sh; then alias container-extract='~/team/docker/scripts/container-extract.sh'; fi
+if test -f ~/team/docker/scripts/image-extract.sh; then alias image-extract='~/team/docker/scripts/image-extract.sh'; fi
 
-if test -f ~/team/scripts/ghcp-usage.sh; then alias ghcp='pushd ~/team/scripts; ./ghcp-usage.sh; popd'; fi
+if test -f ~/team/scripts/hcc-auth.sh; then alias hcc-auth='~/team/scripts/hcc-auth.sh'; fi
+# if test -f ~/team/scripts/ghcp-usage.sh; then alias ghcp='pushd ~/team/scripts; ./ghcp-usage.sh; popd'; fi
 
 if test -f ~/docker/update-golden-images.sh; then alias update-golden-images='~/docker/update-golden-images.sh'; fi
