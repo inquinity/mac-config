@@ -64,7 +64,7 @@ precmd() {
 	    fi
 	fi
     else
-        zstyle ':vcs_info:git:*' formats "%F{green}%b%f branch"
+	zstyle ':vcs_info:git:*' formats "%F{green}%b%f branch"
     fi
     vcs_info
 }
@@ -97,3 +97,8 @@ compinit
 
 # This will disable MicroTemplate Husky hooks
 export HUSKY=0
+
+# Added by gcloud cli
+export CLOUDSDK_PYTHON=/usr/local/bin/python3
+export PATH=$PATH:/Applications/google-cloud-sdk/bin
+export REQUESTS_CA_BUNDLE=/Applications/google-cloud-sdk/Certs/standard_trusts.pem
