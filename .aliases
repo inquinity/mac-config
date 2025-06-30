@@ -72,7 +72,7 @@ alias killdoc='killall -KILL Dock'
 
 node-20() { brew unlink node ; brew unlink node@22 ; brew unlink node; brew link --overwrite node@20 ; node --version ; }
 node-22() { brew unlink node ; brew unlink node@20 ; brew unlink node; brew link --overwrite node@22 ; node --version ; }
-node-latest() { brew unlink node@20 ; brew unlink node@22 ; brew link --overwrite node ; node --version ; }
+node-latest() { brew unlink node@20 ; brew unlink node@22 ; brew reinstall node ; node --version ; }
 
 alias python=python3
 alias py=python3
@@ -95,8 +95,8 @@ alias ghcp='gh copilot'
 term() { echo -n -e "\033]0;$@\007" ; }
 
 # Objective-C / NIB searches
-gr() { grep --line-number --recursive --include=*.{m,h,xib} "$1" * ; }
-gri() { grep --line-number --recursive --ignore-case --include=*.{m,h,xib} "$1" * ; }
+gr() { grep --line-number --recursive --include=*.{m,h,xib} "$1"; }
+gri() { grep --line-number --recursive --ignore-case --include=*.{m,h,xib} "$1"; }
 
 xcode ()  { open /Applications/Xcode.app "$@" ; }
 sim () { open /Applications/Xcode.app/Contents/Developer/Applications/Simulator.app ; }
