@@ -38,6 +38,8 @@ alias showa='whence -f'
 # sourcea: to source this file (to make changes active after editing)
 alias sourcea='source ~/.aliases'
 
+alias emacs='/Applications/Emacs.app/Contents/MacOS/Emacs.sh'
+
 #----------------
 # Command history
 #----------------
