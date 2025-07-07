@@ -268,6 +268,9 @@ if test -f ~/team/docker/scripts/xray.sh; then alias xray='~/team/docker/scripts
 if test -f ~/team/docker/scripts/container-extract.sh; then alias container-extract='~/team/docker/scripts/container-extract.sh'; fi
 if test -f ~/team/docker/scripts/image-extract.sh; then alias image-extract='~/team/docker/scripts/image-extract.sh'; fi
 
+if test -f ~/team/docker/sbom-compare/sbom-diff.sh; then alias sbom-diff='~/team/docker/sbom-compare/sbom-diff.sh'; fi
+if test -f ~/team/docker/sbom-compare/sbom-analyze.sh; then alias sbom-analyze='~/team/docker/sbom-compare/sbom-analyze.sh'; fi
+
 if test -f ~/team/scripts/hcc-auth.sh; then alias hcc-auth='~/team/scripts/hcc-auth.sh'; fi
 # if test -f ~/team/scripts/ghcp-usage.sh; then alias ghcp='pushd ~/team/scripts; ./ghcp-usage.sh; popd'; fi
 
