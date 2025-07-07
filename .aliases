@@ -44,15 +44,15 @@ alias emacs='/Applications/Emacs.app/Contents/MacOS/Emacs.sh'
 # Command history
 #----------------
 
-alias h=history 1
-
-# history (paged)
-hh ()  { history 1 "$@" | less ; }
-
-# grep in command history
-#hgrep () { grep -i "$1" ~/.zsh_history ; }
-alias hgrep='history 1 | grep -i'
-
+if command -v atuin &>/dev/null; then
+    alias h='atuin history list --session'
+    alias hh='atuin history list'
+    alias hgrep='atuin search'
+else
+    alias h='history 1'
+    hh ()  { history 1 "$@" | less ; } # history (paged)
+    alias hgrep='history 1 | grep -i'  # grep through command history
+fi
 
 #-----------
 # Searching:

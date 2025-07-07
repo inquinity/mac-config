@@ -102,3 +102,6 @@ export HUSKY=0
 export CLOUDSDK_PYTHON=/usr/local/bin/python3
 export PATH=$PATH:/Applications/google-cloud-sdk/bin
 export REQUESTS_CA_BUNDLE=/Applications/google-cloud-sdk/Certs/standard_trusts.pem
+
+# Added by atuin (shell history magic)
+eval "$(atuin init zsh)"
