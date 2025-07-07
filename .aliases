@@ -87,7 +87,7 @@ fi; eval 'python3 --version' ; }
 
 python-312() { alias python3 >/dev/null 2>&1 && unalias python3 ; unset npm_config_python ; eval 'python3 --version' ; }
 
-alias ghcp='gh copilot'
+alias ghcp='gh copilot suggest'
 
 # ------------------------
 # Mac OS & iOS Development
