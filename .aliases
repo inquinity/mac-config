@@ -11,9 +11,15 @@
 # Directory / list
 #-----------------
 
-alias la='ls -aO'
-alias ll='ls -aOlh'
-alias lt='ls -lt'
+if command -v eza &>/dev/null; then
+    alias la='eza --all --qll'
+    alias ll='eza --long --all --all --octal-permissions --icons'
+    alias lt='eza --long --all --all --sort=time'
+else
+    alias la='ls -aO'
+    alias ll='ls -aOlh'
+    alias lt='ls -lt'
+fi
 
 # list recrusive -- this requires quoted arquments
 lr () { for pattern in "$@"; do find . -name "$pattern" -type f ; done ; }
@@ -50,7 +56,7 @@ if command -v atuin &>/dev/null; then
     alias hgrep='atuin search'
 else
     alias h='history 1'
-    hh ()  { history 1 "$@" | less ; } # history (paged)
+    alias hh='history 1 | less' # history (paged)
     alias hgrep='history 1 | grep -i'  # grep through command history
 fi
 
@@ -141,120 +147,20 @@ convert-video() {
 # docker
 # ------
 
-docker-ls() {
-    format_args="{{.Repository}}:{{.Tag}}\t{{.CreatedAt}}\t{{.ID}}\t{{.Size}}"
-    if [ -n "$1" ]; then
-        result=$(docker image ls --format "${format_args}")
-        for term in "$@"; do
-            result=$(echo "$result" | grep "$term")
-        done
-        echo "$result"
-    else
-        docker image ls --format "${format_args}"
-    fi
-}
+# Source Docker functions from external library
+if test -f ~/mac-config/docker.shlib; then 
+    source ~/mac-config/docker.shlib
+fi
 
-docker-sha() { docker inspect "$1" | jq '"Image: "+.[0].Id, "Repository: "+.[0].RepoDigests[0]' ; }
-docker-os() { docker run --rm --interactive --tty --entrypoint "sh" --user root  "$1" -c "grep ^ID= /etc/os-release | cut -c 4-" ; }
+# Source APK functions from external library
+if test -f ~/GoldenImageTechCoP/cookbook/apk-search/apk-functions.shlib; then 
+    source ~/GoldenImageTechCoP/cookbook/apk-search/apk-functions.shlib
+fi
 
-docker-info() {
-  echo -n "Inspecting Docker image: ${1}" ;
-  docker inspect --format='{{json .Config.Labels}}' "$1" | jq -r '"
-    Golden Image Type: " + .["golden.container.image.type"] + "
-    Golden Image Build Tag: " + .["golden.container.image.build.tag"] + "
-    Golden Image Release Date: " + .["golden.container.image.build.release"] + "
-    Chainguard Package: " +.["dev.chainguard.package.main"] + "
-    Chainguard Image Base: " + .["golden.container.image.vendor.tag"] + "
-    Image Source: " + .["org.opencontainers.image.source"]
-' }
-
-docker-run() { docker run --rm --interactive --tty --entrypoint "sh" --user root  "$1" ; }
-docker-exec() { docker exec --interactive --tty $1 sh ; }
-
-# ----------
-# Encryption
-# ----------
-
-encryption_extension="encrypted"
-
-encrypt() {
-    # Prompt for password
-    IFS= read -rs 'password?Please enter a password: '
-    echo
-    IFS= read -rs 'password2?Please re-enter the password: '
-    echo
-
-    if [ "$password" != "$password2" ]; then
-        echo "Passwords do not match. Exiting."
-        exit 1
-    fi
-
-    # make sure we don't encrypt the same file twice
-    seen_files=()
-
-    # walk through the files and encrypt them
-    for pattern in "$@"; do
-        for file in ${pattern}; do
-            # space are needed in the comparison to avoid matching substrings
-            if [[ ! " ${seen_files[*]} " =~ " ${file} " ]]; then
-                # skip files that already end with .encrypted
-                if [[ "${file}" == *.${encryption_extension} ]]; then
-                    echo "Skipping ${file} as it already ends with .${encryption_extension}"
-                    continue
-                fi
-                # create the encrypted file name
-                encrypted_name="${file}.${encryption_extension}"
-                echo "Encrypting ${file} to ${encrypted_name}"
-                # remove the encrypted file if it exists
-                if [ -f "${encrypted_name}" ]; then
-                    rm "${encrypted_name}"
-                fi
-                # encrypt the file
-                if ! openssl aes-256-cbc -in "${file}" -out "${encrypted_name}" -pass pass:"${password}"; then
-                    echo "Error encrypting ${file}"
-                    [ -f "${encrypted_name}" ] && rm "${encrypted_name}"
-                fi
-                # add the file to the seen files
-                seen_files+=("${file}")
-            fi
-        done
-    done
-}
-
-decrypt() {
-    # Prompt for password
-    IFS= read -rs 'password?Please enter a password: '
-    echo
-
-    # make sure we don't decrypt the same file twice
-    seen_files=()
-
-    # walk through the files and decrypt them
-    for pattern in "$@"; do
-        for file in ${pattern}; do
-            # space are needed in the comparison to avoid matching substrings
-            if [[ ! " ${seen_files[*]} " =~ " ${file} " ]]; then
-                # ensure the file ends with encryption_extension
-                if [[ ! "${file}" == *.${encryption_extension} ]]; then
-                    echo "${file} does not end with .${encryption_extension}"
-                else
-                    # decrypt the file
-                    decrypted_name="${file%.$encryption_extension}"
-                    # remove the decrypted file if it exists
-                    if [ -f "${decrypted_name}" ]; then
-                        rm "${decrypted_name}"
-                    fi
-                    echo "Decrypting ${file} to ${decrypted_name}"
-                    if ! openssl aes-256-cbc -d -in "${file}" -out "${decrypted_name}" -pass pass:"${password}"; then
-                        echo "Error decrypting ${file}"
-                        [ -f "${decrypted_name}" ] && rm "${decrypted_name}"
-                    fi
-                fi
-                seen_files+=("${file}")
-            fi
-        done
-    done
-}
+# Source Encryption functions from external library
+if test -f ~/mac-config/encryption.shlib; then 
+    source ~/mac-config/encryption.shlib
+fi
 
 # ---------
 # Optum/UHG
