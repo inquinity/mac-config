@@ -5,7 +5,7 @@
 # After .zshenv .zprofile
 # Before .zlogin
 
-#echo Sourcing .zshrc
+echo Sourcing .zshrc
 
 # History options
 # Good source of info: https://zsh.sourceforge.io/Guide/zshguide02.html#l17
@@ -98,10 +98,8 @@ compinit
 # This will disable MicroTemplate Husky hooks
 export HUSKY=0
 
-# Added by gcloud cli
-export CLOUDSDK_PYTHON=/usr/local/bin/python3
-export PATH=$PATH:/Applications/google-cloud-sdk/bin
-export REQUESTS_CA_BUNDLE=/Applications/google-cloud-sdk/Certs/standard_trusts.pem
+# Disable Microsoft cli telemetry
+export DOTNET_CLI_TELEMETRY_OPTOUT=1
 
 # Added by atuin (shell history magic)
 eval "$(atuin init zsh)"

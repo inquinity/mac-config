@@ -6,7 +6,7 @@
 # After .zshenv 
 # Before .zshrc .zlogin
 
-#echo Sourcing .zprofile
+echo Sourcing .zprofile
 
 # This is the easiest way to "fix" the path ordering issue and make sure that homebrew is search before /usr/*/bin
 if [[ $(uname -m) == 'arm64' ]]; then

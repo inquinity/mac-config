@@ -7,6 +7,6 @@
 
 # See also: .logout
 
-#echo Sourcing .login
+echo Sourcing .login
 
 #cd ~/dev

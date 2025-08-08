@@ -9,7 +9,7 @@
 # /etc/paths
 # /etc/paths.d
 
-#echo Sourcing .zshenv
+echo Sourcing .zshenv
 
 # define addpath() here since this is the first sourced file
 addpath() {
@@ -31,4 +31,4 @@ fi
 SHELL_SESSIONS_DISABLE=1
 
 # Load UHG specific settings (if file exists)
-. ~/.zshenv-uhg 2> /dev/null
+source ~/.zshenv-uhg 2> /dev/null
