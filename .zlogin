@@ -5,8 +5,8 @@
 # After .zshenv .zprofile .zshrc
 # Sourced last
 
-# See also: .logout
+# See also: .zlogout
 
-echo Sourcing .login
+# printf "Sourcing .zlogin\n"
 
 #cd ~/dev

@@ -1,12 +1,12 @@
 [credential "https://github.com"]
-	username = robert@AltmanSoftwareDesign.com
-[credential "https://github.com/freelensapp"]
+	username = raltman2_uhg
+[credential "https://github.com/Open-Lens"]
 	username = inquinity
 [credential "https://github.com/inquinity"]
 	username = inquinity
 [user]
 	name = Robert Altman
-	email = robert@AltmanSoftwareDesign.com
+	email = robert.altman+uhg@optum.com
 [core]
 	excludesfile = ~/.gitignore_global
 [diff]

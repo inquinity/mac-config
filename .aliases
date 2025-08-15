@@ -5,7 +5,7 @@
 # imported from sample file
 # From http://hayne.net/MacDev/Bash/aliases.bash
 
-#echo Sourcing .aliases
+# printf "Sourcing .aliases\n"
 
 #-----------------
 # Directory / list
@@ -147,8 +147,8 @@ convert-video() {
 # ------
 
 # Source Docker functions from external library
-if test -f ~/mac-config/docker.shlib; then 
-    source ~/mac-config/docker.shlib
+if test -f ~/mac-config/scripts/docker.shlib; then 
+    source ~/mac-config/scripts/docker.shlib
 fi
 
 # Source APK functions from external library
@@ -157,8 +157,8 @@ if test -f ~/GoldenImageTechCoP/cookbook/apk-search/apk-functions.shlib; then
 fi
 
 # Source Encryption functions from external library
-if test -f ~/mac-config/encryption.shlib; then 
-    source ~/mac-config/encryption.shlib
+if test -f ~/mac-config/scripts/encryption.shlib; then 
+    source ~/mac-config/scripts/encryption.shlib
 fi
 
 # ---------

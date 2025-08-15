@@ -5,7 +5,7 @@
 # After .zshenv .zprofile
 # Before .zlogin
 
-echo Sourcing .zshrc
+# printf "Sourcing .zshrc\n"
 
 # History options
 # Good source of info: https://zsh.sourceforge.io/Guide/zshguide02.html#l17

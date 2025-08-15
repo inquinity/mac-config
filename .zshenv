@@ -9,7 +9,7 @@
 # /etc/paths
 # /etc/paths.d
 
-echo Sourcing .zshenv
+# printf "Sourcing .zshenv\n"
 
 # define addpath() here since this is the first sourced file
 addpath() {
