@@ -19,7 +19,7 @@ print_colored() {
     printf "${color}${message}${COLOR_RESET}\n"
 }
 
-printf "Sourcing encryption.shlib...\n"
+# printf "Sourcing encryption.shlib...\n"
 
 encryption_extension="encrypted"
 

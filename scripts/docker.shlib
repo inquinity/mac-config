@@ -19,7 +19,7 @@ print_colored() {
     printf "${color}${message}${COLOR_RESET}\n"
 }
 
-printf "Sourcing docker.shlib...\n"
+# printf "Sourcing docker.shlib...\n"
 
 docker-ls() {
     format_args="{{.Repository}}:{{.Tag}}\t{{.CreatedAt}}\t{{.ID}}\t{{.Size}}"

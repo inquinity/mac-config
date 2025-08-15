@@ -17,9 +17,35 @@ print_colored() {
     printf "${color}${message}${COLOR_RESET}\n"
 }
 
-print_colored "${COLOR_BRIGHTYELLOW}" "\nStarting pull-all script...\n$"
+# Check for optional subdirectory parameter
+if [ $# -eq 1 ]; then
+    subdirectory="$1"
+    # Check for help request
+    if [ "$subdirectory" = "help" ] || [ "$subdirectory" = "-h" ] || [ "$subdirectory" = "--help" ]; then
+        print_colored "${COLOR_YELLOW}" "Usage: $0 [subdirectory]"
+        print_colored "${COLOR_YELLOW}" "Examples:"
+        print_colored "${COLOR_YELLOW}" "  $0          # Update all git repositories"
+        print_colored "${COLOR_YELLOW}" "  $0 team     # Update only repositories in ./team directory"
+        exit 0
+    fi
+    if [ ! -d "$subdirectory" ]; then
+        print_colored "${COLOR_RED}" "Error: Subdirectory '$subdirectory' not found."
+        exit 1
+    fi
+    print_colored "${COLOR_BRIGHTYELLOW}" "Starting pull-all script for subdirectory: $subdirectory"
+    search_path="./$subdirectory"
+elif [ $# -eq 0 ]; then
+    print_colored "${COLOR_BRIGHTYELLOW}" "Starting pull-all script for all directories"
+    search_path="."
+else
+    print_colored "${COLOR_RED}" "Usage: $0 [subdirectory]"
+    print_colored "${COLOR_YELLOW}" "Examples:"
+    print_colored "${COLOR_YELLOW}" "  $0          # Update all git repositories"
+    print_colored "${COLOR_YELLOW}" "  $0 team     # Update only repositories in ./team directory"
+    exit 1
+fi
 
-find . -type d -name ".git" -execdir zsh -c '
+find "$search_path" -type d -name ".git" -execdir zsh -c '
      COLOR_GREEN="\e[32m"; COLOR_RESET="\e[0m"
      print_colored() { local color=$1; local message=$2; printf "${color}${message}${COLOR_RESET}\n"; }
      print_colored "${COLOR_GREEN}" "$(pwd)"
