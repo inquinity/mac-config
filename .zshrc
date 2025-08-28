@@ -71,7 +71,15 @@ precmd() {
 
 # set the prompt
 PROMPT='%B%F{240}%~%f%b %F{red}%@ %#%f '
-RPROMPT='${vcs_info_msg_0_}'
+if [[ -z "$VSCODE_PID" && "$TERM_PROGRAM" != "vscode" ]]; then
+    # Not running inside VS Code terminal (this might be preventing the "rich integration")
+    RPROMPT='${vcs_info_msg_0_}'
+else
+    # disable atuin in vscode ?
+    export ATUIN_NOBIND="true" && atuin init zsh --disable-up-arrow --disable-ctrl-r | source
+fi
+
+
 
 # Load UHG specific settings (if file exists)
 #. ~/.zshrc-uhg 2> /dev/null
