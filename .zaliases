@@ -5,7 +5,7 @@
 # imported from sample file
 # From http://hayne.net/MacDev/Bash/aliases.bash
 
-# printf "Sourcing .aliases\n"
+# printf "Sourcing .zaliases\n"
 
 #-----------------
 # Directory / list
@@ -43,7 +43,7 @@ alias showpath='echo "$PATH" | tr ":" "\n" | nl'
 alias showa='whence -f'
 
 # sourcea: to source this file (to make changes active after editing)
-alias sourcea='source ~/.aliases'
+alias sourcea='source ~/.zaliases'
 
 alias emacs='/Applications/Emacs.app/Contents/MacOS/Emacs.sh'
 

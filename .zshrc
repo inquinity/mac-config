@@ -71,21 +71,24 @@ precmd() {
 
 # set the prompt
 PROMPT='%B%F{240}%~%f%b %F{red}%@ %#%f '
-if [[ -z "$VSCODE_PID" && "$TERM_PROGRAM" != "vscode" ]]; then
+
+if [[ "$TERM_PROGRAM" != "vscode" ]]; then
     # Not running inside VS Code terminal (this might be preventing the "rich integration")
     RPROMPT='${vcs_info_msg_0_}'
+
+    # Added by atuin (shell history magic)
+    eval "$(atuin init zsh)"
 else
     # disable atuin in vscode ?
-    export ATUIN_NOBIND="true" && atuin init zsh --disable-up-arrow --disable-ctrl-r | source
+    source "$(code --locate-shell-integration-path zsh)"
+    #export ATUIN_NOBIND="true"
 fi
-
-
 
 # Load UHG specific settings (if file exists)
 #. ~/.zshrc-uhg 2> /dev/null
 
 #aliases
-. ~/.aliases
+source ~/.zaliases
 
 # Lines configured by zsh-newuser-install
 #HISTFILE=~/.histfile
@@ -109,5 +112,3 @@ export HUSKY=0
 # Disable Microsoft cli telemetry
 export DOTNET_CLI_TELEMETRY_OPTOUT=1
 
-# Added by atuin (shell history magic)
-eval "$(atuin init zsh)"

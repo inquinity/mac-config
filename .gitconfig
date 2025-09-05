@@ -6,9 +6,9 @@
 	username = inquinity
 [user]
 	name = Robert Altman
-	email = robert.altman+uhg@optum.com
+	email = robert.altman@optum.com
 [core]
-	excludesfile = ~/.gitignore_global
+	excludesfile = /Users/raltman2/.gitignore_global
 [diff]
 	tool = bc
 [merge]
