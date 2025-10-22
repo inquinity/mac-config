@@ -47,6 +47,9 @@ alias sourcea='source ~/.zaliases'
 
 alias emacs='/Applications/Emacs.app/Contents/MacOS/Emacs.sh'
 
+# GitHub Copilot REALLY likes timeout. This function does the same thing without needing to install GNU Coreutils 
+function timeout() { perl -e 'alarm shift; exec @ARGV' "$@"; }
+
 #----------------
 # Command history
 #----------------
@@ -149,18 +152,18 @@ convert-video() {
 # ------
 
 # Source Docker functions from external library
-if test -f ~/mac-config/scripts/docker.shlib; then 
-    source ~/mac-config/scripts/docker.shlib
+if test -f ~/mac-config/scripts/docker.sh; then 
+    source ~/mac-config/scripts/docker.sh
 fi
 
 # Source APK functions from external library
-if test -f ~/GoldenImageTechCoP/cookbook/apk-search/apk-functions.shlib; then 
-    source ~/GoldenImageTechCoP/cookbook/apk-search/apk-functions.shlib
+if test -f ~/dev/GoldenImageCoP/cookbook/apk-search/apk-functions.sh; then 
+    source ~/dev/GoldenImageCoP/cookbook/apk-search/apk-functions.sh
 fi
 
 # Source Encryption functions from external library
-if test -f ~/mac-config/scripts/encryption.shlib; then 
-    source ~/mac-config/scripts/encryption.shlib
+if test -f ~/mac-config/scripts/encryption.sh; then 
+    source ~/mac-config/scripts/encryption.sh
 fi
 
 # ---------
@@ -179,6 +182,5 @@ if test -f ~/dev/team/docker/sbom-compare/sbom-diff.sh; then alias sbom-diff='~/
 if test -f ~/dev/team/docker/sbom-compare/sbom-analyze.sh; then alias sbom-analyze='~/dev/team/docker/sbom-compare/sbom-analyze.sh'; fi
 
 if test -f ~/dev/team/scripts/hcc-auth.sh; then alias hcc-auth='~/dev/team/scripts/hcc-auth.sh'; fi
-# if test -f ~/dev/team/scripts/ghcp-usage.sh; then alias ghcp='pushd ~/dev/team/scripts; ./ghcp-usage.sh; popd'; fi
 
-# if test -f ~/docker/update-golden-images.sh; then alias update-golden-images='~/docker/update-golden-images.sh'; fi
+if test -f ~/dev/codeql.sh; then alias codeql='~/dev/codeql.sh'; fi

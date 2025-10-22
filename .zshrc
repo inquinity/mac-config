@@ -112,3 +112,5 @@ export HUSKY=0
 # Disable Microsoft cli telemetry
 export DOTNET_CLI_TELEMETRY_OPTOUT=1
 
+
+export PATH=$PATH:~/.docker/bin:/Applications/Docker.app/Contents/Resources/bin/

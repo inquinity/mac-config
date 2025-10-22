@@ -1,7 +1,7 @@
 #!/bin/zsh
 
-# kubectl_common.shlib - Common functions for kubectl deployment scripts
-# Source this file in your scripts with: source ~/team/scripts/kubectl_common.shlib
+# kubectl_common.sh - Common functions for kubectl deployment scripts
+# Source this file in your scripts with: source ~/team/scripts/kubectl_common.sh
 
 # Define color codes for terminal output
 COLOR_GREEN="\e[32m"         # Used for success messages and instructions
@@ -40,7 +40,7 @@ switch_context() {
     local current_context=$(kubectl config current-context)
     
     if [ "$current_context" != "$target_context" ]; then
-        printf "${COLOR_BLUE}Switching context to: ${target_context}${COLOR_RESET}\n"
+        printf "${COLOR_TEAL}Switching context to: ${target_context}${COLOR_RESET}\n"
         kubectl config use-context $target_context
     fi
 }
@@ -130,7 +130,7 @@ query_and_print_image() {
     local resource_name=$3
     local jq_expr_param=${4:-$jq_expr}
     
-    printf "${COLOR_BLUE}Querying ${resource_type}: ${resource_name}${COLOR_RESET}\n"
+    printf "${COLOR_TEAL}Querying ${resource_type}: ${resource_name}${COLOR_RESET}\n"
     
     local image_name=$(kubectl -n $namespace describe $resource_type $resource_name 2>/dev/null | grep Image | sed 's!^[[:blank:]]*Image:[[:blank:]]*!!g' | head -1)
     
@@ -149,7 +149,7 @@ pull_docker_image() {
     local deployment_type=$2  # "deployment" or "cronjob"
     local resource_name=$3
     
-    printf "${COLOR_BLUE}Querying ${deployment_type}: ${resource_name}${COLOR_RESET}\n"
+    printf "${COLOR_TEAL}Querying ${deployment_type}: ${resource_name}${COLOR_RESET}\n"
     
     if [ -z "$image_name" ]; then
         printf "${COLOR_RED}Failed to extract image name from ${deployment_type} ${resource_name}${COLOR_RESET}\n"
