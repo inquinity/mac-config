@@ -8,7 +8,7 @@
 	name = Robert Altman
 	email = robert.altman@optum.com
 [core]
-	excludesfile = /Users/raltman2/.gitignore_global
+	excludesfile = ~/.gitignore_global
 [diff]
 	tool = bc
 [merge]
