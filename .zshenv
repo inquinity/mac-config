@@ -21,11 +21,15 @@ addpath() {
 
 # this is repeated in zprofile to ensure correct path ordering so brew folders come before /usr/*/bin
 if [[ $(uname -m) == 'arm64' ]]; then
+  # Apple chips
   eval "$(/opt/homebrew/bin/brew shellenv)"
   addpath "/opt/bin"
   if [ -d /opt/homebrew/opt/mysql-client/bin ]; then
       addpath "/opt/homebrew/opt/mysql-client/bin"
   fi
+else
+    # Intel chips
+    addpath "/usr/local/sbin"
 fi
 
 SHELL_SESSIONS_DISABLE=1
