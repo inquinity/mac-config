@@ -4,13 +4,14 @@
 # Usage: source ~/mac-config/docker.shlib
 
 # Define color codes for terminal output
-COLOR_GREEN="\e[32m"
-COLOR_RED="\e[31m"
-COLOR_YELLOW="\e[33m"
-COLOR_BLUE="\e[34m"
-COLOR_MAGENTA="\e[35m"
-COLOR_BRIGHTYELLOW="\e[93m"
-COLOR_RESET="\e[0m"
+COLOR_GREEN="\e[32m"         # Used for success messages and instructions
+COLOR_RED="\e[31m"           # Used for error messages and warnings
+COLOR_YELLOW="\e[33m"        # Used for help text, lists, and informational content
+COLOR_MAGENTA="\e[35m"       # Available for general use
+COLOR_CYAN="\e[36m"          # Available for general use
+COLOR_BLUE="\e[34m"          # Available for general use; does not show on screen well
+COLOR_BRIGHTYELLOW="\e[93m"  # Used for highlighting important actions and status
+COLOR_RESET="\e[0m"          # Used to reset color formatting
 
 # Function to print colored output
 print_colored() {
@@ -22,6 +23,14 @@ print_colored() {
 # printf "Sourcing docker.shlib...\n"
 
 docker-ls() {
+    # Detect container runtime type
+    runtimes=$(docker info 2>/dev/null | grep "Runtimes:" | awk '{print $2}')
+    if [ "$runtimes" = "io.containerd.runc.v2" ]; then
+        print_colored "$COLOR_YELLOW" "Using containerd"
+    else
+        print_colored "$COLOR_YELLOW" "Using standard container"
+    fi
+    
     format_args="{{.Repository}}:{{.Tag}}\t{{.CreatedAt}}\t{{.ID}}\t{{.Size}}"
     if [ -n "$1" ]; then
         result=$(docker image ls --format "${format_args}")
