@@ -1,5 +1,7 @@
 [credential "https://github.com"]
 	username = raltman2_uhg
+[credential "https://github.com/raltman_uhgsand"]
+	username = raltman2_uhgsand
 [credential "https://github.com/Open-Lens"]
 	username = inquinity
 [credential "https://github.com/inquinity"]
