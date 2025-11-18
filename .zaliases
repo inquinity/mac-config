@@ -83,9 +83,10 @@ ffe () { find . -name '*'"$@" ; }
 
 alias killdoc='killall -KILL Dock'
 
-node-20() { brew unlink node ; brew unlink node@22 ; brew unlink node; brew link --overwrite node@20 ; node --version ; }
-node-22() { brew unlink node ; brew unlink node@20 ; brew unlink node; brew link --overwrite node@22 ; node --version ; }
-node-latest() { brew unlink node@20 ; brew unlink node@22 ; brew reinstall node ; node --version ; }
+node-20() { brew unlink node ; brew unlink node@22 ; brew unlink node@24; brew link --overwrite node@20 ; node --version ; }
+node-22() { brew unlink node ; brew unlink node@20 ; brew unlink node@24; brew link --overwrite node@22 ; node --version ; }
+node-24() { brew unlink node ; brew unlink node@20 ; brew unlink node@22; brew link --overwrite node@24 ; node --version ; }
+node-latest() { brew unlink node@20 ; brew unlink node@22 ; brew unlink node@24; brew reinstall node ; node --version ; }
 
 alias python=python3
 alias py=python3
