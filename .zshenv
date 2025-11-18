@@ -19,6 +19,10 @@ addpath() {
     fi
 }
 
+#export PATH=$PATH:~/.docker/bin:/Applications/Docker.app/Contents/Resources/bin/
+addpath :~/.docker/bin
+addpath /Applications/Docker.app/Contents/Resources/bin/
+
 # this is repeated in zprofile to ensure correct path ordering so brew folders come before /usr/*/bin
 if [[ $(uname -m) == 'arm64' ]]; then
   # Apple chips
