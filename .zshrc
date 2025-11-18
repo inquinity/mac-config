@@ -114,3 +114,5 @@ export DOTNET_CLI_TELEMETRY_OPTOUT=1
 
 
 export PATH=$PATH:~/.docker/bin:/Applications/Docker.app/Contents/Resources/bin/
+# Configure eza - see https://github.com/eza-community/eza-themes
+export EZA_CONFIG_DIR=~/.config/eza
