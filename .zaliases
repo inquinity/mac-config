@@ -50,6 +50,12 @@ alias emacs='/Applications/Emacs.app/Contents/MacOS/Emacs.sh'
 # GitHub Copilot REALLY likes timeout. This function does the same thing without needing to install GNU Coreutils 
 function timeout() { perl -e 'alarm shift; exec @ARGV' "$@"; }
 
+#------
+# Timer
+#------
+
+alias timer='command time -h'
+
 #----------------
 # Command history
 #----------------
