@@ -45,7 +45,8 @@ alias showa='whence -f'
 # sourcea: to source this file (to make changes active after editing)
 alias sourcea='source ~/.zaliases'
 
-alias emacs='/Applications/Emacs.app/Contents/MacOS/Emacs.sh'
+alias emacs='~/.emacs.d/open-with-emacs.sh'
+# but what is /Applications/Emacs.app/Contents/MacOS/Emacs.sh
 
 # GitHub Copilot REALLY likes timeout. This function does the same thing without needing to install GNU Coreutils 
 function timeout() { perl -e 'alarm shift; exec @ARGV' "$@"; }
@@ -180,14 +181,28 @@ fi
 # microproduct template cli
 alias mpt='npx @optum-rx-platform/cli@latest'
 
+# docker scripts
 if test -f ~/dev/team/docker/scripts/prisma.sh; then alias prisma='~/dev/team/docker/scripts/prisma.sh'; fi
 if test -f ~/dev/team/docker/scripts/xray.sh; then alias xray='~/dev/team/docker/scripts/xray.sh'; fi
-if test -f ~/dev/team/docker/scripts/container-extract.sh; then alias container-extract='~/dev/team/docker/scripts/container-extract.sh'; fi
-if test -f ~/dev/team/docker/scripts/image-extract.sh; then alias image-extract='~/dev/team/docker/scripts/image-extract.sh'; fi
+if test -f ~/dev/team/docker/scripts/container-extract.sh; then alias container-extract='~/dev/team/docker/scripts/container-extract.sh';
+  elif test -f ~/mac-config/scripts/container-extract.sh; then alias container-extract='~/mac-config/scripts/container-extract.sh';
+fi
+if test -f ~/dev/team/docker/scripts/image-extract.sh; then alias image-extract='~/dev/team/docker/scripts/image-extract.sh';
+  elif test -f ~/mac-config/scripts/image-extract.sh; then alias image-extract='~/mac-config/scripts/image-extract.sh';
+fi
 
-if test -f ~/dev/team/docker/sbom-compare/sbom-diff.sh; then alias sbom-diff='~/dev/team/docker/sbom-compare/sbom-diff.sh'; fi
-if test -f ~/dev/team/docker/sbom-compare/sbom-analyze.sh; then alias sbom-analyze='~/dev/team/docker/sbom-compare/sbom-analyze.sh'; fi
+# SBOM comparison
+if test -f ~/dev/team/docker/sbom-compare/sbom-diff.sh; then alias sbom-diff='~/dev/team/docker/sbom-compare/sbom-diff.sh';
+  elif test -f ~/mac-config/sbom-compare/sbom-diff.sh; then alias sbom-diff='~/mac-config/sbom-compare/sbom-diff.sh';
+fi
+if test -f ~/dev/team/docker/sbom-compare/sbom-analyze.sh; then alias sbom-analyze='~/dev/team/docker/sbom-compare/sbom-analyze.sh';
+  elif test -f ~/mac-config/sbom-compare/sbom-analyze.sh; then alias sbom-analyze='~/mac-config/sbom-compare/sbom-analyze.sh';
+fi
 
 if test -f ~/dev/team/scripts/hcc-auth.sh; then alias hcc-auth='~/dev/team/scripts/hcc-auth.sh'; fi
 
+# codeql
 if test -f ~/dev/codeql.sh; then alias codeql='~/dev/codeql.sh'; fi
+
+# gcitool
+if test -f ~/dev/optum/gcitool/scripts/gcictl.sh; then alias gci=~/dev/optum/gcitool/scripts/gcictl.sh; fi
