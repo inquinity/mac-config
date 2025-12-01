@@ -114,3 +114,7 @@
 (setq ls-lisp-verbosity '(links uid))
 (setq ls-lisp-format-time-list '("%b %e %H:%M" "%b %e  %Y"))
 (setq ls-lisp-use-localized-time-format t)
+
+;;========================================
+;; start the emacsserver that listens to emacsclient
+(server-start)
