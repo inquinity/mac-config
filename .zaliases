@@ -29,15 +29,22 @@ lr () { for pattern in "$@"; do find . -name "$pattern" -type f ; done ; }
 lsr () { ls -lh "$@"/..namedfork/rsrc ; }
 
 #--------------
-# Folder / Path
+# Markdown viewer
 #--------------
 
-alias md='mkdir -p'
-alias showpath='echo "$PATH" | tr ":" "\n" | nl'
+if command -v treemd &> /dev/null; then
+  alias md=treemd
+elif command -v glow &> /dev/null; then
+  alias md=glow
+else
+  alias md=less
+fi
 
 #--------
 # Aliases
 #--------
+
+alias showpath='echo "$PATH" | tr ":" "\n" | nl'
 
 # showa: to remind yourself of an alias (given some part of it)
 alias showa='whence -f'
