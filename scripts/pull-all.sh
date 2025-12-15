@@ -1,8 +1,8 @@
 #!/bin/zsh
 
 # pull-all.sh
-# Version: 1.1
-# Author: raltman2
+# Version: 1.2
+# Author: robert.altman@optum.com
 # Description: Intelligently updates all git repositories by fetching from all remotes
 #              and fast-forwarding local branches that track origin/*. For the current
 #              branch, uses git merge --ff-only. For other branches, directly updates
@@ -28,6 +28,9 @@ print_colored() {
     printf "${color}${message}${COLOR_RESET}\n"
 }
 
+# Associative array to track repository results
+typeset -A repo_status
+
 # Update a single repository
 update_repository() {
     local repo_path="$1"
@@ -50,6 +53,10 @@ update_repository() {
     local current_branch
     current_branch="$(git symbolic-ref --short HEAD 2>/dev/null)"
     print_colored "${COLOR_CYAN}" "  Current branch: ${current_branch:-<detached HEAD>}"
+    
+    # Track if there were any errors
+    typeset error_occurred="false"
+    typeset error_message=""
     
     # Enumerate local branches that track origin/* using process substitution
     while read -r local_branch upstream_branch; do
@@ -85,20 +92,32 @@ update_repository() {
             if git merge --ff-only "origin/$remote_branch"; then
                 print_colored "${COLOR_GREEN}" "  ✓ Updated current branch: $local_branch"
             else
-                print_colored "${COLOR_YELLOW}" "  ⚠ Cannot fast-forward current branch: $local_branch (diverged)"
+                print_colored "${COLOR_RED}" "  ⚠ Cannot fast-forward current branch: $local_branch (diverged)"
+                error_occurred="true"
+                error_message="Cannot fast-forward current branch: $local_branch (diverged)"
             fi
         else
             # Case 2: Non-current branch - update ref directly
             if git update-ref "refs/heads/$local_branch" "origin/$remote_branch" "$local_commit" 2>/dev/null; then
                 print_colored "${COLOR_GREEN}" "  ✓ Updated branch: $local_branch"
             else
-                print_colored "${COLOR_YELLOW}" "  ⚠ Failed to update branch: $local_branch"
+                print_colored "${COLOR_RED}" "  ⚠ Failed to update branch: $local_branch"
+                error_occurred="true"
+                error_message="Failed to update branch: $local_branch"
             fi
         fi
     done < <(git for-each-ref --format='%(refname:short) %(upstream:short)' refs/heads/)
     
     # Return to previous directory
     popd > /dev/null
+    
+    # Store result in array
+    if [[ "$error_occurred" == "true" ]]; then
+        repo_status["$repo_path"]="$error_message"
+    else
+        repo_status["$repo_path"]="success"
+    fi
+    
     return 0
 }
 
@@ -134,4 +153,18 @@ fi
 find "$search_path" -name ".git" -type d -prune -print0 | while IFS= read -r -d '' git_dir; do
     repo_path="$(dirname "$git_dir")"
     update_repository "$repo_path"
+done
+
+# Print summary
+print_colored "${COLOR_BRIGHTYELLOW}" ""
+print_colored "${COLOR_BRIGHTYELLOW}" "Summary:"
+print_colored "${COLOR_BRIGHTYELLOW}" "-----------"
+
+for repo_path in "${(@ok)repo_status[@]}"; do
+    result="${repo_status[$repo_path]}"
+    if [[ "$result" == "success" ]]; then
+        print_colored "${COLOR_GREEN}" "$repo_path: success"
+    else
+        print_colored "${COLOR_RED}" "$repo_path: $result"
+    fi
 done
