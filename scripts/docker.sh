@@ -70,25 +70,3 @@ docker-run() {
 docker-exec() { 
     docker exec --interactive --tty "$1" sh 
 }
-
-grype-all() {
-    grype "$1" --scope all-layers -o json \
-  | jq -r '
-    .matches[]
-    | .artifact as $a
-    | .vulnerability as $v
-    | $a.locations[0].layerID
-        | sub("sha256:";"") 
-        | .[0:8] as $layer
-    | [
-        $a.name,
-        $a.version,
-        $a.type,
-        $v.id,
-        $v.severity,
-        $layer
-      ]
-      | @tsv
-  ' \
-      | column -t
-}

@@ -198,6 +198,10 @@ if test -f ~/dev/team/docker/scripts/image-extract.sh; then alias image-extract=
   elif test -f ~/mac-config/scripts/image-extract.sh; then alias image-extract='~/mac-config/scripts/image-extract.sh';
 fi
 
+if test -f ~/dev/team/docker/scripts/grype.sh; then alias grype='~/dev/team/docker/scripts/grype.';
+  elif test -f ~/mac-config/scripts/grype.sh; then alias grype='~/mac-config/scripts/grype.sh';
+fi
+
 # SBOM comparison
 if test -f ~/dev/team/docker/sbom-compare/sbom-diff.sh; then alias sbom-diff='~/dev/team/docker/sbom-compare/sbom-diff.sh';
   elif test -f ~/mac-config/sbom-compare/sbom-diff.sh; then alias sbom-diff='~/mac-config/sbom-compare/sbom-diff.sh';
