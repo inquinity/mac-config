@@ -198,7 +198,7 @@ if test -f ~/dev/team/docker/scripts/image-extract.sh; then alias image-extract=
   elif test -f ~/mac-config/scripts/image-extract.sh; then alias image-extract='~/mac-config/scripts/image-extract.sh';
 fi
 
-if test -f ~/dev/team/docker/scripts/grype.sh; then alias grype='~/dev/team/docker/scripts/grype.';
+if test -f ~/dev/team/docker/scripts/grype.sh; then alias grype='~/dev/team/docker/scripts/grype.sh';
   elif test -f ~/mac-config/scripts/grype.sh; then alias grype='~/mac-config/scripts/grype.sh';
 fi
 
