@@ -53,13 +53,16 @@ docker-os() {
 
 docker-info() {
     printf "Inspecting Docker image: %s\n" "$1"
-    docker inspect --format='{{json .Config.Labels}}' "$1" | jq -r '"
-    Golden Image Type: " + .["golden.container.image.type"] + "
-    Golden Image Build Tag: " + .["golden.container.image.build.tag"] + "
-    Golden Image Release Date: " + .["golden.container.image.build.release"] + "
-    Chainguard Package: " +.["dev.chainguard.package.main"] + "
-    Chainguard Image Base: " + .["golden.container.image.vendor.tag"] + "
-    Image Source: " + .["org.opencontainers.image.source"]
+    docker inspect "$1" | jq -r '.[0] | "
+    Instance ID: " + .Id + "
+    Full Resource Name: " + .RepoDigests[0] + "
+    Image Build Date: " + .Created + "
+    Golden Image Type: " + .Config.Labels["golden.container.image.type"] + "
+    Golden Image Build Tag: " + .Config.Labels["golden.container.image.build.tag"] + "
+    Golden Image Release Date: " + .Config.Labels["golden.container.image.build.release"] + "
+    Chainguard Package: " + .Config.Labels["dev.chainguard.package.main"] + "
+    Chainguard Image Base: " + .Config.Labels["golden.container.image.vendor.tag"] + "
+    Image Source: " + .Config.Labels["org.opencontainers.image.source"]
 '
 }
 
