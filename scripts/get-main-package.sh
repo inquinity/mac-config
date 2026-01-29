@@ -49,12 +49,20 @@ fi
 sbom_file="/tmp/sbom-$$.json"
 trap "rm -f '$sbom_file'" EXIT
 
+# Determine the source type (local image vs registry)
+# If the image URL contains a registry domain (e.g., edgecore.optum.com), use registry: prefix
+if [[ "$image_url" == *"."*"/"* ]]; then
+    source_type="registry:${image_url}"
+else
+    source_type="${image_url}"
+fi
+
 # Generate SBOM
 print_colored "$COLOR_GREEN" "Generating SBOM for image: $image_url"
 if [[ "$debug_mode" == true ]]; then
-    print_colored "$COLOR_CYAN" "$ syft scan registry:${image_url} -o syft-json > $sbom_file"
+    print_colored "$COLOR_CYAN" "$ syft scan ${source_type} -o syft-json > $sbom_file"
 fi
-syft scan "registry:${image_url}" -o syft-json > "$sbom_file" 2>/dev/null
+syft scan "${source_type}" -o syft-json > "$sbom_file" 2>/dev/null
 if [[ $? -ne 0 ]]; then
     print_colored "$COLOR_RED" "Error: Failed to generate SBOM for image"
     exit 1
