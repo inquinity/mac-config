@@ -1,7 +1,7 @@
 #!/bin/zsh
 
 # Source common kubectl functions
-source ~/team/scripts/kubectl_common.shlib
+source ../kubectl_common.sh
 
 # Check arguments
 check_arguments $*

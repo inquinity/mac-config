@@ -1,7 +1,7 @@
 #!/bin/zsh
 
 # kubectl_common.sh - Common functions for kubectl deployment scripts
-# Source this file in your scripts with: source ~/team/scripts/kubectl_common.sh
+# Source this file in your scripts with: source ./path/to/file/kubectl_common.sh
 
 # Define color codes for terminal output
 COLOR_GREEN="\e[32m"         # Used for success messages and instructions
@@ -45,12 +45,24 @@ switch_context() {
     fi
 }
 
-# Docker inspect with retry logic and error handling
+# Docker inspect with pull-first strategy
+# Always pulls to ensure we have the latest image from the registry
+# Status messages go to stderr, only the date result goes to stdout
 docker_inspect_with_retry() {
     local image_name=$1
     local jq_expr_param=${2:-$jq_expr}
     
-    # First attempt at docker inspect
+    # Always pull first to ensure we have the latest image
+    # (image tags can be reused with different content)
+    printf "${COLOR_TEAL}    Pulling image: ${image_name}${COLOR_RESET}\n" >&2
+    
+    if docker pull "$image_name" > /dev/null 2>&1; then
+        printf "${COLOR_GREEN}    Successfully pulled image${COLOR_RESET}\n" >&2
+    else
+        printf "${COLOR_YELLOW}    Pull failed, attempting to use local image if available${COLOR_RESET}\n" >&2
+    fi
+    
+    # Inspect the image
     local result=$(docker inspect "$image_name" 2>/dev/null | jq -r "$jq_expr_param" 2>/dev/null)
     
     if [ $? -eq 0 ] && [ "$result" != "null" ] && [ -n "$result" ]; then
@@ -58,24 +70,8 @@ docker_inspect_with_retry() {
         return 0
     fi
     
-    printf "${COLOR_YELLOW}Docker inspect failed, attempting to pull image: ${image_name}${COLOR_RESET}\n"
-    
-    # Try to pull the image
-    if docker pull "$image_name" > /dev/null 2>&1; then
-        printf "${COLOR_GREEN}Successfully pulled image: ${image_name}${COLOR_RESET}\n"
-        
-        # Retry inspect after successful pull
-        result=$(docker inspect "$image_name" 2>/dev/null | jq -r "$jq_expr_param" 2>/dev/null)
-        if [ $? -eq 0 ] && [ "$result" != "null" ] && [ -n "$result" ]; then
-            echo "$result"
-            return 0
-        fi
-    else
-        printf "${COLOR_RED}Failed to pull image: ${image_name}${COLOR_RESET}\n"
-    fi
-    
     # Final failure
-    printf "${COLOR_RED}Failed to inspect image after retry: ${image_name}${COLOR_RESET}\n"
+    printf "${COLOR_RED}    Failed to inspect image: ${image_name}${COLOR_RESET}\n" >&2
     echo "null"
     return 1
 }
@@ -84,15 +80,43 @@ docker_inspect_with_retry() {
 print_release_date() {
     local image="$1"
     local jq_expr_param=${2:-$jq_expr}
-    local msg_release="    Golden Image Release Date: %s\n"
-    local msg_release_days="    Golden Image Release Date: %s\n    Image is %s days old\n"
-    local msg_release_days_red="    ${COLOR_RED}Golden Image Release Date: %s\n    Image is %s days old${COLOR_RESET}\n"
+    local now_epoch=$(date +%s)
     local release_date
     
     release_date=$(docker_inspect_with_retry "$image" "$jq_expr_param")
     
+    # Print the Image ID
+    local image_id=$(docker inspect --format='{{.Id}}' "$image" 2>/dev/null)
+    if [[ -n "$image_id" ]]; then
+        printf "    Image ID: %s\n" "$image_id"
+    fi
+    
+    # Print Image Created date with age
+    local created_raw=$(docker inspect --format='{{.Created}}' "$image" 2>/dev/null)
+    if [[ -n "$created_raw" ]]; then
+        # Extract date portion (YYYY-MM-DD) from ISO timestamp
+        local created_date="${created_raw:0:10}"
+        local created_display="${created_date//-/.}"
+        
+        # Calculate days old
+        local created_epoch=""
+        # BSD date (macOS)
+        created_epoch=$(date -j -f "%Y-%m-%d" "$created_date" +"%s" 2>/dev/null)
+        # GNU date fallback (Linux)
+        if [[ -z "$created_epoch" ]]; then
+            created_epoch=$(date -d "$created_date" +"%s" 2>/dev/null)
+        fi
+        
+        if [[ -n "$created_epoch" ]]; then
+            local created_days=$(( (now_epoch - created_epoch) / 86400 ))
+            printf "    Image Created: %s (%s days ago)\n" "$created_display" "$created_days"
+        else
+            printf "    Image Created: %s\n" "$created_display"
+        fi
+    fi
+    
     if [[ "$release_date" == "null" || -z "$release_date" ]]; then
-        printf "$msg_release" "$release_date"
+        printf "    Golden Image Release Date: %s\n" "$release_date"
         return
     fi
     
@@ -108,18 +132,17 @@ print_release_date() {
             release_epoch=$(date -d "$release_date_fmt" +"%s" 2>/dev/null)
         fi
     fi
-    
-    now_epoch=$(date +%s)
+
     local diff_days=""
     if [[ -n "$release_epoch" ]]; then
         diff_days=$(( (now_epoch - release_epoch) / 86400 ))
         if (( diff_days > ${date_threshold_warning} )); then
-            printf "$msg_release_days_red" "$release_date" "$diff_days"
+            printf "    ${COLOR_RED}Golden Image Release Date: %s (%s days old)${COLOR_RESET}\n" "$release_date" "$diff_days"
         else
-            printf "$msg_release_days" "$release_date" "$diff_days"
+            printf "    Golden Image Release Date: %s (%s days old)\n" "$release_date" "$diff_days"
         fi
     else
-        printf "$msg_release" "$release_date"
+        printf "    Golden Image Release Date: %s\n" "$release_date"
     fi
 }
 
@@ -133,7 +156,6 @@ query_and_print_image() {
     printf "${COLOR_TEAL}Querying ${resource_type}: ${resource_name}${COLOR_RESET}\n"
     
     local image_name=$(kubectl -n $namespace describe $resource_type $resource_name 2>/dev/null | grep Image | sed 's!^[[:blank:]]*Image:[[:blank:]]*!!g' | head -1)
-    
     if [ -z "$image_name" ]; then
         printf "${COLOR_RED}Failed to get image from ${resource_type}: ${resource_name}${COLOR_RESET}\n"
         return 1
@@ -183,7 +205,6 @@ process_deployment() {
     local deployment_name=$2
     
     local image_name=$(kubectl -n $namespace describe deployment $deployment_name 2>/dev/null | grep Image | sed 's/[[:blank:]]*Image:[[:blank:]]*//' | head -1)
-    
     if [ -z "$image_name" ]; then
         printf "${COLOR_RED}Failed to get image from deployment: ${deployment_name}${COLOR_RESET}\n"
         return 1
@@ -198,7 +219,6 @@ process_cronjob() {
     local cronjob_name=$2
     
     local image_name=$(kubectl -n $namespace describe cronjob $cronjob_name 2>/dev/null | grep Image | sed 's/[[:blank:]]*Image:[[:blank:]]*//' | head -1)
-    
     if [ -z "$image_name" ]; then
         printf "${COLOR_RED}Failed to get image from cronjob: ${cronjob_name}${COLOR_RESET}\n"
         return 1
