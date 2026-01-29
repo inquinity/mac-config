@@ -85,12 +85,6 @@ if [[ "$debug_mode" == true ]]; then
     print_colored "$COLOR_CYAN" "$ jq -r '.source.metadata.config' $sbom_file | base64 -d | jq -r '.history[0].created'"
 fi
 image_date=$(jq -r '.source.metadata.config' "$sbom_file" | base64 -d | jq -r '.history[0].created // empty')
-if [[ -z "$image_date" ]]; then
-    image_date=$(jq -r '.source.metadata.labels["golden.container.image.build.release"] // empty' "$sbom_file")
-    if [[ -n "$image_date" ]]; then
-        image_date="${image_date} (golden image date)"
-    fi
-fi
 
 # Print results
 printf "\n"
