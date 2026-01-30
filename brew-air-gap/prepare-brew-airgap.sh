@@ -44,104 +44,31 @@ else
   git clone https://github.com/Homebrew/homebrew-cask.git homebrew-cask.git
 fi
 
-# 2) Detect portable ruby version used by Homebrew
-cd "$OUTDIR/repos/brew.git"
-echo "Detecting portable Ruby version used by Homebrew..."
-# Try a couple of likely places for the variable name.
-PORTABLE_RUBY_VERSION="$(grep -RhoE 'PORTABLE_RUBY_VERSION[[:space:]]*=[[:space:]]*\"[^\"]+\"' Library || true)"
-if [[ -n "$PORTABLE_RUBY_VERSION" ]]; then
-  PORTABLE_RUBY_VERSION="$(echo "$PORTABLE_RUBY_VERSION" | head -n1 | sed -E 's/.*=\"([^\"]+)\".*/\1/')"
-fi
+# 2)  ruby ...
+echo "Portable Ruby handling:"
+echo "  This bundle does NOT auto-download portable Ruby."
+echo "  You must manually place portable Ruby tarballs here:"
+echo "    ruby/arm64/"
+echo "    ruby/x86_64/"
+echo
+echo "Expected filenames look like:"
+echo "  portable-ruby-<version>.arm64_big_sur.bottle.tar.gz"
+echo "  portable-ruby-<version>.x86_64_big_sur.bottle.tar.gz"
+echo
+brew ruby -e 'puts RUBY_VERSION'
 
-# fallback: try to find vendor/portable-ruby version hints
-if [[ -z "${PORTABLE_RUBY_VERSION:-}" ]]; then
-  # look for vendor/portable-ruby elsewhere
-  prfile="$(grep -Rho 'portable-ruby-[0-9]+\.[0-9]+\.[0-9]+' Library || true)"
-  if [[ -n "$prfile" ]]; then
-    PORTABLE_RUBY_VERSION="$(echo "$prfile" | head -n1 | sed -E 's/.*portable-ruby-([0-9]+\.[0-9]+\.[0-9]+).*/\1/')"
-  fi
-fi
+chrome https://github.com/Homebrew/homebrew-portable-ruby/releases
 
-if [[ -z "${PORTABLE_RUBY_VERSION:-}" ]]; then
-  echo "WARNING: Could not auto-detect PORTABLE_RUBY_VERSION in the cloned brew repo."
-  echo "You will need to download portable Ruby tarballs manually and place them in the 'ruby' directory."
-  echo "Continuing; script will still build the bundle with repos."
-else
-  echo "Detected portable Ruby version: $PORTABLE_RUBY_VERSION"
-fi
+# Wait for any single keypress (no Enter needed)
+read -n 1 -s -r -p "Press any key to continue..."
 
-# 3) Attempt to download portable Ruby builds for both architectures
-# We'll try several filename patterns (Homebrew uses OS-tagged bottles like *_big_sur.bottle.tar.gz).
-mkdir -p "$OUTDIR/ruby/arm64" "$OUTDIR/ruby/x86_64"
-
-download_if_exists() {
-  url="$1"
-  out="$2"
-  if curl -sfSL -o "$out" "$url"; then
-    echo "Downloaded: $url -> $out"
-    return 0
-  else
-    rm -f "$out" 2>/dev/null || true
-    return 1
-  fi
-}
-
-if [[ -n "${PORTABLE_RUBY_VERSION:-}" ]]; then
-  PVER="$PORTABLE_RUBY_VERSION"
-  ARCH_PATTERNS=(
-    "arm64_big_sur" "arm64_monterey" "arm64_ventura" "arm64_catalina"
-    "x86_64_big_sur" "x86_64_monterey" "x86_64_ventura" "x86_64_catalina"
-    "arm64" "x86_64"
-  )
-  BASE_URL="https://github.com/Homebrew/homebrew-portable-ruby/releases/download/portable-ruby-${PVER}"
-  for arch in arm64 x86_64; do
-    found=0
-    for pat in "${ARCH_PATTERNS[@]}"; do
-      # build a candidate filename set
-      candidates=(
-        "portable-ruby-${PVER}.${pat}.bottle.tar.gz"
-        "portable-ruby-${PVER}.${pat}.tar.gz"
-        "portable-ruby-${PVER}.${pat}.bottle.tar"
-        "portable-ruby-${PVER}.${pat}.tgz"
-        "portable-ruby-${PVER}.${pat}.zip"
-        "portable-ruby-${PVER}.${arch}.bottle.tar.gz"
-        "portable-ruby-${PVER}.${arch}.tar.gz"
-        "portable-ruby-${PVER}.tar.gz"
-      )
-      for fname in "${candidates[@]}"; do
-        url="${BASE_URL}/${fname}"
-        outpath="$OUTDIR/ruby/${arch}/${fname}"
-        if download_if_exists "$url" "$outpath"; then
-          found=1
-          break 2
-        fi
-      done
-    done
-    if [[ $found -eq 0 ]]; then
-      echo "Could not auto-download portable Ruby for arch $arch. Please download the correct tarball(s) for version $PVER and place them in:"
-      echo "  $OUTDIR/ruby/$arch/"
-    fi
-  done
-else
-  echo "Skipping portable Ruby auto-download (no version detected). Place portable Ruby tarballs manually in $OUTDIR/ruby/<arch>/"
-fi
-
-# 4) Optionally copy Command Line Tools pkg into the bundle
-if [[ -n "$CLT_PKG" && -f "$CLT_PKG" ]]; then
-  mkdir -p "$OUTDIR/clt"
-  cp -v "$CLT_PKG" "$OUTDIR/clt/CommandLineTools.pkg"
-  echo "Copied CommandLineTools.pkg into $OUTDIR/clt/"
-else
-  echo "No CommandLineTools.pkg given. (You said targets already have CLT installed.)"
-fi
-
-# 5) Copy the repos into a top-level homebrew dir for copying to USB
+# 3) Copy the repos into a top-level homebrew dir for copying to USB
 mkdir -p "$OUTDIR/homebrew"
 cp -a "$OUTDIR/repos/brew.git" "$OUTDIR/homebrew/"
 cp -a "$OUTDIR/repos/homebrew-core.git" "$OUTDIR/homebrew/"
 cp -a "$OUTDIR/repos/homebrew-cask.git" "$OUTDIR/homebrew/"
 
-# 6) Create a README and manifest of checksums
+# 4) Create a README and manifest of checksums
 cat > "$OUTDIR/README.txt" <<'EOF'
 Homebrew air-gap bundle
 -----------------------
