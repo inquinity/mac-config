@@ -57,7 +57,7 @@ echo "  portable-ruby-<version>.x86_64_big_sur.bottle.tar.gz"
 echo
 brew ruby -e 'puts RUBY_VERSION'
 
-chrome https://github.com/Homebrew/homebrew-portable-ruby/releases
+open -n -a "Google Chrome" --args '--new-window' https://github.com/Homebrew/homebrew-portable-ruby/releases
 
 # Wait for any single keypress (no Enter needed)
 read -n 1 -s -r -p "Press any key to continue..."
