@@ -1,3 +1,8 @@
+~/Library/Caches/Homebrew/downloads  3:23PM % ls *ruby*
+1f59be1967d5aa93af29ed9e98b36115f489ff1fa9033e32e63f0e21052f56f6--portable-ruby-4.0.1.bottle_manifest.json
+4261b46620060c791a35064396758ecfd939a349fba9b6541ec70526f062eb96--portable-ruby--4.0.1.catalina.bottle.tar.gz
+cf1fe69761d91cd53f7a39fa4f365e7a97ad87cf58f7eef235b87e07a392c15c--portable-ruby--4.0.1.arm64_big_sur.bottle.tar.gz
+
 ==> Copying repos into bundle homebrew/ directory
 
 ==> Fetching portable-ruby bottles via brew (authoritative)
