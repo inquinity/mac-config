@@ -1,0 +1,205 @@
+Preparing airgap bundle in: /Users/Robert/brew-air-gap
+Cloning Homebrew repositories (full clones). This may take some time...
+Cloning into 'brew.git'...
+remote: Enumerating objects: 320500, done.
+remote: Counting objects: 100% (24/24), done.
+remote: Compressing objects: 100% (11/11), done.
+remote: Total 320500 (delta 17), reused 15 (delta 13), pack-reused 320476 (from 2)
+Receiving objects: 100% (320500/320500), 104.40 MiB | 796.00 KiB/s, done.
+Resolving deltas: 100% (227286/227286), done.
+Cloning into 'homebrew-core.git'...
+remote: Enumerating objects: 3194948, done.
+remote: Counting objects: 100% (1101/1101), done.
+remote: Compressing objects: 100% (354/354), done.
+remote: Total 3194948 (delta 1010), reused 784 (delta 747), pack-reused 3193847 (from 2)
+Receiving objects: 100% (3194948/3194948), 1.03 GiB | 741.00 KiB/s, done.
+Resolving deltas: 100% (2447396/2447396), done.
+Updating files: 100% (8697/8697), done.
+Cloning into 'homebrew-cask.git'...
+remote: Enumerating objects: 1623847, done.
+remote: Counting objects: 100% (100/100), done.
+remote: Compressing objects: 100% (57/57), done.
+remote: Total 1623847 (delta 95), reused 43 (delta 43), pack-reused 1623747 (from 3)
+Receiving objects: 100% (1623847/1623847), 426.52 MiB | 1.03 MiB/s, done.
+Resolving deltas: 100% (1251788/1251788), done.
+Updating files: 100% (7590/7590), done.
+Detecting portable Ruby version used by Homebrew...
+Detected portable Ruby version: $(cat 
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+Could not auto-download portable Ruby for arch arm64. Please download the correct tarball(s) for version $(cat  and place them in:
+  /Users/Robert/brew-air-gap/ruby/arm64/
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL rejected: Malformed input to a URL function
+Could not auto-download portable Ruby for arch x86_64. Please download the correct tarball(s) for version $(cat  and place them in:
+  /Users/Robert/brew-air-gap/ruby/x86_64/
+No CommandLineTools.pkg given. (You said targets already have CLT installed.)
+Generating SHA256 manifest...
+Bundle prepared in: /Users/Robert/brew-air-gap
+Contents:
+total 10256
+drwxr-xr-x   7 Robert  staff   224B Jan 30 12:41 .
+drwxr-xr-x  76 Robert  staff   2.4K Jan 30 12:04 ..
+drwxr-xr-x   5 Robert  staff   160B Jan 30 12:41 homebrew
+-rw-r--r--   1 Robert  staff   4.3M Jan 30 12:44 manifest.txt
+-rw-r--r--   1 Robert  staff   408B Jan 30 12:41 README.txt
+drwxr-xr-x   5 Robert  staff   160B Jan 30 12:33 repos
+drwxr-xr-x   4 Robert  staff   128B Jan 30 12:41 ruby
+Done. Copy the entire /Users/Robert/brew-air-gap directory to your USB drive (preserve permissions).
+
