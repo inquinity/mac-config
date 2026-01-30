@@ -83,4 +83,170 @@ echo
 echo "==> Fetching portable-ruby bottles via brew (authoritative)"
 
 BREW_RUNTIME_RUBY="$(brew ruby -e 'puts RUBY_VERSION' 2>/dev/null || true)"
-echo "Current install
+echo "Current installed brew runtime Ruby (informational): ${BREW_RUNTIME_RUBY:-unknown}"
+
+PORTABLE_RUBY_VER="$(brew info --json=v2 portable-ruby | python3 -c '
+import sys,json
+d=json.load(sys.stdin)
+print(d["formulae"][0]["versions"]["stable"])
+')"
+echo "portable-ruby formula stable version: $PORTABLE_RUBY_VER"
+
+PORTABLE_RUBY_JSON="$(brew info --json=v2 portable-ruby)"
+AVAILABLE_TAGS="$(
+  printf '%s' "$PORTABLE_RUBY_JSON" | python3 -c '
+import sys, json
+d=json.load(sys.stdin)
+files=d["formulae"][0]["bottle"]["stable"]["files"]
+for k in files.keys():
+    print(k)
+'
+)"
+echo "Available portable-ruby bottle tags:"
+echo "$AVAILABLE_TAGS" | sed 's/^/  - /'
+
+pick_tag() {
+  local t
+  for t in "$@"; do
+    if echo "$AVAILABLE_TAGS" | grep -qx "$t"; then
+      echo "$t"
+      return 0
+    fi
+  done
+  return 1
+}
+
+# Prefer broad-compat tags but only if they exist
+INTEL_TAG="$(pick_tag catalina big_sur monterey ventura sonoma sequoia x86_64_big_sur x86_64_monterey x86_64_ventura x86_64_sonoma x86_64_sequoia || true)"
+ARM_TAG="$(pick_tag arm64_big_sur arm64_monterey arm64_ventura arm64_sonoma arm64_sequoia || true)"
+
+if [[ -z "${INTEL_TAG:-}" ]]; then
+  echo "ERROR: Could not select an Intel bottle tag."
+  exit 1
+fi
+if [[ -z "${ARM_TAG:-}" ]]; then
+  echo "ERROR: Could not select an ARM64 bottle tag."
+  exit 1
+fi
+
+echo "Selected Intel bottle tag: $INTEL_TAG"
+echo "Selected ARM64 bottle tag: $ARM_TAG"
+
+echo "Fetching Intel portable-ruby..."
+brew fetch -f --bottle-tag="$INTEL_TAG" portable-ruby
+echo "Fetching ARM64 portable-ruby..."
+brew fetch -f --bottle-tag="$ARM_TAG" portable-ruby
+
+# Locate bottles in either cache root (old layout) or downloads/ (hashed layout)
+find_bottle() {
+  local tag="$1"
+
+  shopt -s nullglob
+  local -a candidates=()
+
+  # Old style (rare now): portable-ruby--X.Y.Z.<tag>.bottle.tar.gz
+  candidates+=( "$BREW_CACHE"/portable-ruby--*."$tag".bottle.tar.gz )
+
+  # Hashed downloads style (common):
+  # <hash>--portable-ruby--X.Y.Z.<tag>.bottle.tar.gz
+  if [[ -d "$BREW_DL_DIR" ]]; then
+    candidates+=( "$BREW_DL_DIR"/*--portable-ruby--*."$tag".bottle.tar.gz )
+  fi
+
+  shopt -u nullglob
+
+  if [[ ${#candidates[@]} -eq 0 ]]; then
+    return 1
+  fi
+
+  # Pick newest by mtime
+  local newest="${candidates[0]}"
+  local newest_ts
+  newest_ts="$(stat -f '%m' "$newest" 2>/dev/null || echo 0)"
+
+  local f ts
+  for f in "${candidates[@]}"; do
+    ts="$(stat -f '%m' "$f" 2>/dev/null || echo 0)"
+    if (( ts > newest_ts )); then
+      newest_ts="$ts"
+      newest="$f"
+    fi
+  done
+
+  echo "$newest"
+  return 0
+}
+
+INTEL_BOTTLE_PATH="$(find_bottle "$INTEL_TAG")" || {
+  echo "ERROR: Intel portable-ruby bottle not found for tag '$INTEL_TAG'."
+  echo "Searched:"
+  echo "  $BREW_CACHE/portable-ruby--*.$INTEL_TAG.bottle.tar.gz"
+  echo "  $BREW_DL_DIR/*--portable-ruby--*.$INTEL_TAG.bottle.tar.gz"
+  echo "Debug: listing portable-ruby files under downloads/:"
+  ls -1 "$BREW_DL_DIR" 2>/dev/null | grep -E 'portable-ruby' || true
+  exit 1
+}
+
+ARM_BOTTLE_PATH="$(find_bottle "$ARM_TAG")" || {
+  echo "ERROR: ARM64 portable-ruby bottle not found for tag '$ARM_TAG'."
+  echo "Searched:"
+  echo "  $BREW_CACHE/portable-ruby--*.$ARM_TAG.bottle.tar.gz"
+  echo "  $BREW_DL_DIR/*--portable-ruby--*.$ARM_TAG.bottle.tar.gz"
+  echo "Debug: listing portable-ruby files under downloads/:"
+  ls -1 "$BREW_DL_DIR" 2>/dev/null | grep -E 'portable-ruby' || true
+  exit 1
+}
+
+echo
+echo "Located bottles:"
+echo "  Intel: $INTEL_BOTTLE_PATH"
+echo "  ARM64: $ARM_BOTTLE_PATH"
+
+rm -f "$OUTDIR/ruby/x86_64/"portable-ruby* 2>/dev/null || true
+rm -f "$OUTDIR/ruby/arm64/"portable-ruby* 2>/dev/null || true
+
+cp -v "$INTEL_BOTTLE_PATH" "$OUTDIR/ruby/x86_64/"
+cp -v "$ARM_BOTTLE_PATH" "$OUTDIR/ruby/arm64/"
+
+echo "Portable-ruby bottles staged:"
+ls -lh "$OUTDIR/ruby/x86_64" || true
+ls -lh "$OUTDIR/ruby/arm64" || true
+
+# --- README ------------------------------------------------------------------
+
+echo
+echo "==> Writing README.txt"
+cat > "$OUTDIR/README.txt" <<EOF
+Homebrew air-gap bundle
+======================
+
+Prepared: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+Contents:
+  homebrew/
+    brew.git/
+    homebrew-core.git/
+    homebrew-cask.git/
+  ruby/
+    arm64/    (portable-ruby bottle(s))
+    x86_64/   (portable-ruby bottle(s))
+  manifest.txt (sha256 checksums)
+  README.txt
+
+portable-ruby formula stable version: $PORTABLE_RUBY_VER
+Selected bottle tags:
+  Intel: $INTEL_TAG
+  ARM64: $ARM_TAG
+
+EOF
+
+# --- Manifest ----------------------------------------------------------------
+
+echo
+echo "==> Generating SHA256 manifest (may take a while due to large git repos)"
+cd "$OUTDIR"
+find . -type f -print0 | sort -z | xargs -0 sh -c 'for f; do sha256sum "$f"; done' sh > "$OUTDIR/manifest.txt"
+
+echo
+echo "Bundle prepared successfully: $OUTDIR"
+ls -lah "$OUTDIR"
