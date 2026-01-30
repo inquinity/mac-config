@@ -1,40 +1,23 @@
-Usage: brew fetch [options] formula|cask [...]
+==> Copying repos into bundle homebrew/ directory
 
-Download a bottle (if available) or source packages for formulae and binaries
-for casks. For files, also print SHA-256 checksums.
-
-      --os                         Download for the given operating system.
-                                   (Pass all to download for all operating
-                                   systems.)
-      --arch                       Download for the given CPU architecture.
-                                   (Pass all to download for all
-                                   architectures.)
-      --bottle-tag                 Download a bottle for given tag.
-      --HEAD                       Fetch HEAD version instead of stable version.
-  -f, --force                      Remove a previously cached version and
-                                   re-fetch.
-  -v, --verbose                    Do a verbose VCS checkout, if the URL
-                                   represents a VCS. This is useful for seeing
-                                   if an existing VCS cache has been updated.
-      --retry                      Retry if downloading fails or re-download if
-                                   the checksum of a previously cached version
-                                   no longer matches. Tries at most 5 times with
-                                   exponential backoff.
-      --deps                       Also download dependencies for any listed
-                                   formula.
-  -s, --build-from-source          Download source packages rather than a
-                                   bottle.
-      --build-bottle               Download source packages (for eventual
-                                   bottling) rather than a bottle.
-      --force-bottle               Download a bottle if it exists for the
-                                   current or newest version of macOS, even if
-                                   it would not be used during installation.
-                                   $HOMEBREW_CASK_OPTS_QUARANTINE is set.
-                                   (deprecated)
-      --formula, --formulae        Treat all named arguments as formulae.
-      --cask, --casks              Treat all named arguments as casks.
-  -d, --debug                      Display any debugging information.
-  -q, --quiet                      Make some output more quiet.
-  -h, --help                       Show this message.
-
-Error: Invalid usage: Options --force-bottle and --bottle-tag are mutually exclusive.
+==> Fetching portable-ruby bottles via brew (authoritative)
+Homebrew cache: /Users/Robert/Library/Caches/Homebrew
+Current installed brew runtime Ruby (informational): 3.4.8
+Available portable-ruby bottle tags:
+  - arm64_big_sur
+  - catalina
+  - arm64_linux
+  - x86_64_linux
+Selected Intel bottle tag: catalina
+Selected ARM64 bottle tag: arm64_big_sur
+Fetching Intel portable-ruby...
+✔︎ Bottle Manifest portable-ruby (4.0.1)                                                                                                                                                                    Downloaded    5.7KB/  5.7KB
+✔︎ Bottle portable-ruby (4.0.1)                                                                                                                                                                             Downloaded   10.5MB/ 10.5MB
+Fetching ARM64 portable-ruby...
+✔︎ Bottle Manifest portable-ruby (4.0.1)                                                                                                                                                                    Downloaded    5.7KB/  5.7KB
+✔︎ Bottle portable-ruby (4.0.1)                                                                                                                                                                             Downloaded   10.9MB/ 10.9MB
+Copying fetched portable-ruby bottles into bundle ruby/...
+ERROR: Intel portable-ruby bottle not found in cache after fetch.
+Expected pattern: /Users/Robert/Library/Caches/Homebrew/portable-ruby--*.catalina.bottle.tar.gz
+Cache portable-ruby entries:
+portable-ruby--4.0.1
