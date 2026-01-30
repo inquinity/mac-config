@@ -73,8 +73,8 @@ echo "Fetching portable-ruby bottles into the cache..."
 # - Intel: catalina
 # - Apple Silicon: arm64_big_sur
 # If your environment uses different minimum macOS versions, change these tags.
-brew fetch --force-bottle --bottle-tag=catalina portable-ruby
-brew fetch --force-bottle --bottle-tag=arm64_big_sur portable-ruby
+brew fetch --bottle-tag=catalina portable-ruby
+brew fetch --bottle-tag=arm64_big_sur portable-ruby
 
 echo "Copying fetched portable-ruby bottle files into the airgap bundle..."
 shopt -s nullglob
