@@ -44,63 +44,63 @@ else
   git clone https://github.com/Homebrew/homebrew-cask.git homebrew-cask.git
 fi
 
-+ # 2) Fetch portable Ruby bottles using Homebrew itself (reliable; portable-ruby is now distributed as bottles via GHCR)
-+ #
-+ # NOTE: This requires Homebrew to be installed and working on the connected staging machine.
-+ # It avoids brittle parsing and avoids hand-constructing GHCR URLs.
-+ mkdir -p "$OUTDIR/ruby/arm64" "$OUTDIR/ruby/x86_64"
-+ 
-+ if ! command -v brew >/dev/null 2>&1; then
-+   echo "ERROR: Homebrew (brew) is not installed on this connected staging machine."
-+   echo "Portable Ruby bottles are best fetched via 'brew fetch' (Homebrew handles registry URLs/auth)."
-+   echo "Install Homebrew on the staging machine, then re-run this script."
-+   exit 1
-+ fi
-+ 
-+ echo "Detecting Homebrew Ruby version (informational)..."
-+ BREW_RUBY_VERSION="$(brew ruby -e 'puts RUBY_VERSION' 2>/dev/null || true)"
-+ if [[ -n "${BREW_RUBY_VERSION:-}" ]]; then
-+   echo "Homebrew Ruby version reported by brew: $BREW_RUBY_VERSION"
-+ else
-+   echo "WARNING: Could not read Ruby version via 'brew ruby'. Continuing."
-+ fi
-+ 
-+ BREW_CACHE="$(brew --cache)"
-+ echo "Homebrew cache: $BREW_CACHE"
-+ 
-+ echo "Fetching portable-ruby bottles into the cache..."
-+ # Oldest-supported tags (generally) for maximum compatibility:
-+ # - Intel: catalina
-+ # - Apple Silicon: arm64_big_sur
-+ # If your environment uses different minimum macOS versions, change these tags.
-+ brew fetch --force-bottle --bottle-tag=catalina portable-ruby
-+ brew fetch --force-bottle --bottle-tag=arm64_big_sur portable-ruby
-+ 
-+ echo "Copying fetched portable-ruby bottle files into the airgap bundle..."
-+ shopt -s nullglob
-+ INTEL_BOTTLES=( "$BREW_CACHE"/portable-ruby--*.catalina.bottle.tar.gz )
-+ ARM_BOTTLES=( "$BREW_CACHE"/portable-ruby--*.arm64_big_sur.bottle.tar.gz )
-+ shopt -u nullglob
-+ 
-+ if [[ ${#INTEL_BOTTLES[@]} -eq 0 ]]; then
-+   echo "ERROR: Did not find an Intel portable-ruby bottle in cache matching:"
-+   echo "  $BREW_CACHE/portable-ruby--*.catalina.bottle.tar.gz"
-+   echo "Check 'brew fetch' output and/or available bottle tags for portable-ruby."
-+   exit 1
-+ fi
-+ if [[ ${#ARM_BOTTLES[@]} -eq 0 ]]; then
-+   echo "ERROR: Did not find an ARM portable-ruby bottle in cache matching:"
-+   echo "  $BREW_CACHE/portable-ruby--*.arm64_big_sur.bottle.tar.gz"
-+   echo "Check 'brew fetch' output and/or available bottle tags for portable-ruby."
-+   exit 1
-+ fi
-+ 
-+ cp -v "${INTEL_BOTTLES[0]}" "$OUTDIR/ruby/x86_64/"
-+ cp -v "${ARM_BOTTLES[0]}" "$OUTDIR/ruby/arm64/"
-+ 
-+ echo "Portable Ruby bottles staged:"
-+ ls -lh "$OUTDIR/ruby/x86_64" || true
-+ ls -lh "$OUTDIR/ruby/arm64" || true
+# 2) Fetch portable Ruby bottles using Homebrew itself (reliable; portable-ruby is now distributed as bottles via GHCR)
+#
+# NOTE: This requires Homebrew to be installed and working on the connected staging machine.
+# It avoids brittle parsing and avoids hand-constructing GHCR URLs.
+mkdir -p "$OUTDIR/ruby/arm64" "$OUTDIR/ruby/x86_64"
+
+if ! command -v brew >/dev/null 2>&1; then
+  echo "ERROR: Homebrew (brew) is not installed on this connected staging machine."
+  echo "Portable Ruby bottles are best fetched via 'brew fetch' (Homebrew handles registry URLs/auth)."
+  echo "Install Homebrew on the staging machine, then re-run this script."
+  exit 1
+fi
+
+echo "Detecting Homebrew Ruby version (informational)..."
+BREW_RUBY_VERSION="$(brew ruby -e 'puts RUBY_VERSION' 2>/dev/null || true)"
+if [[ -n "${BREW_RUBY_VERSION:-}" ]]; then
+  echo "Homebrew Ruby version reported by brew: $BREW_RUBY_VERSION"
+else
+  echo "WARNING: Could not read Ruby version via 'brew ruby'. Continuing."
+fi
+
+BREW_CACHE="$(brew --cache)"
+echo "Homebrew cache: $BREW_CACHE"
+
+echo "Fetching portable-ruby bottles into the cache..."
+# Oldest-supported tags (generally) for maximum compatibility:
+# - Intel: catalina
+# - Apple Silicon: arm64_big_sur
+# If your environment uses different minimum macOS versions, change these tags.
+brew fetch --force-bottle --bottle-tag=catalina portable-ruby
+brew fetch --force-bottle --bottle-tag=arm64_big_sur portable-ruby
+
+echo "Copying fetched portable-ruby bottle files into the airgap bundle..."
+shopt -s nullglob
+INTEL_BOTTLES=( "$BREW_CACHE"/portable-ruby--*.catalina.bottle.tar.gz )
+ARM_BOTTLES=( "$BREW_CACHE"/portable-ruby--*.arm64_big_sur.bottle.tar.gz )
+shopt -u nullglob
+
+if [[ ${#INTEL_BOTTLES[@]} -eq 0 ]]; then
+  echo "ERROR: Did not find an Intel portable-ruby bottle in cache matching:"
+  echo "  $BREW_CACHE/portable-ruby--*.catalina.bottle.tar.gz"
+  echo "Check 'brew fetch' output and/or available bottle tags for portable-ruby."
+  exit 1
+fi
+if [[ ${#ARM_BOTTLES[@]} -eq 0 ]]; then
+  echo "ERROR: Did not find an ARM portable-ruby bottle in cache matching:"
+  echo "  $BREW_CACHE/portable-ruby--*.arm64_big_sur.bottle.tar.gz"
+  echo "Check 'brew fetch' output and/or available bottle tags for portable-ruby."
+  exit 1
+fi
+
+cp -v "${INTEL_BOTTLES[0]}" "$OUTDIR/ruby/x86_64/"
+cp -v "${ARM_BOTTLES[0]}" "$OUTDIR/ruby/arm64/"
+
+echo "Portable Ruby bottles staged:"
+ls -lh "$OUTDIR/ruby/x86_64" || true
+ls -lh "$OUTDIR/ruby/arm64" || true
 
 # 3) Copy the repos into a top-level homebrew dir for copying to USB
 mkdir -p "$OUTDIR/homebrew"
