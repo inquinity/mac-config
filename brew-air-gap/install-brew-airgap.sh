@@ -92,6 +92,28 @@ run_cmd() {
   "$@"
 }
 
+log_fs_info() {
+  local path="$1"
+  local parent
+  parent="$(dirname "$path")"
+  {
+    echo "----- Filesystem info -----"
+    echo "Target path: $path"
+    echo "Parent path: $parent"
+    echo "df -h $parent:"
+    df -h "$parent" 2>/dev/null || echo "  (df failed)"
+    echo "stat -f for $parent:"
+    stat -f '%N %H/%L %u:%g %Sp %Sf (%T)' "$parent" 2>/dev/null || echo "  (stat failed)"
+    echo "ls -ldO $path:"
+    ls -ldO "$path" 2>/dev/null || echo "  (ls failed)"
+    echo "ls -ldO $parent:"
+    ls -ldO "$parent" 2>/dev/null || echo "  (ls failed)"
+    echo "mount entries (root and target parent):"
+    mount | awk -v p="$parent" '$0 ~ " on / " || $0 ~ " on "p" " {print "  "$0}'
+    echo "---------------------------"
+  } >> "$LOG_FILE"
+}
+
 init_hash_cmd() {
   if command -v sha256sum >/dev/null 2>&1; then
     HASH_CMD=(sha256sum)
@@ -124,6 +146,8 @@ show_context() {
   echo "PWD:  $(pwd)"
   echo "umask: $(umask)"
   echo "uname: $(uname -a)"
+  echo "sw_vers: $(sw_vers 2>/dev/null || echo 'unavailable')"
+  echo "PATH: $PATH"
   echo "-------------------"
 }
 
@@ -183,6 +207,8 @@ fi
 
 echo "Target architecture: $ARCH"
 echo "Homebrew will be installed to: $BREW_PREFIX"
+
+log_fs_info "$BREW_PREFIX"
 
 # 4) Optional manifest verification
 if [[ $VERIFY -eq 1 ]]; then
