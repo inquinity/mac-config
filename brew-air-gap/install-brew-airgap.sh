@@ -258,8 +258,12 @@ ln -sf "$BREW_PREFIX/Homebrew/bin/brew" "$BREW_PREFIX/bin/brew"
 
 # Ownership: Homebrew expects user-owned prefix
 note "Ensuring $BREW_PREFIX is owned by the invoking user (Homebrew expects user-writeable prefix)..."
-OWNER="$(whoami)"
-chown -R "$OWNER" "$BREW_PREFIX"
+OWNER="${SUDO_USER:-$(whoami)}"
+if [[ "$OWNER" == "root" ]]; then
+  die "Refusing to chown $BREW_PREFIX to root. Re-run with sudo from your user account."
+fi
+OWNER_GROUP="$(id -gn "$OWNER")"
+chown -R "$OWNER":"$OWNER_GROUP" "$BREW_PREFIX"
 
 # ----------------------------- postflight -------------------------------------
 
