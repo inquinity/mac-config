@@ -1,8 +1,206 @@
-Using bundle at: /Users/robert/brew-air-gap
+=============================================================================
+Homebrew air-gap install starting: 2026-02-02 11:02:51 -0600
+Bundle root: /Users/robert/air-gapped-install
+Log file: /Users/robert/air-gapped-install/install_log.txt
+Args: --debug
+=============================================================================
+[DEBUG] Enabled. Command tracing (set -x) will be used.
++ show_context
++ echo '----- Context -----'
+----- Context -----
+++ timestamp
+++ date '+%Y-%m-%d %H:%M:%S %z'
++ echo 'Time: 2026-02-02 11:02:51 -0600'
+Time: 2026-02-02 11:02:51 -0600
+++ id
++ echo 'User: uid=501(robert) gid=20(staff) groups=20(staff),12(everyone),61(localaccounts),79(_appserverusr),80(admin),81(_appserveradm),701(com.apple.sharepoint.group.1),33(_appstore),98(_lpadmin),100(_lpoperator),204(_developer),250(_analyticsusers),395(com.apple.access_ftp),398(com.apple.access_screensharing),399(com.apple.access_ssh),400(com.apple.access_remote_ae)'
+User: uid=501(robert) gid=20(staff) groups=20(staff),12(everyone),61(localaccounts),79(_appserverusr),80(admin),81(_appserveradm),701(com.apple.sharepoint.group.1),33(_appstore),98(_lpadmin),100(_lpoperator),204(_developer),250(_analyticsusers),395(com.apple.access_ftp),398(com.apple.access_screensharing),399(com.apple.access_ssh),400(com.apple.access_remote_ae)
+++ pwd
++ echo 'PWD:  /Users/robert/air-gapped-install'
+PWD:  /Users/robert/air-gapped-install
+++ umask
++ echo 'umask: 0022'
+umask: 0022
+++ uname -a
++ echo 'uname: Darwin Roberts-Mac.local 24.6.0 Darwin Kernel Version 24.6.0: Wed Nov  5 21:30:23 PST 2025; root:xnu-11417.140.69.705.2~1/RELEASE_X86_64 x86_64'
+uname: Darwin Roberts-Mac.local 24.6.0 Darwin Kernel Version 24.6.0: Wed Nov  5 21:30:23 PST 2025; root:xnu-11417.140.69.705.2~1/RELEASE_X86_64 x86_64
++ echo -------------------
+-------------------
++ note 'Checking for Xcode Command Line Tools...'
++ echo '==> Checking for Xcode Command Line Tools...'
+==> Checking for Xcode Command Line Tools...
++ xcode-select -p
++ echo 'Xcode Command Line Tools found.'
 Xcode Command Line Tools found.
++ note 'Validating bundle structure...'
++ echo '==> Validating bundle structure...'
+==> Validating bundle structure...
++ require_dir /Users/robert/air-gapped-install/homebrew
++ local d=/Users/robert/air-gapped-install/homebrew
++ [[ -d /Users/robert/air-gapped-install/homebrew ]]
++ require_dir /Users/robert/air-gapped-install/homebrew/brew.git
++ local d=/Users/robert/air-gapped-install/homebrew/brew.git
++ [[ -d /Users/robert/air-gapped-install/homebrew/brew.git ]]
++ require_dir /Users/robert/air-gapped-install/homebrew/homebrew-core.git
++ local d=/Users/robert/air-gapped-install/homebrew/homebrew-core.git
++ [[ -d /Users/robert/air-gapped-install/homebrew/homebrew-core.git ]]
++ [[ -d /Users/robert/air-gapped-install/homebrew/homebrew-cask.git ]]
++ echo 'Found homebrew-cask.git'
+Found homebrew-cask.git
+++ uname -m
++ ARCH=x86_64
++ [[ x86_64 == \a\r\m\6\4 ]]
++ BREW_PREFIX=/usr/local
++ RUBY_ARCH_DIR=x86_64
++ echo 'Target architecture: x86_64'
 Target architecture: x86_64
++ echo 'Homebrew will be installed to: /usr/local'
 Homebrew will be installed to: /usr/local
-No manifest.txt found in bundle — skipping checksum verification.
-Installing Homebrew files to /usr/local...
-Copying repos (this may take a while)...
-cp: /usr/local/Homebrew/Library/Taps/homebrew/homebrew-core: No such file or directory
++ [[ 0 -eq 1 ]]
++ echo 'Manifest verification disabled (use --verify to enable).'
+Manifest verification disabled (use --verify to enable).
++ note 'Checking required permissions...'
++ echo '==> Checking required permissions...'
+==> Checking required permissions...
++ NEEDS_SUDO=0
++ [[ ! -d /usr/local ]]
++ [[ -w /usr/local ]]
++ NEEDS_SUDO=1
++ [[ 1 -eq 1 ]]
++ cat
+NOTE: Installing Homebrew to /usr/local requires elevated privileges (sudo).
+Please re-run with:
+
+  sudo "/Users/robert/air-gapped-install/install-brew-airgap.sh" --debug --verify
+
+Exiting without making changes.
++ exit 3
+=============================================================================
+Homebrew air-gap install starting: 2026-02-02 11:03:36 -0600
+Bundle root: /Users/robert/air-gapped-install
+Log file: /Users/robert/air-gapped-install/install_log.txt
+Args: --debug
+=============================================================================
+[DEBUG] Enabled. Command tracing (set -x) will be used.
++ show_context
++ echo '----- Context -----'
+----- Context -----
+++ timestamp
+++ date '+%Y-%m-%d %H:%M:%S %z'
++ echo 'Time: 2026-02-02 11:03:36 -0600'
+Time: 2026-02-02 11:03:36 -0600
+++ id
++ echo 'User: uid=0(root) gid=0(wheel) groups=0(wheel),1(daemon),2(kmem),3(sys),4(tty),5(operator),8(procview),9(procmod),12(everyone),20(staff),29(certusers),61(localaccounts),80(admin),701(com.apple.sharepoint.group.1),33(_appstore),98(_lpadmin),100(_lpoperator),204(_developer),250(_analyticsusers),395(com.apple.access_ftp),398(com.apple.access_screensharing),399(com.apple.access_ssh),400(com.apple.access_remote_ae)'
+User: uid=0(root) gid=0(wheel) groups=0(wheel),1(daemon),2(kmem),3(sys),4(tty),5(operator),8(procview),9(procmod),12(everyone),20(staff),29(certusers),61(localaccounts),80(admin),701(com.apple.sharepoint.group.1),33(_appstore),98(_lpadmin),100(_lpoperator),204(_developer),250(_analyticsusers),395(com.apple.access_ftp),398(com.apple.access_screensharing),399(com.apple.access_ssh),400(com.apple.access_remote_ae)
+++ pwd
++ echo 'PWD:  /Users/robert/air-gapped-install'
+PWD:  /Users/robert/air-gapped-install
+++ umask
++ echo 'umask: 0022'
+umask: 0022
+++ uname -a
++ echo 'uname: Darwin Roberts-Mac.local 24.6.0 Darwin Kernel Version 24.6.0: Wed Nov  5 21:30:23 PST 2025; root:xnu-11417.140.69.705.2~1/RELEASE_X86_64 x86_64'
+uname: Darwin Roberts-Mac.local 24.6.0 Darwin Kernel Version 24.6.0: Wed Nov  5 21:30:23 PST 2025; root:xnu-11417.140.69.705.2~1/RELEASE_X86_64 x86_64
++ echo -------------------
+-------------------
++ note 'Checking for Xcode Command Line Tools...'
++ echo '==> Checking for Xcode Command Line Tools...'
+==> Checking for Xcode Command Line Tools...
++ xcode-select -p
++ echo 'Xcode Command Line Tools found.'
+Xcode Command Line Tools found.
++ note 'Validating bundle structure...'
++ echo '==> Validating bundle structure...'
+==> Validating bundle structure...
++ require_dir /Users/robert/air-gapped-install/homebrew
++ local d=/Users/robert/air-gapped-install/homebrew
++ [[ -d /Users/robert/air-gapped-install/homebrew ]]
++ require_dir /Users/robert/air-gapped-install/homebrew/brew.git
++ local d=/Users/robert/air-gapped-install/homebrew/brew.git
++ [[ -d /Users/robert/air-gapped-install/homebrew/brew.git ]]
++ require_dir /Users/robert/air-gapped-install/homebrew/homebrew-core.git
++ local d=/Users/robert/air-gapped-install/homebrew/homebrew-core.git
++ [[ -d /Users/robert/air-gapped-install/homebrew/homebrew-core.git ]]
++ [[ -d /Users/robert/air-gapped-install/homebrew/homebrew-cask.git ]]
++ echo 'Found homebrew-cask.git'
+Found homebrew-cask.git
+++ uname -m
++ ARCH=x86_64
++ [[ x86_64 == \a\r\m\6\4 ]]
++ BREW_PREFIX=/usr/local
++ RUBY_ARCH_DIR=x86_64
++ echo 'Target architecture: x86_64'
+Target architecture: x86_64
++ echo 'Homebrew will be installed to: /usr/local'
+Homebrew will be installed to: /usr/local
++ [[ 0 -eq 1 ]]
++ echo 'Manifest verification disabled (use --verify to enable).'
+Manifest verification disabled (use --verify to enable).
++ note 'Checking required permissions...'
++ echo '==> Checking required permissions...'
+==> Checking required permissions...
++ NEEDS_SUDO=0
++ [[ ! -d /usr/local ]]
++ [[ -w /usr/local ]]
++ [[ 0 -eq 1 ]]
++ note 'Installing Homebrew files to /usr/local...'
++ echo '==> Installing Homebrew files to /usr/local...'
+==> Installing Homebrew files to /usr/local...
++ mkdir -p /usr/local
++ mkdir -p /usr/local/Homebrew
++ mkdir -p /usr/local/Homebrew/Library/Taps/homebrew
++ note 'Copying brew.git into /usr/local/Homebrew ...'
++ echo '==> Copying brew.git into /usr/local/Homebrew ...'
+==> Copying brew.git into /usr/local/Homebrew ...
++ copy_tree /Users/robert/air-gapped-install/homebrew/brew.git /usr/local/Homebrew
++ local src=/Users/robert/air-gapped-install/homebrew/brew.git
++ local dst=/usr/local/Homebrew
++ command -v rsync
++ rsync -a --delete /Users/robert/air-gapped-install/homebrew/brew.git/ /usr/local/Homebrew/
++ note 'Copying homebrew-core.git tap ...'
++ echo '==> Copying homebrew-core.git tap ...'
+==> Copying homebrew-core.git tap ...
++ copy_tree /Users/robert/air-gapped-install/homebrew/homebrew-core.git /usr/local/Homebrew/Library/Taps/homebrew/homebrew-core
++ local src=/Users/robert/air-gapped-install/homebrew/homebrew-core.git
++ local dst=/usr/local/Homebrew/Library/Taps/homebrew/homebrew-core
++ command -v rsync
++ rsync -a --delete /Users/robert/air-gapped-install/homebrew/homebrew-core.git/ /usr/local/Homebrew/Library/Taps/homebrew/homebrew-core/
++ [[ -d /Users/robert/air-gapped-install/homebrew/homebrew-cask.git ]]
++ note 'Copying homebrew-cask.git tap ...'
++ echo '==> Copying homebrew-cask.git tap ...'
+==> Copying homebrew-cask.git tap ...
++ copy_tree /Users/robert/air-gapped-install/homebrew/homebrew-cask.git /usr/local/Homebrew/Library/Taps/homebrew/homebrew-cask
++ local src=/Users/robert/air-gapped-install/homebrew/homebrew-cask.git
++ local dst=/usr/local/Homebrew/Library/Taps/homebrew/homebrew-cask
++ command -v rsync
++ rsync -a --delete /Users/robert/air-gapped-install/homebrew/homebrew-cask.git/ /usr/local/Homebrew/Library/Taps/homebrew/homebrew-cask/
++ note 'Staging portable Ruby for x86_64 ...'
++ echo '==> Staging portable Ruby for x86_64 ...'
+==> Staging portable Ruby for x86_64 ...
++ RUBY_SRC_DIR=/Users/robert/air-gapped-install/ruby/x86_64
++ require_dir /Users/robert/air-gapped-install/ruby/x86_64
++ local d=/Users/robert/air-gapped-install/ruby/x86_64
++ [[ -d /Users/robert/air-gapped-install/ruby/x86_64 ]]
++ shopt -s nullglob
++ RUBY_TARS=("$RUBY_SRC_DIR"/*.bottle.tar.gz "$RUBY_SRC_DIR"/*.tar.gz "$RUBY_SRC_DIR"/*.tgz)
++ shopt -u nullglob
++ [[ 2 -eq 0 ]]
++ RUBY_TAR=/Users/robert/air-gapped-install/ruby/x86_64/4261b46620060c791a35064396758ecfd939a349fba9b6541ec70526f062eb96--portable-ruby--4.0.1.catalina.bottle.tar.gz
++ echo 'Using portable Ruby tarball: /Users/robert/air-gapped-install/ruby/x86_64/4261b46620060c791a35064396758ecfd939a349fba9b6541ec70526f062eb96--portable-ruby--4.0.1.catalina.bottle.tar.gz'
+Using portable Ruby tarball: /Users/robert/air-gapped-install/ruby/x86_64/4261b46620060c791a35064396758ecfd939a349fba9b6541ec70526f062eb96--portable-ruby--4.0.1.catalina.bottle.tar.gz
++ VENDOR_DIR=/usr/local/Homebrew/Library/Homebrew/vendor
++ mkdir -p /usr/local/Homebrew/Library/Homebrew/vendor
++ tar -xzf /Users/robert/air-gapped-install/ruby/x86_64/4261b46620060c791a35064396758ecfd939a349fba9b6541ec70526f062eb96--portable-ruby--4.0.1.catalina.bottle.tar.gz -C /usr/local/Homebrew/Library/Homebrew/vendor
++ note 'Linking brew into /usr/local/bin ...'
++ echo '==> Linking brew into /usr/local/bin ...'
+==> Linking brew into /usr/local/bin ...
++ mkdir -p /usr/local/bin
++ [[ -f /usr/local/Homebrew/bin/brew ]]
++ ln -sf /usr/local/Homebrew/bin/brew /usr/local/bin/brew
++ note 'Ensuring /usr/local is owned by the invoking user (Homebrew expects user-writeable prefix)...'
++ echo '==> Ensuring /usr/local is owned by the invoking user (Homebrew expects user-writeable prefix)...'
+==> Ensuring /usr/local is owned by the invoking user (Homebrew expects user-writeable prefix)...
+++ whoami
++ OWNER=root
++ chown -R root /usr/local
+chown: /usr/local: Operation not permitted
