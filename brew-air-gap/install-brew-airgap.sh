@@ -30,7 +30,7 @@ set -euo pipefail
 DEBUG=0
 VERIFY=0
 
-for arg in "${@:-}"; do
+for arg in "$@"; do
   case "$arg" in
     --debug)  DEBUG=1 ;;
     --verify) VERIFY=1 ;;
