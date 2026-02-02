@@ -16,6 +16,9 @@ set -euo pipefail
 # Example:
 #   ./prepare-brew-airgap.sh "$HOME/brew-air-gap"
 
+# Directory where this prepare script itself resides
+SOURCEDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 OUTDIR="${1:-}"
 
 if [[ -z "$OUTDIR" ]]; then
@@ -247,6 +250,16 @@ echo "==> Generating SHA256 manifest (may take a while due to large git repos)"
 cd "$OUTDIR"
 find . -type f -print0 | sort -z | xargs -0 sh -c 'for f; do sha256sum "$f"; done' sh > "$OUTDIR/manifest.txt"
 
+# --- Manifest ----------------------------------------------------------------
+
+echo
+echo "==> Copying install shell script"
+cp -v "$SOURCEDIR/install-brew-airgap.sh" "$OUTDIR/"
+chmod 0755 "$OUTDIR/install-brew-airgap.sh"
+
+# --- Completed ----------------------------------------------------------------
+
 echo
 echo "Bundle prepared successfully: $OUTDIR"
 ls -lah "$OUTDIR"
+
