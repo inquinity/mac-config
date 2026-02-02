@@ -33,12 +33,40 @@ echo "Preparing airgap bundle in: $OUTDIR"
 
 # --- Preconditions ------------------------------------------------------------
 
-for cmd in git brew python3; do
+for cmd in git brew python3 zip; do
   if ! command -v "$cmd" >/dev/null 2>&1; then
     echo "ERROR: Required command not found: $cmd"
     exit 1
   fi
 done
+
+HASH_CMD=()
+
+init_hash_cmd() {
+  if command -v sha256sum >/dev/null 2>&1; then
+    HASH_CMD=(sha256sum)
+  elif command -v shasum >/dev/null 2>&1; then
+    HASH_CMD=(shasum -a 256)
+  else
+    echo "ERROR: No SHA256 tool found (need sha256sum or shasum)."
+    exit 1
+  fi
+}
+
+write_manifest() {
+  local base_dir="$1"
+  local out_file="$2"
+  init_hash_cmd
+  (
+    cd "$base_dir"
+    find . -type f \
+      ! -name 'manifest.txt' \
+      ! -name 'install_log.txt' \
+      -print | LC_ALL=C sort | while IFS= read -r f; do
+        "${HASH_CMD[@]}" "$f"
+      done
+  ) > "$out_file"
+}
 
 BREW_CACHE="$(brew --cache)"
 BREW_DL_DIR="$BREW_CACHE/downloads"
@@ -243,19 +271,27 @@ Selected bottle tags:
 
 EOF
 
-# --- Manifest ----------------------------------------------------------------
-
-echo
-echo "==> Generating SHA256 manifest (may take a while due to large git repos)"
-cd "$OUTDIR"
-find . -type f -print0 | sort -z | xargs -0 sh -c 'for f; do sha256sum "$f"; done' sh > "$OUTDIR/manifest.txt"
-
-# --- Manifest ----------------------------------------------------------------
+# --- Copy installer before manifest ------------------------------------------
 
 echo
 echo "==> Copying install shell script"
 cp -v "$SOURCEDIR/install-brew-airgap.sh" "$OUTDIR/"
 chmod 0755 "$OUTDIR/install-brew-airgap.sh"
+
+# --- Manifest ----------------------------------------------------------------
+
+echo
+echo "==> Generating SHA256 manifest (may take a while due to large git repos)"
+write_manifest "$OUTDIR" "$OUTDIR/manifest.txt"
+
+# --- Zip bundle for easy transfer -------------------------------------------
+
+echo
+echo "==> Creating brew-install.zip"
+ZIP_NAME="brew-install.zip"
+OUTDIR_PARENT="$(dirname "$OUTDIR")"
+OUTDIR_BASENAME="$(basename "$OUTDIR")"
+(cd "$OUTDIR_PARENT" && rm -f "$ZIP_NAME" && zip -r "$ZIP_NAME" "$OUTDIR_BASENAME")
 
 # --- Completed ----------------------------------------------------------------
 

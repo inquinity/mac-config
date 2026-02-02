@@ -65,8 +65,7 @@ echo "Args: ${*:-<none>}"
 echo "============================================================================="
 
 if [[ $DEBUG -eq 1 ]]; then
-  echo "[DEBUG] Enabled. Command tracing (set -x) will be used."
-  set -x
+  echo "[DEBUG] Enabled. Extra command traces will be written to the log file only."
 fi
 
 # ----------------------------- helpers ----------------------------------------
@@ -80,6 +79,42 @@ die() {
 
 note() {
   echo "==> $*"
+}
+
+run_cmd() {
+  if [[ $DEBUG -eq 1 ]]; then
+    {
+      printf '[CMD] '
+      printf '%q ' "$@"
+      printf '\n'
+    } >> "$LOG_FILE"
+  fi
+  "$@"
+}
+
+init_hash_cmd() {
+  if command -v sha256sum >/dev/null 2>&1; then
+    HASH_CMD=(sha256sum)
+  elif command -v shasum >/dev/null 2>&1; then
+    HASH_CMD=(shasum -a 256)
+  else
+    die "No SHA256 tool found (need sha256sum or shasum)."
+  fi
+}
+
+write_manifest() {
+  local base_dir="$1"
+  local out_file="$2"
+  init_hash_cmd
+  (
+    cd "$base_dir"
+    find . -type f \
+      ! -name 'manifest.txt' \
+      ! -name 'install_log.txt' \
+      -print | LC_ALL=C sort | while IFS= read -r f; do
+        "${HASH_CMD[@]}" "$f"
+      done
+  ) > "$out_file"
 }
 
 show_context() {
@@ -155,7 +190,7 @@ if [[ $VERIFY -eq 1 ]]; then
   if [[ -f "$SCRIPT_DIR/manifest.txt" ]]; then
     note "Verifying manifest.txt checksums (this may take a while)..."
     TMPMAN="$(mktemp)"
-    (cd "$SCRIPT_DIR" && find . -type f -print0 | sort -z | xargs -0 sh -c 'for f; do sha256sum "$f"; done' sh) > "$TMPMAN"
+    write_manifest "$SCRIPT_DIR" "$TMPMAN"
     if ! cmp -s "$TMPMAN" "$SCRIPT_DIR/manifest.txt"; then
       rm -f "$TMPMAN"
       die "Manifest checksum mismatch. Bundle may be corrupted/modified."
@@ -196,24 +231,24 @@ fi
 note "Installing Homebrew files to $BREW_PREFIX..."
 
 # Ensure prefix exists
-mkdir -p "$BREW_PREFIX"
+run_cmd mkdir -p "$BREW_PREFIX"
 
 # Create required directory structure BEFORE copying taps (fix for your cp error)
 # brew repo goes to: $BREW_PREFIX/Homebrew
 # taps go to:      $BREW_PREFIX/Homebrew/Library/Taps/homebrew/{homebrew-core,homebrew-cask}
-mkdir -p "$BREW_PREFIX/Homebrew"
-mkdir -p "$BREW_PREFIX/Homebrew/Library/Taps/homebrew"
+run_cmd mkdir -p "$BREW_PREFIX/Homebrew"
+run_cmd mkdir -p "$BREW_PREFIX/Homebrew/Library/Taps/homebrew"
 
 # Copy repos (use rsync if available for better progress; else cp -a)
 copy_tree() {
   local src="$1"
   local dst="$2"
   if command -v rsync >/dev/null 2>&1; then
-    rsync -a --delete "$src"/ "$dst"/
+    run_cmd rsync -a --delete "$src"/ "$dst"/
   else
-    rm -rf "$dst"
-    mkdir -p "$(dirname "$dst")"
-    cp -a "$src" "$dst"
+    run_cmd rm -rf "$dst"
+    run_cmd mkdir -p "$(dirname "$dst")"
+    run_cmd cp -a "$src" "$dst"
   fi
 }
 
@@ -247,14 +282,14 @@ RUBY_TAR="${RUBY_TARS[0]}"
 echo "Using portable Ruby tarball: $RUBY_TAR"
 
 VENDOR_DIR="$BREW_PREFIX/Homebrew/Library/Homebrew/vendor"
-mkdir -p "$VENDOR_DIR"
-tar -xzf "$RUBY_TAR" -C "$VENDOR_DIR"
+run_cmd mkdir -p "$VENDOR_DIR"
+run_cmd tar -xzf "$RUBY_TAR" -C "$VENDOR_DIR"
 
 # Create brew symlink
 note "Linking brew into $BREW_PREFIX/bin ..."
-mkdir -p "$BREW_PREFIX/bin"
+run_cmd mkdir -p "$BREW_PREFIX/bin"
 [[ -f "$BREW_PREFIX/Homebrew/bin/brew" ]] || die "brew binary not found at $BREW_PREFIX/Homebrew/bin/brew"
-ln -sf "$BREW_PREFIX/Homebrew/bin/brew" "$BREW_PREFIX/bin/brew"
+run_cmd ln -sf "$BREW_PREFIX/Homebrew/bin/brew" "$BREW_PREFIX/bin/brew"
 
 # Ownership: Homebrew expects user-owned prefix
 note "Ensuring $BREW_PREFIX is owned by the invoking user (Homebrew expects user-writeable prefix)..."
@@ -263,7 +298,7 @@ if [[ "$OWNER" == "root" ]]; then
   die "Refusing to chown $BREW_PREFIX to root. Re-run with sudo from your user account."
 fi
 OWNER_GROUP="$(id -gn "$OWNER")"
-chown -R "$OWNER":"$OWNER_GROUP" "$BREW_PREFIX"
+run_cmd chown -R "$OWNER":"$OWNER_GROUP" "$BREW_PREFIX"
 
 # ----------------------------- postflight -------------------------------------
 
