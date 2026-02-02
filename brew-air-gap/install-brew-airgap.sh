@@ -89,13 +89,42 @@ warn() {
 
 usage() {
   cat <<EOS
-Homebrew Installer
-Usage: [NONINTERACTIVE=1] [CI=1] install.sh [options]
+Homebrew Air-Gap Installer
+Usage: [NONINTERACTIVE=1] install-brew-airgap.sh [options]
     -h, --help       Display this message.
     NONINTERACTIVE   Install without prompting for user input
-    CI               Install in CI mode (e.g. do not prompt for user input)
+
+This script installs Homebrew from a local air-gapped bundle.
+The bundle directory must contain:
+  homebrew/brew.git/
+  homebrew/homebrew-core.git/
+  homebrew/homebrew-cask.git/  (optional)
+  ruby/arm64/   (portable-ruby bottle)
+  ruby/x86_64/  (portable-ruby bottle)
 EOS
   exit "${1:-0}"
+}
+
+# ----------------------------- air-gap bundle ---------------------------------
+# Detect bundle root (directory containing this script)
+AIRGAP_BUNDLE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+airgap_require_dir() {
+  if [[ ! -d "$1" ]]; then
+    abort "Required bundle directory missing: $1"
+  fi
+}
+
+airgap_copy_tree() {
+  local src="$1"
+  local dst="$2"
+  if command -v rsync >/dev/null 2>&1; then
+    rsync -a --delete "$src"/ "$dst"/
+  else
+    rm -rf "$dst"
+    mkdir -p "$(dirname "$dst")"
+    cp -a "$src" "$dst"
+  fi
 }
 
 while [[ $# -gt 0 ]]
@@ -107,6 +136,7 @@ do
       usage 1
       ;;
   esac
+  shift
 done
 
 # Check if script is run non-interactively (e.g. CI)
@@ -922,68 +952,39 @@ EOABORT
   fi
 fi
 
-if ! command -v curl >/dev/null
-then
-  abort "$(
-    cat <<EOABORT
-You must install cURL before installing Homebrew. See:
-  ${tty_underline}https://docs.brew.sh/Installation${tty_reset}
-EOABORT
-  )"
-elif [[ -n "${HOMEBREW_ON_LINUX-}" ]]
-then
-  USABLE_CURL="$(find_tool curl)"
-  if [[ -z "${USABLE_CURL}" ]]
-  then
-    abort "$(
-      cat <<EOABORT
-The version of cURL that was found does not satisfy requirements for Homebrew.
-Please install cURL ${REQUIRED_CURL_VERSION} or newer and add it to your PATH.
-EOABORT
-    )"
-  elif [[ "${USABLE_CURL}" != /usr/bin/curl ]]
-  then
-    export HOMEBREW_CURL_PATH="${USABLE_CURL}"
-    ohai "Found cURL: ${HOMEBREW_CURL_PATH}"
-  fi
-fi
+# Note: curl check removed for air-gap install (not needed for local copies)
 
-ohai "Downloading and installing Homebrew..."
+ohai "Installing Homebrew from air-gap bundle..."
+
+# Validate bundle structure
+airgap_require_dir "${AIRGAP_BUNDLE_DIR}/homebrew"
+airgap_require_dir "${AIRGAP_BUNDLE_DIR}/homebrew/brew.git"
+airgap_require_dir "${AIRGAP_BUNDLE_DIR}/homebrew/homebrew-core.git"
+
+# Determine Ruby architecture directory
+if [[ "${UNAME_MACHINE}" == "arm64" ]]; then
+  AIRGAP_RUBY_ARCH="arm64"
+else
+  AIRGAP_RUBY_ARCH="x86_64"
+fi
+airgap_require_dir "${AIRGAP_BUNDLE_DIR}/ruby/${AIRGAP_RUBY_ARCH}"
+
 (
+  # Copy brew.git to repository location
+  ohai "Copying brew.git into ${HOMEBREW_REPOSITORY} ..."
+  airgap_copy_tree "${AIRGAP_BUNDLE_DIR}/homebrew/brew.git" "${HOMEBREW_REPOSITORY}"
+
   cd "${HOMEBREW_REPOSITORY}" >/dev/null || return
 
-  # we do it in four steps to avoid merge errors when reinstalling
-  execute "${USABLE_GIT}" "-c" "init.defaultBranch=main" "init" "--quiet"
-
-  # "git remote add" will fail if the remote is defined in the global config
-  execute "${USABLE_GIT}" "config" "remote.origin.url" "${HOMEBREW_BREW_GIT_REMOTE}"
-  execute "${USABLE_GIT}" "config" "remote.origin.fetch" "+refs/heads/*:refs/remotes/origin/*"
-  execute "${USABLE_GIT}" "config" "--bool" "fetch.prune" "true"
-
-  # ensure we don't munge line endings on checkout
-  execute "${USABLE_GIT}" "config" "--bool" "core.autocrlf" "false"
-
-  # make sure symlinks are saved as-is
-  execute "${USABLE_GIT}" "config" "--bool" "core.symlinks" "true"
-
-  if [[ -z "${NONINTERACTIVE-}" ]]
-  then
-    quiet_progress=("--quiet" "--progress")
-  else
-    quiet_progress=("--quiet")
-  fi
-  retry 5 "${USABLE_GIT}" "fetch" "${quiet_progress[@]}" "--force" "origin"
-  retry 5 "${USABLE_GIT}" "fetch" "${quiet_progress[@]}" "--force" "--tags" "origin"
-
-  execute "${USABLE_GIT}" "remote" "set-head" "origin" "--auto" >/dev/null
-
+  # Checkout the latest tag (already present in the bundle)
   LATEST_GIT_TAG="$("${USABLE_GIT}" -c "column.ui=never" tag --list --sort="-version:refname" | head -n1)"
   if [[ -z "${LATEST_GIT_TAG}" ]]
   then
-    abort "Failed to query latest Homebrew/brew Git tag."
+    abort "Failed to query latest Homebrew/brew Git tag from bundle."
   fi
   execute "${USABLE_GIT}" "checkout" "--quiet" "--force" "-B" "stable" "${LATEST_GIT_TAG}"
 
+  # Create symlink for Intel installs
   if [[ "${HOMEBREW_REPOSITORY}" != "${HOMEBREW_PREFIX}" ]]
   then
     if [[ "${HOMEBREW_REPOSITORY}" == "${HOMEBREW_PREFIX}/Homebrew" ]]
@@ -994,30 +995,39 @@ ohai "Downloading and installing Homebrew..."
     fi
   fi
 
-  if [[ -n "${HOMEBREW_NO_INSTALL_FROM_API-}" && ! -d "${HOMEBREW_CORE}" ]]
+  # Copy homebrew-core tap
+  ohai "Copying homebrew-core.git tap ..."
+  execute "${MKDIR[@]}" "${HOMEBREW_CORE}"
+  airgap_copy_tree "${AIRGAP_BUNDLE_DIR}/homebrew/homebrew-core.git" "${HOMEBREW_CORE}"
+
+  # Copy homebrew-cask tap if present
+  if [[ -d "${AIRGAP_BUNDLE_DIR}/homebrew/homebrew-cask.git" ]]
   then
-    # Always use single-quoted strings with `exp` expressions
-    # shellcheck disable=SC2016
-    ohai 'Tapping homebrew/core because `$HOMEBREW_NO_INSTALL_FROM_API` is set.'
-    (
-      execute "${MKDIR[@]}" "${HOMEBREW_CORE}"
-      cd "${HOMEBREW_CORE}" >/dev/null || return
-
-      execute "${USABLE_GIT}" "-c" "init.defaultBranch=main" "init" "--quiet"
-      execute "${USABLE_GIT}" "config" "remote.origin.url" "${HOMEBREW_CORE_GIT_REMOTE}"
-      execute "${USABLE_GIT}" "config" "remote.origin.fetch" "+refs/heads/*:refs/remotes/origin/*"
-      execute "${USABLE_GIT}" "config" "--bool" "fetch.prune" "true"
-      execute "${USABLE_GIT}" "config" "--bool" "core.autocrlf" "false"
-      execute "${USABLE_GIT}" "config" "--bool" "core.symlinks" "true"
-      retry 5 "${USABLE_GIT}" "fetch" "--force" "${quiet_progress[@]}" \
-        "origin" "refs/heads/main:refs/remotes/origin/main"
-      execute "${USABLE_GIT}" "remote" "set-head" "origin" "--auto" >/dev/null
-      execute "${USABLE_GIT}" "reset" "--hard" "origin/main"
-
-      cd "${HOMEBREW_REPOSITORY}" >/dev/null || return
-    ) || exit 1
+    ohai "Copying homebrew-cask.git tap ..."
+    HOMEBREW_CASK="${HOMEBREW_REPOSITORY}/Library/Taps/homebrew/homebrew-cask"
+    execute "${MKDIR[@]}" "${HOMEBREW_CASK}"
+    airgap_copy_tree "${AIRGAP_BUNDLE_DIR}/homebrew/homebrew-cask.git" "${HOMEBREW_CASK}"
   fi
 
+  # Install portable Ruby
+  ohai "Staging portable Ruby for ${AIRGAP_RUBY_ARCH} ..."
+  AIRGAP_RUBY_SRC="${AIRGAP_BUNDLE_DIR}/ruby/${AIRGAP_RUBY_ARCH}"
+  VENDOR_DIR="${HOMEBREW_REPOSITORY}/Library/Homebrew/vendor"
+  execute "${MKDIR[@]}" "${VENDOR_DIR}"
+
+  # Find the ruby tarball
+  shopt -s nullglob
+  RUBY_TARS=( "${AIRGAP_RUBY_SRC}"/*.bottle.tar.gz "${AIRGAP_RUBY_SRC}"/*.tar.gz "${AIRGAP_RUBY_SRC}"/*.tgz )
+  shopt -u nullglob
+  if [[ ${#RUBY_TARS[@]} -eq 0 ]]
+  then
+    abort "No portable-ruby tarball found in ${AIRGAP_RUBY_SRC}"
+  fi
+  RUBY_TAR="${RUBY_TARS[0]}"
+  ohai "Using portable Ruby: $(basename "${RUBY_TAR}")"
+  execute "tar" "-xzf" "${RUBY_TAR}" "-C" "${VENDOR_DIR}"
+
+  # Set up paths.d for non-/usr/local installs
   if [[ -n "${ADD_PATHS_D-}" ]]
   then
     execute_sudo "${MKDIR[@]}" /etc/paths.d
@@ -1029,7 +1039,8 @@ ohai "Downloading and installing Homebrew..."
     PATH_WARN=1
   fi
 
-  execute "${HOMEBREW_PREFIX}/bin/brew" "update" "--force" "--quiet"
+  # Skip brew update (we are air-gapped)
+  ohai "Skipping 'brew update' (air-gapped install)."
 
   if [[ -n "${PATH_WARN-}" ]]
   then
@@ -1044,25 +1055,17 @@ echo
 
 ring_bell
 
-# Use an extra newline and bold to avoid this being missed.
-ohai "Homebrew has enabled anonymous aggregate formulae and cask analytics."
+ohai "Air-gapped Homebrew installation complete."
 echo "$(
   cat <<EOS
-${tty_bold}Read the analytics documentation (and how to opt-out) here:
-  ${tty_underline}https://docs.brew.sh/Analytics${tty_reset}
-No analytics data has been sent yet (nor will any be during this ${tty_bold}install${tty_reset} run).
+${tty_bold}Note:${tty_reset} This is an offline installation. Analytics are disabled.
+To keep analytics disabled, add to your shell profile:
+  export HOMEBREW_NO_ANALYTICS=1
 EOS
 )
 "
 
-ohai "Homebrew is run entirely by unpaid volunteers. Please consider donating:"
-echo "$(
-  cat <<EOS
-  ${tty_underline}https://github.com/Homebrew/brew#donations${tty_reset}
-EOS
-)
-"
-
+# Disable analytics in git config (local, no network needed)
 (
   cd "${HOMEBREW_REPOSITORY}" >/dev/null || return
   execute "${USABLE_GIT}" "config" "--replace-all" "homebrew.analyticsmessage" "true"
