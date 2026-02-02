@@ -1,83 +1,11 @@
 =============================================================================
-Homebrew air-gap install starting: 2026-02-02 12:34:27 -0600
+Homebrew air-gap install starting: 2026-02-02 12:51:57 -0600
 Bundle root: /Users/robert/air-gapped-install
 Log file: /Users/robert/air-gapped-install/install_log.txt
 Args: <none>
 =============================================================================
 ----- Context -----
-Time: 2026-02-02 12:34:27 -0600
-User: uid=0(root) gid=0(wheel) groups=0(wheel),1(daemon),2(kmem),3(sys),4(tty),5(operator),8(procview),9(procmod),12(everyone),20(staff),29(certusers),61(localaccounts),80(admin),701(com.apple.sharepoint.group.1),33(_appstore),98(_lpadmin),100(_lpoperator),204(_developer),250(_analyticsusers),395(com.apple.access_ftp),398(com.apple.access_screensharing),399(com.apple.access_ssh),400(com.apple.access_remote_ae)
-PWD:  /Users/robert/air-gapped-install
-umask: 0022
-uname: Darwin Roberts-Mac.local 24.6.0 Darwin Kernel Version 24.6.0: Wed Nov  5 21:30:23 PST 2025; root:xnu-11417.140.69.705.2~1/RELEASE_X86_64 x86_64
--------------------
-==> Checking for Xcode Command Line Tools...
-Xcode Command Line Tools found.
-==> Validating bundle structure...
-Found homebrew-cask.git
-Target architecture: x86_64
-Homebrew will be installed to: /usr/local
-Manifest verification disabled (use --verify to enable).
-==> Checking required permissions...
-==> Installing Homebrew files to /usr/local...
-==> Copying brew.git into /usr/local/Homebrew ...
-==> Copying homebrew-core.git tap ...
-==> Copying homebrew-cask.git tap ...
-==> Staging portable Ruby for x86_64 ...
-Using portable Ruby tarball: /Users/robert/air-gapped-install/ruby/x86_64/4261b46620060c791a35064396758ecfd939a349fba9b6541ec70526f062eb96--portable-ruby--4.0.1.catalina.bottle.tar.gz
-==> Linking brew into /usr/local/bin ...
-==> Ensuring /usr/local is owned by the invoking user (Homebrew expects user-writeable prefix)...
-chown: /usr/local: Operation not permitted
-=============================================================================
-Homebrew air-gap install starting: 2026-02-02 12:39:59 -0600
-Bundle root: /Users/robert/air-gapped-install
-Log file: /Users/robert/air-gapped-install/install_log.txt
-Args: --debug
-=============================================================================
-[DEBUG] Enabled. Extra command traces will be written to the log file only.
------ Context -----
-Time: 2026-02-02 12:39:59 -0600
-User: uid=0(root) gid=0(wheel) groups=0(wheel),1(daemon),2(kmem),3(sys),4(tty),5(operator),8(procview),9(procmod),12(everyone),20(staff),29(certusers),61(localaccounts),80(admin),701(com.apple.sharepoint.group.1),33(_appstore),98(_lpadmin),100(_lpoperator),204(_developer),250(_analyticsusers),395(com.apple.access_ftp),398(com.apple.access_screensharing),399(com.apple.access_ssh),400(com.apple.access_remote_ae)
-PWD:  /Users/robert/air-gapped-install
-umask: 0022
-uname: Darwin Roberts-Mac.local 24.6.0 Darwin Kernel Version 24.6.0: Wed Nov  5 21:30:23 PST 2025; root:xnu-11417.140.69.705.2~1/RELEASE_X86_64 x86_64
--------------------
-==> Checking for Xcode Command Line Tools...
-Xcode Command Line Tools found.
-==> Validating bundle structure...
-Found homebrew-cask.git
-Target architecture: x86_64
-Homebrew will be installed to: /usr/local
-Manifest verification disabled (use --verify to enable).
-==> Checking required permissions...
-==> Installing Homebrew files to /usr/local...
-[CMD] mkdir -p /usr/local 
-[CMD] mkdir -p /usr/local/Homebrew 
-[CMD] mkdir -p /usr/local/Homebrew/Library/Taps/homebrew 
-==> Copying brew.git into /usr/local/Homebrew ...
-[CMD] rsync -a --delete /Users/robert/air-gapped-install/homebrew/brew.git/ /usr/local/Homebrew/ 
-==> Copying homebrew-core.git tap ...
-[CMD] rsync -a --delete /Users/robert/air-gapped-install/homebrew/homebrew-core.git/ /usr/local/Homebrew/Library/Taps/homebrew/homebrew-core/ 
-==> Copying homebrew-cask.git tap ...
-[CMD] rsync -a --delete /Users/robert/air-gapped-install/homebrew/homebrew-cask.git/ /usr/local/Homebrew/Library/Taps/homebrew/homebrew-cask/ 
-==> Staging portable Ruby for x86_64 ...
-Using portable Ruby tarball: /Users/robert/air-gapped-install/ruby/x86_64/4261b46620060c791a35064396758ecfd939a349fba9b6541ec70526f062eb96--portable-ruby--4.0.1.catalina.bottle.tar.gz
-[CMD] mkdir -p /usr/local/Homebrew/Library/Homebrew/vendor 
-[CMD] tar -xzf /Users/robert/air-gapped-install/ruby/x86_64/4261b46620060c791a35064396758ecfd939a349fba9b6541ec70526f062eb96--portable-ruby--4.0.1.catalina.bottle.tar.gz -C /usr/local/Homebrew/Library/Homebrew/vendor 
-==> Linking brew into /usr/local/bin ...
-[CMD] mkdir -p /usr/local/bin 
-[CMD] ln -sf /usr/local/Homebrew/bin/brew /usr/local/bin/brew 
-==> Ensuring /usr/local is owned by the invoking user (Homebrew expects user-writeable prefix)...
-[CMD] chown -R robert:staff /usr/local 
-chown: /usr/local: Operation not permitted
-=============================================================================
-Homebrew air-gap install starting: 2026-02-02 12:46:31 -0600
-Bundle root: /Users/robert/air-gapped-install
-Log file: /Users/robert/air-gapped-install/install_log.txt
-Args: <none>
-=============================================================================
------ Context -----
-Time: 2026-02-02 12:46:31 -0600
+Time: 2026-02-02 12:51:57 -0600
 User: uid=0(root) gid=0(wheel) groups=0(wheel),1(daemon),2(kmem),3(sys),4(tty),5(operator),8(procview),9(procmod),12(everyone),20(staff),29(certusers),61(localaccounts),80(admin),701(com.apple.sharepoint.group.1),33(_appstore),98(_lpadmin),100(_lpoperator),204(_developer),250(_analyticsusers),395(com.apple.access_ftp),398(com.apple.access_screensharing),399(com.apple.access_ssh),400(com.apple.access_remote_ae)
 PWD:  /Users/robert/air-gapped-install
 umask: 0022
@@ -98,7 +26,7 @@ Target path: /usr/local
 Parent path: /usr
 df -h /usr:
 Filesystem        Size    Used   Avail Capacity iused ifree %iused  Mounted on
-/dev/disk1s5s1    80Gi    10Gi    50Gi    18%    427k  523M    0%   /
+/dev/disk1s5s1    80Gi    10Gi    50Gi    18%    427k  522M    0%   /
 stat -f for /usr:
 /usr   (stat failed)
 ls -ldO /usr/local:
