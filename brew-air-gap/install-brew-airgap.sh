@@ -92,6 +92,14 @@ run_cmd() {
   "$@"
 }
 
+run_cmd_sudo() {
+  if [[ ${USE_SUDO:-0} -eq 1 ]]; then
+    sudo "$@"
+  else
+    "$@"
+  fi
+}
+
 log_fs_info() {
   local path="$1"
   local parent
@@ -165,6 +173,16 @@ require_file() {
 
 show_context
 
+# Check for file that prevents Homebrew installation
+if [[ -f "/etc/homebrew/brew.no_install" ]]; then
+  BREW_NO_INSTALL="$(cat "/etc/homebrew/brew.no_install" 2>/dev/null || true)"
+  if [[ -n "$BREW_NO_INSTALL" ]]; then
+    die "Homebrew cannot be installed because ${BREW_NO_INSTALL}."
+  else
+    die "Homebrew cannot be installed because /etc/homebrew/brew.no_install exists."
+  fi
+fi
+
 # 1) Verify Xcode Command Line Tools (do not install)
 note "Checking for Xcode Command Line Tools..."
 if ! xcode-select -p >/dev/null 2>&1; then
@@ -195,13 +213,15 @@ else
   echo "WARNING: homebrew-cask.git not found; casks will not be available unless added later."
 fi
 
-# 3) Architecture + install prefix
+# 3) Architecture + install prefix/repository
 ARCH="$(uname -m)"
 if [[ "$ARCH" == "arm64" ]]; then
   BREW_PREFIX="/opt/homebrew"
+  BREW_REPOSITORY="$BREW_PREFIX"
   RUBY_ARCH_DIR="arm64"
 else
   BREW_PREFIX="/usr/local"
+  BREW_REPOSITORY="$BREW_PREFIX/Homebrew"
   RUBY_ARCH_DIR="x86_64"
 fi
 
@@ -209,6 +229,11 @@ echo "Target architecture: $ARCH"
 echo "Homebrew will be installed to: $BREW_PREFIX"
 
 log_fs_info "$BREW_PREFIX"
+
+# Prefix must be searchable if it already exists
+if [[ -d "$BREW_PREFIX" && ! -x "$BREW_PREFIX" ]]; then
+  die "The Homebrew prefix $BREW_PREFIX exists but is not searchable. Fix permissions (e.g., sudo chmod 775 $BREW_PREFIX)."
+fi
 
 # 4) Optional manifest verification
 if [[ $VERIFY -eq 1 ]]; then
@@ -240,16 +265,15 @@ else
   [[ -w "$BREW_PREFIX" ]] || NEEDS_SUDO=1
 fi
 
+USE_SUDO=0
 if [[ $NEEDS_SUDO -eq 1 ]]; then
-  cat <<EOF
-NOTE: Installing Homebrew to $BREW_PREFIX requires elevated privileges (sudo).
-Please re-run with:
-
-  sudo "$SCRIPT_DIR/install-brew-airgap.sh" ${DEBUG:+--debug} ${VERIFY:+--verify}
-
-Exiting without making changes.
-EOF
-  exit 3
+  if [[ $EUID -ne 0 ]]; then
+    if ! command -v sudo >/dev/null 2>&1; then
+      die "sudo is required to install to $BREW_PREFIX but was not found."
+    fi
+    USE_SUDO=1
+    echo "NOTE: Installing Homebrew to $BREW_PREFIX requires elevated privileges (sudo)."
+  fi
 fi
 
 # ----------------------------- install ----------------------------------------
@@ -257,13 +281,13 @@ fi
 note "Installing Homebrew files to $BREW_PREFIX..."
 
 # Ensure prefix exists
-run_cmd mkdir -p "$BREW_PREFIX"
+run_cmd_sudo mkdir -p "$BREW_PREFIX"
 
-# Create required directory structure BEFORE copying taps (fix for your cp error)
-# brew repo goes to: $BREW_PREFIX/Homebrew
-# taps go to:      $BREW_PREFIX/Homebrew/Library/Taps/homebrew/{homebrew-core,homebrew-cask}
-run_cmd mkdir -p "$BREW_PREFIX/Homebrew"
-run_cmd mkdir -p "$BREW_PREFIX/Homebrew/Library/Taps/homebrew"
+# Create required directory structure BEFORE copying taps
+# brew repo goes to: $BREW_REPOSITORY
+# taps go to:      $BREW_REPOSITORY/Library/Taps/homebrew/{homebrew-core,homebrew-cask}
+run_cmd_sudo mkdir -p "$BREW_REPOSITORY"
+run_cmd_sudo mkdir -p "$BREW_REPOSITORY/Library/Taps/homebrew"
 
 # Copy repos (use rsync if available for better progress; else cp -a)
 copy_tree() {
@@ -278,17 +302,17 @@ copy_tree() {
   fi
 }
 
-note "Copying brew.git into $BREW_PREFIX/Homebrew ..."
-copy_tree "$SCRIPT_DIR/homebrew/brew.git" "$BREW_PREFIX/Homebrew"
+note "Copying brew.git into $BREW_REPOSITORY ..."
+copy_tree "$SCRIPT_DIR/homebrew/brew.git" "$BREW_REPOSITORY"
 
 note "Copying homebrew-core.git tap ..."
 copy_tree "$SCRIPT_DIR/homebrew/homebrew-core.git" \
-  "$BREW_PREFIX/Homebrew/Library/Taps/homebrew/homebrew-core"
+  "$BREW_REPOSITORY/Library/Taps/homebrew/homebrew-core"
 
 if [[ -d "$SCRIPT_DIR/homebrew/homebrew-cask.git" ]]; then
   note "Copying homebrew-cask.git tap ..."
   copy_tree "$SCRIPT_DIR/homebrew/homebrew-cask.git" \
-    "$BREW_PREFIX/Homebrew/Library/Taps/homebrew/homebrew-cask"
+    "$BREW_REPOSITORY/Library/Taps/homebrew/homebrew-cask"
 fi
 
 # Install portable Ruby bottle for this architecture
@@ -307,15 +331,18 @@ fi
 RUBY_TAR="${RUBY_TARS[0]}"
 echo "Using portable Ruby tarball: $RUBY_TAR"
 
-VENDOR_DIR="$BREW_PREFIX/Homebrew/Library/Homebrew/vendor"
-run_cmd mkdir -p "$VENDOR_DIR"
-run_cmd tar -xzf "$RUBY_TAR" -C "$VENDOR_DIR"
+VENDOR_DIR="$BREW_REPOSITORY/Library/Homebrew/vendor"
+run_cmd_sudo mkdir -p "$VENDOR_DIR"
+run_cmd_sudo tar -xzf "$RUBY_TAR" -C "$VENDOR_DIR"
 
 # Create brew symlink
 note "Linking brew into $BREW_PREFIX/bin ..."
-run_cmd mkdir -p "$BREW_PREFIX/bin"
-[[ -f "$BREW_PREFIX/Homebrew/bin/brew" ]] || die "brew binary not found at $BREW_PREFIX/Homebrew/bin/brew"
-run_cmd ln -sf "$BREW_PREFIX/Homebrew/bin/brew" "$BREW_PREFIX/bin/brew"
+run_cmd_sudo mkdir -p "$BREW_PREFIX/bin"
+BREW_BIN="$BREW_REPOSITORY/bin/brew"
+[[ -f "$BREW_BIN" ]] || die "brew binary not found at $BREW_BIN"
+if [[ "$BREW_REPOSITORY" != "$BREW_PREFIX" ]]; then
+  run_cmd_sudo ln -sf "$BREW_BIN" "$BREW_PREFIX/bin/brew"
+fi
 
 # Ownership: Homebrew expects user-owned prefix
 note "Ensuring $BREW_PREFIX is owned by the invoking user (Homebrew expects user-writeable prefix)..."
@@ -324,7 +351,42 @@ if [[ "$OWNER" == "root" ]]; then
   die "Refusing to chown $BREW_PREFIX to root. Re-run with sudo from your user account."
 fi
 OWNER_GROUP="$(id -gn "$OWNER")"
-run_cmd chown -R "$OWNER":"$OWNER_GROUP" "$BREW_PREFIX"
+TARGET_GROUP="admin"
+if ! dscl . -read "/Groups/$TARGET_GROUP" >/dev/null 2>&1; then
+  TARGET_GROUP="$OWNER_GROUP"
+fi
+OWN_DIRS=(
+  "$BREW_REPOSITORY"
+  "$BREW_PREFIX/bin"
+  "$BREW_REPOSITORY/Library/Taps/homebrew"
+  "$BREW_REPOSITORY/Library/Homebrew/vendor"
+)
+for dir in "${OWN_DIRS[@]}"; do
+  if [[ -e "$dir" ]]; then
+    run_cmd_sudo chown -R "$OWNER":"$TARGET_GROUP" "$dir"
+    run_cmd_sudo chmod -R g+rwx "$dir"
+  fi
+done
+
+# Ensure Homebrew cache is writable
+HOMEBREW_CACHE="$HOME/Library/Caches/Homebrew"
+run_cmd mkdir -p "$HOMEBREW_CACHE"
+run_cmd_sudo chown -R "$OWNER":"$TARGET_GROUP" "$HOMEBREW_CACHE"
+run_cmd_sudo chmod -R g+rwx "$HOMEBREW_CACHE"
+
+# Ensure /etc/paths.d/homebrew is set for non-/usr/local installs
+if [[ -d "/etc/paths.d" && "$BREW_PREFIX" != "/usr/local" ]]; then
+  note "Configuring /etc/paths.d/homebrew ..."
+  if [[ $USE_SUDO -eq 1 ]]; then
+    printf '%s\n' "$BREW_PREFIX/bin" | sudo tee /etc/paths.d/homebrew >/dev/null
+    run_cmd_sudo chown root:wheel /etc/paths.d/homebrew
+    run_cmd_sudo chmod a+r /etc/paths.d/homebrew
+  else
+    printf '%s\n' "$BREW_PREFIX/bin" > /etc/paths.d/homebrew
+    run_cmd_sudo chown root:wheel /etc/paths.d/homebrew
+    run_cmd_sudo chmod a+r /etc/paths.d/homebrew
+  fi
+fi
 
 # ----------------------------- postflight -------------------------------------
 
