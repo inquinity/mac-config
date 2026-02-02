@@ -1,12 +1,16 @@
+Last login: Mon Feb  2 13:32:10 on console
+robert@Roberts-Mac ~ % cd air-gapped-install 
+robert@Roberts-Mac air-gapped-install % chmod u+x install-brew-airgap.sh 
+robert@Roberts-Mac air-gapped-install % ./install-brew-airgap.sh 
 =============================================================================
-Homebrew air-gap install starting: 2026-02-02 12:51:57 -0600
+Homebrew air-gap install starting: 2026-02-02 13:39:47 -0600
 Bundle root: /Users/robert/air-gapped-install
 Log file: /Users/robert/air-gapped-install/install_log.txt
 Args: <none>
 =============================================================================
 ----- Context -----
-Time: 2026-02-02 12:51:57 -0600
-User: uid=0(root) gid=0(wheel) groups=0(wheel),1(daemon),2(kmem),3(sys),4(tty),5(operator),8(procview),9(procmod),12(everyone),20(staff),29(certusers),61(localaccounts),80(admin),701(com.apple.sharepoint.group.1),33(_appstore),98(_lpadmin),100(_lpoperator),204(_developer),250(_analyticsusers),395(com.apple.access_ftp),398(com.apple.access_screensharing),399(com.apple.access_ssh),400(com.apple.access_remote_ae)
+Time: 2026-02-02 13:39:47 -0600
+User: uid=501(robert) gid=20(staff) groups=20(staff),12(everyone),61(localaccounts),79(_appserverusr),80(admin),81(_appserveradm),701(com.apple.sharepoint.group.1),33(_appstore),98(_lpadmin),100(_lpoperator),204(_developer),250(_analyticsusers),395(com.apple.access_ftp),398(com.apple.access_screensharing),399(com.apple.access_ssh),400(com.apple.access_remote_ae)
 PWD:  /Users/robert/air-gapped-install
 umask: 0022
 uname: Darwin Roberts-Mac.local 24.6.0 Darwin Kernel Version 24.6.0: Wed Nov  5 21:30:23 PST 2025; root:xnu-11417.140.69.705.2~1/RELEASE_X86_64 x86_64
@@ -21,29 +25,267 @@ Xcode Command Line Tools found.
 Found homebrew-cask.git
 Target architecture: x86_64
 Homebrew will be installed to: /usr/local
------ Filesystem info -----
-Target path: /usr/local
-Parent path: /usr
-df -h /usr:
-Filesystem        Size    Used   Avail Capacity iused ifree %iused  Mounted on
-/dev/disk1s5s1    80Gi    10Gi    50Gi    18%    427k  522M    0%   /
-stat -f for /usr:
-/usr   (stat failed)
-ls -ldO /usr/local:
-drwxr-xr-x  4 root  wheel  sunlnk 128 Feb  2 12:35 /usr/local
-ls -ldO /usr:
-drwxr-xr-x@ 11 root  wheel  restricted,hidden 352 Nov 22 02:17 /usr
-mount entries (root and target parent):
-  /dev/disk1s5s1 on / (apfs, sealed, local, read-only, journaled)
----------------------------
 Manifest verification disabled (use --verify to enable).
 ==> Checking required permissions...
+NOTE: Installing Homebrew to /usr/local requires elevated privileges (sudo).
 ==> Installing Homebrew files to /usr/local...
+Password:
 ==> Copying brew.git into /usr/local/Homebrew ...
-==> Copying homebrew-core.git tap ...
-==> Copying homebrew-cask.git tap ...
-==> Staging portable Ruby for x86_64 ...
-Using portable Ruby tarball: /Users/robert/air-gapped-install/ruby/x86_64/4261b46620060c791a35064396758ecfd939a349fba9b6541ec70526f062eb96--portable-ruby--4.0.1.catalina.bottle.tar.gz
-==> Linking brew into /usr/local/bin ...
-==> Ensuring /usr/local is owned by the invoking user (Homebrew expects user-writeable prefix)...
-chown: /usr/local: Operation not permitted
+rsync(780): error: Library/Taps/homebrew: unlinkat: Permission denied
+rsync(780): error: Library/Taps: unlinkat: Permission denied
+rsync(780): error: ./Library/Taps/homebrew: unlinkat: Permission denied
+rsync(780): error: ./Library/Taps: unlinkat: Permission denied
+rsync(780): error: .claude/: mkpathat: Permission denied
+rsync(780): error: .cursor/: mkpathat: Permission denied
+rsync(780): error: .devcontainer/: mkpathat: Permission denied
+rsync(780): error: .git/: mkpathat: Permission denied
+rsync(780): error: .git/hooks: mkpathat: Permission denied
+rsync(780): error: .git/info: mkpathat: Permission denied
+rsync(780): error: .git/logs: mkpathat: Permission denied
+rsync(780): error: .git/logs/refs: mkpathat: Permission denied
+rsync(780): error: .git/logs/refs/heads: mkpathat: Permission denied
+rsync(780): error: .git/logs/refs/remotes: mkpathat: Permission denied
+rsync(780): error: .git/logs/refs/remotes/origin: mkpathat: Permission denied
+rsync(780): error: .git/logs/refs/remotes/origin/livecheck: mkpathat: Permission denied
+rsync(780): error: .git/objects: mkpathat: Permission denied
+rsync(780): error: .git/objects/02: mkpathat: Permission denied
+rsync(780): error: .git/objects/04: mkpathat: Permission denied
+rsync(780): error: .git/objects/08: mkpathat: Permission denied
+rsync(780): error: .git/objects/09: mkpathat: Permission denied
+rsync(780): error: .git/objects/0f: mkpathat: Permission denied
+rsync(780): error: .git/objects/11: mkpathat: Permission denied
+rsync(780): error: .git/objects/15: mkpathat: Permission denied
+rsync(780): error: .git/objects/16: mkpathat: Permission denied
+rsync(780): error: .git/objects/17: mkpathat: Permission denied
+rsync(780): error: .git/objects/1b: mkpathat: Permission denied
+rsync(780): error: .git/objects/1d: mkpathat: Permission denied
+rsync(780): error: .git/objects/1e: mkpathat: Permission denied
+rsync(780): error: .git/objects/1f: mkpathat: Permission denied
+rsync(780): error: .git/objects/20: mkpathat: Permission denied
+rsync(780): error: .git/objects/21: mkpathat: Permission denied
+rsync(780): error: .git/objects/22: mkpathat: Permission denied
+rsync(780): error: .git/objects/27: mkpathat: Permission denied
+rsync(780): error: .git/objects/28: mkpathat: Permission denied
+rsync(780): error: .git/objects/30: mkpathat: Permission denied
+rsync(780): error: .git/objects/35: mkpathat: Permission denied
+rsync(780): error: .git/objects/39: mkpathat: Permission denied
+rsync(780): error: .git/objects/3d: mkpathat: Permission denied
+rsync(780): error: .git/objects/3e: mkpathat: Permission denied
+rsync(780): error: .git/objects/42: mkpathat: Permission denied
+rsync(780): error: .git/objects/43: mkpathat: Permission denied
+rsync(780): error: .git/objects/44: mkpathat: Permission denied
+rsync(780): error: .git/objects/47: mkpathat: Permission denied
+rsync(780): error: .git/objects/48: mkpathat: Permission denied
+rsync(780): error: .git/objects/4a: mkpathat: Permission denied
+rsync(780): error: .git/objects/50: mkpathat: Permission denied
+rsync(780): error: .git/objects/56: mkpathat: Permission denied
+rsync(780): error: .git/objects/58: mkpathat: Permission denied
+rsync(780): error: .git/objects/5a: mkpathat: Permission denied
+rsync(780): error: .git/objects/5d: mkpathat: Permission denied
+rsync(780): error: .git/objects/62: mkpathat: Permission denied
+rsync(780): error: .git/objects/64: mkpathat: Permission denied
+rsync(780): error: .git/objects/65: mkpathat: Permission denied
+rsync(780): error: .git/objects/69: mkpathat: Permission denied
+rsync(780): error: .git/objects/6c: mkpathat: Permission denied
+rsync(780): error: .git/objects/6d: mkpathat: Permission denied
+rsync(780): error: .git/objects/71: mkpathat: Permission denied
+rsync(780): error: .git/objects/72: mkpathat: Permission denied
+rsync(780): error: .git/objects/77: mkpathat: Permission denied
+rsync(780): error: .git/objects/7d: mkpathat: Permission denied
+rsync(780): error: .git/objects/7e: mkpathat: Permission denied
+rsync(780): error: .git/objects/7f: mkpathat: Permission denied
+rsync(780): error: .git/objects/80: mkpathat: Permission denied
+rsync(780): error: .git/objects/82: mkpathat: Permission denied
+rsync(780): error: .git/objects/86: mkpathat: Permission denied
+rsync(780): error: .git/objects/87: mkpathat: Permission denied
+rsync(780): error: .git/objects/88: mkpathat: Permission denied
+rsync(780): error: .git/objects/8c: mkpathat: Permission denied
+rsync(780): error: .git/objects/94: mkpathat: Permission denied
+rsync(780): error: .git/objects/95: mkpathat: Permission denied
+rsync(780): error: .git/objects/96: mkpathat: Permission denied
+rsync(780): error: .git/objects/97: mkpathat: Permission denied
+rsync(780): error: .git/objects/9b: mkpathat: Permission denied
+rsync(780): error: .git/objects/9c: mkpathat: Permission denied
+rsync(780): error: .git/objects/a0: mkpathat: Permission denied
+rsync(780): error: .git/objects/a1: mkpathat: Permission denied
+rsync(780): error: .git/objects/a4: mkpathat: Permission denied
+rsync(780): error: .git/objects/a5: mkpathat: Permission denied
+rsync(780): error: .git/objects/aa: mkpathat: Permission denied
+rsync(780): error: .git/objects/ab: mkpathat: Permission denied
+rsync(780): error: .git/objects/ad: mkpathat: Permission denied
+rsync(780): error: .git/objects/af: mkpathat: Permission denied
+rsync(780): error: .git/objects/b4: mkpathat: Permission denied
+rsync(780): error: .git/objects/b5: mkpathat: Permission denied
+rsync(780): error: .git/objects/b6: mkpathat: Permission denied
+rsync(780): error: .git/objects/b8: mkpathat: Permission denied
+rsync(780): error: .git/objects/b9: mkpathat: Permission denied
+rsync(780): error: .git/objects/c5: mkpathat: Permission denied
+rsync(780): error: .git/objects/c8: mkpathat: Permission denied
+rsync(780): error: .git/objects/c9: mkpathat: Permission denied
+rsync(780): error: .git/objects/cf: mkpathat: Permission denied
+rsync(780): error: .git/objects/d1: mkpathat: Permission denied
+rsync(780): error: .git/objects/d3: mkpathat: Permission denied
+rsync(780): error: .git/objects/d4: mkpathat: Permission denied
+rsync(780): error: .git/objects/d5: mkpathat: Permission denied
+rsync(780): error: .git/objects/d7: mkpathat: Permission denied
+rsync(780): error: .git/objects/d9: mkpathat: Permission denied
+rsync(780): error: .git/objects/db: mkpathat: Permission denied
+rsync(780): error: .git/objects/e1: mkpathat: Permission denied
+rsync(780): error: .git/objects/e3: mkpathat: Permission denied
+rsync(780): error: .git/objects/f0: mkpathat: Permission denied
+rsync(780): error: .git/objects/f3: mkpathat: Permission denied
+rsync(780): error: .git/objects/f8: mkpathat: Permission denied
+rsync(780): error: .git/objects/f9: mkpathat: Permission denied
+rsync(780): error: .git/objects/fe: mkpathat: Permission denied
+rsync(780): error: .git/objects/info: mkpathat: Permission denied
+rsync(780): error: .git/objects/pack: mkpathat: Permission denied
+rsync(780): error: .git/refs: mkpathat: Permission denied
+rsync(780): error: .git/refs/heads: mkpathat: Permission denied
+rsync(780): error: .git/refs/remotes: mkpathat: Permission denied
+rsync(780): error: .git/refs/remotes/origin: mkpathat: Permission denied
+rsync(780): error: .git/refs/remotes/origin/livecheck: mkpathat: Permission denied
+rsync(780): error: .git/refs/tags: mkpathat: Permission denied
+rsync(780): error: .github/: mkpathat: Permission denied
+rsync(780): error: .github/ISSUE_TEMPLATE: mkpathat: Permission denied
+rsync(780): error: .github/codeql: mkpathat: Permission denied
+rsync(780): error: .github/codeql/extensions: mkpathat: Permission denied
+rsync(780): error: .github/workflows: mkpathat: Permission denied
+rsync(780): error: .sublime/: mkpathat: Permission denied
+rsync(780): error: .vscode/: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/.bundle: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/aliases: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/api: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/api/formula: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/bundle: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/bundle/commands: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/cask: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/cask/artifact: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/cask/dsl: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/cask/utils: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/cli: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/cmake: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/cmd: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/command-not-found: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/completions: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/data: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/data/schemas: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/data/spdx: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/debrew: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/dev-cmd: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/extend: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/extend/ENV: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/extend/file: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/extend/hash: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/extend/object: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/extend/os: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/extend/os/bundle: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/extend/os/bundle/commands: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/extend/os/cask: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/extend/os/cask/artifact: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/extend/os/cmd: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/extend/os/dev-cmd: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/extend/os/extend: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/extend/os/extend/ENV: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/extend/os/language: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/extend/os/linux: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/extend/os/linux/bundle: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/extend/os/linux/cask: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/extend/os/linux/cask/artifact: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/extend/os/linux/cmd: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/extend/os/linux/dev-cmd: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/extend/os/linux/extend: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/extend/os/linux/extend/ENV: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/extend/os/linux/hardware: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/extend/os/linux/requirements: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/extend/os/mac: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/extend/os/mac/bundle: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/extend/os/mac/cask: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/extend/os/mac/cask/artifact: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/extend/os/mac/dev-cmd: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/extend/os/mac/extend: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/extend/os/mac/extend/ENV: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/extend/os/mac/hardware: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/extend/os/mac/language: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/extend/os/mac/unpack_strategy: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/extend/os/mac/utils: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/extend/os/requirements: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/extend/os/unpack_strategy: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/extend/os/utils: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/extend/pathname: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/formula-analytics: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/language: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/livecheck: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/livecheck/strategy: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/manpages: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/manpages/converter: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/manpages/parser: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/os: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/os/linux: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/os/mac: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/os/mac/pkgconfig: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/os/mac/pkgconfig/10.15: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/os/mac/pkgconfig/11.0: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/os/mac/pkgconfig/11.1: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/os/mac/pkgconfig/11: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/os/mac/pkgconfig/12: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/os/mac/pkgconfig/13: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/os/mac/pkgconfig/14: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/os/mac/pkgconfig/15: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/os/mac/pkgconfig/26: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/requirements: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/rubocops: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/rubocops/cask: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/rubocops/cask/ast: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/rubocops/cask/constants: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/rubocops/cask/extend: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/rubocops/cask/mixin: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/rubocops/extend: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/rubocops/shared: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/services: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/services/commands: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/services/system: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/shims: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/shims/gems: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/shims/linux: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/shims/linux/super: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/shims/mac: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/shims/mac/shared: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/shims/mac/shared/include: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/shims/mac/shared/include/llvm: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/shims/mac/super: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/shims/scm: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/shims/shared: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/shims/super: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/sorbet: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/sorbet/rbi: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/sorbet/rbi/annotations: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/sorbet/rbi/dsl: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/sorbet/rbi/dsl/cask: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/sorbet/rbi/dsl/cask/dsl: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/sorbet/rbi/dsl/homebrew: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/sorbet/rbi/dsl/homebrew/api: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/sorbet/rbi/dsl/homebrew/cmd: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/sorbet/rbi/dsl/homebrew/dev_cmd: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/sorbet/rbi/dsl/homebrew/livecheck: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/sorbet/rbi/dsl/homebrew/livecheck/strategy: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/sorbet/rbi/dsl/homebrew/livecheck/strategy/extract_plist: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/sorbet/rbi/dsl/homebrew/livecheck/strategy/sparkle: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/sorbet/rbi/dsl/rubo_cop: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/sorbet/rbi/dsl/rubo_cop/cask: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/sorbet/rbi/dsl/rubo_cop/cask/ast: mkpathat: Permission denied
+rsync(780): error: mkstempat: '..dockerignore.ze44Z69V5c': Permission denied
+rsync(780): error: Library/Homebrew/sorbet/rbi/dsl/rubo_cop/cop: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/sorbet/rbi/dsl/rubo_cop/cop/cask: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/sorbet/rbi/dsl/rubo_cop/cop/formula_audit: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/sorbet/rbi/dsl/rubo_cop/cop/formula_audit_strict: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/sorbet/rbi/dsl/rubo_cop/cop/homebrew: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/sorbet/rbi/dsl/utils: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/sorbet/rbi/dsl/utils/ast: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/sorbet/rbi/gems: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/sorbet/tapioca: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/sorbet/tapioca/compilers: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/sorbet/tapioca/compilers/cask: mkpathat: Permission denied
+rsync(780): error: Library/Homebrew/standalone: mkpathat: Permission denied
+rsync(780): error: .dockerignore: utimensat (2): No such file or directory
+rsync(779): error: unexpected end of file
