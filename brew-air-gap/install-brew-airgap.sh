@@ -1138,7 +1138,6 @@ ensure_rcfile "${shell_rcfile}"
 
 brew_shellenv_line="eval \"\$(${HOMEBREW_PREFIX}/bin/brew shellenv${shellenv_suffix})\""
 append_line_if_missing "${brew_shellenv_line}" "${shell_rcfile}"
-eval "\$(${HOMEBREW_PREFIX}/bin/brew shellenv${shellenv_suffix})"
 
 if [[ -n "${non_default_repos}" ]]
 then
