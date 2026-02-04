@@ -73,8 +73,7 @@ BREW_DL_DIR="$BREW_CACHE/downloads"
 echo "Homebrew cache: $BREW_CACHE"
 echo "Homebrew downloads dir: $BREW_DL_DIR"
 
-mkdir -p "$OUTDIR/repos" \
-         "$OUTDIR/homebrew" \
+mkdir -p "$OUTDIR/homebrew" \
          "$OUTDIR/ruby/arm64" \
          "$OUTDIR/ruby/x86_64"
 
@@ -96,17 +95,10 @@ clone_or_update() {
 
 echo
 echo "==> Cloning/updating Homebrew repositories (full history)"
-cd "$OUTDIR/repos"
+cd "$OUTDIR/homebrew"
 clone_or_update "https://github.com/Homebrew/brew.git"          "brew.git"
 clone_or_update "https://github.com/Homebrew/homebrew-core.git" "homebrew-core.git"
 clone_or_update "https://github.com/Homebrew/homebrew-cask.git" "homebrew-cask.git"
-
-echo
-echo "==> Copying repos into bundle homebrew/ directory"
-rm -rf "$OUTDIR/homebrew/brew.git" "$OUTDIR/homebrew/homebrew-core.git" "$OUTDIR/homebrew/homebrew-cask.git"
-cp -a "$OUTDIR/repos/brew.git" "$OUTDIR/homebrew/"
-cp -a "$OUTDIR/repos/homebrew-core.git" "$OUTDIR/homebrew/"
-cp -a "$OUTDIR/repos/homebrew-cask.git" "$OUTDIR/homebrew/"
 
 # --- portable-ruby fetch + stage ---------------------------------------------
 
