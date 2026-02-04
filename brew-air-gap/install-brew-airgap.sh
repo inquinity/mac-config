@@ -1102,23 +1102,43 @@ case "${SHELL}" in
     ;;
 esac
 
-if grep -qs "eval \"\$(${HOMEBREW_PREFIX}/bin/brew shellenv[^\"]*)\"" "${shell_rcfile}"
-then
-  if ! [[ -x "$(command -v brew)" ]]
+ensure_rcfile() {
+  if [[ ! -f "$1" ]]
   then
-    cat <<EOS
-- Run this command in your terminal to add Homebrew to your ${tty_bold}PATH${tty_reset}:
-    eval "\$(${HOMEBREW_PREFIX}/bin/brew shellenv${shellenv_suffix})"
-EOS
+    execute "${TOUCH[@]}" "$1"
   fi
-else
-  cat <<EOS
-- Run these commands in your terminal to add Homebrew to your ${tty_bold}PATH${tty_reset}:
-    echo >> ${shell_rcfile}
-    echo 'eval "\$(${HOMEBREW_PREFIX}/bin/brew shellenv${shellenv_suffix})"' >> ${shell_rcfile}
-    eval "\$(${HOMEBREW_PREFIX}/bin/brew shellenv${shellenv_suffix})"
-EOS
-fi
+}
+
+append_line_if_missing() {
+  local line="$1"
+  local file="$2"
+  if ! grep -qsF "${line}" "${file}"
+  then
+    printf "%s\n" "${line}" >> "${file}"
+  fi
+}
+
+set_or_replace_export() {
+  local var_name="$1"
+  local var_value="$2"
+  local file="$3"
+  local value_escaped
+  printf -v value_escaped '%q' "${var_value}"
+  local line="export ${var_name}=${value_escaped}"
+
+  if grep -qs "^export ${var_name}=" "${file}"
+  then
+    /usr/bin/sed -i '' -e "s|^export ${var_name}=.*|${line}|" "${file}"
+  else
+    printf "%s\n" "${line}" >> "${file}"
+  fi
+}
+
+ensure_rcfile "${shell_rcfile}"
+
+brew_shellenv_line="eval \"\$(${HOMEBREW_PREFIX}/bin/brew shellenv${shellenv_suffix})\""
+append_line_if_missing "${brew_shellenv_line}" "${shell_rcfile}"
+eval "\$(${HOMEBREW_PREFIX}/bin/brew shellenv${shellenv_suffix})"
 
 if [[ -n "${non_default_repos}" ]]
 then
@@ -1127,10 +1147,12 @@ then
   then
     plural="s"
   fi
-  printf -- "- Run these commands in your terminal to add the non-default Git remote%s for %s:\n" "${plural}" "${non_default_repos}"
-  printf "    echo '# Set non-default Git remote%s for %s.' >> %s\n" "${plural}" "${non_default_repos}" "${shell_rcfile}"
-  printf "    echo '%s' >> ${shell_rcfile}\n" "${additional_shellenv_commands[@]}"
-  printf "    %s\n" "${additional_shellenv_commands[@]}"
+  printf -- "- Adding non-default Git remote%s for %s to %s\n" "${plural}" "${non_default_repos}" "${shell_rcfile}"
+  append_line_if_missing "# Set non-default Git remote${plural} for ${non_default_repos}." "${shell_rcfile}"
+  for export_line in "${additional_shellenv_commands[@]}"
+  do
+    append_line_if_missing "${export_line}" "${shell_rcfile}"
+  done
 fi
 
 if [[ -n "${HOMEBREW_ON_LINUX-}" ]]
@@ -1162,9 +1184,29 @@ then
 EOS
 fi
 
+if [[ -n "${NONINTERACTIVE-}" ]]
+then
+  warn "Skipping Artifactory token setup because NONINTERACTIVE is set."
+else
+  printf "\nPlease paste your Artifactory token and press ENTER: "
+  IFS= read -r artifactory_token
+  if [[ -z "${artifactory_token}" ]]
+  then
+    warn "No Artifactory token provided. Skipping token configuration."
+  else
+    set_or_replace_export "HOMEBREW_ARTIFACT_DOMAIN" "https://repo1.uhc.com/artifactory/homebrew" "${shell_rcfile}"
+    set_or_replace_export "HOMEBREW_DOCKER_REGISTRY_TOKEN" "${artifactory_token}" "${shell_rcfile}"
+    set_or_replace_export "HOMEBREW_NO_INSTALL_FROM_API" "1" "${shell_rcfile}"
+    printf "Added Artifactory settings to %s\n" "${shell_rcfile}"
+  fi
+fi
+
 cat <<EOS
 - Run ${tty_bold}brew help${tty_reset} to get started
 - Further documentation:
     ${tty_underline}https://docs.brew.sh${tty_reset}
 
+- Review the following documentation for configuring homebrew for Artifactory.
+    ${tty_underline}https://engineeringsupportportal.uhg.com/platform?nav=JFROG?subNav=MIRRORING_HOMEBREW${tty_reset}
+    (This is a special case where repo1 is still being used)
 EOS
