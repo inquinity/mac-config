@@ -23,23 +23,25 @@ print_colored() {
 # printf "Sourcing docker.shlib...\n"
 
 docker-ls() {
-    # Detect container runtime type
-    runtimes=$(docker info 2>/dev/null | grep "Runtimes:" | awk '{print $2}')
-    if [ "$runtimes" = "io.containerd.runc.v2" ]; then
+    runtimes=$(docker info 2>/dev/null | grep "Runtimes:" | awk '{print $2}') 
+    if [ "$runtimes" = "io.containerd.runc.v2" ]
+    then
         print_colored "$COLOR_YELLOW" "Using containerd"
     else
         print_colored "$COLOR_YELLOW" "Using standard container"
     fi
     
-    format_args="{{.Repository}}:{{.Tag}}\t{{.CreatedAt}}\t{{.ID}}\t{{.Size}}"
-    if [ -n "$1" ]; then
-        result=$(docker image ls --format "${format_args}")
-        for term in "$@"; do
-            result=$(printf "%s" "$result" | fgrep "$term")
+    if [ -n "$1" ]
+    then
+        result=$(docker image ls --all --format="")
+        result=$(echo "$result" | tail -n +2)
+        for term in "$@"
+        do
+            result=$(echo "$result" | grep -F "$term") 
         done
         printf "%s\n" "$result"
     else
-        docker image ls --format "${format_args}"
+        docker image ls --all --format=""
     fi
 }
 
