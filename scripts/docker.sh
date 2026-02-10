@@ -23,8 +23,8 @@ print_colored() {
 # printf "Sourcing docker.shlib...\n"
 
 docker-ls() {
-    runtimes=$(docker info 2>/dev/null | grep "Runtimes:" | awk '{print $2}') 
-    if [ "$runtimes" = "io.containerd.runc.v2" ]
+    storage_driver=$(docker info 2>/dev/null | grep -i "Storage Driver:" | awk '{print $NF}')
+    if [ "$storage_driver" = "overlayfs" ]
     then
         print_colored "$COLOR_YELLOW" "Using containerd"
     else
