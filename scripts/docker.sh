@@ -23,34 +23,30 @@ print_colored() {
 # Ensure Docker CLI and daemon are reachable before running commands
 docker_ready() {
     if ! command -v docker >/dev/null 2>&1; then
-        print_colored "$COLOR_RED" "docker CLI not found in PATH."
+        print_colored "$COLOR_RED" "docker CLI not found."
         return 1
     fi
 
     if ! docker info >/dev/null 2>&1; then
-        print_colored "$COLOR_YELLOW" "docker CLI found but daemon/socket is unreachable."
+        print_colored "$COLOR_YELLOW" "docker daemon/socket is unreachable."
         return 1
     fi
 }
 
-# printf "Sourcing docker.shlib...\n"
-
 docker-ls() {
     docker_ready || return 1
 
-  
-    if [ -n "$1" ]
-    then
-        result=$(docker image ls --all --format="")
-        result=$(echo "$result" | tail -n +2)
-        for term in "$@"
-        do
-            result=$(echo "$result" | grep -F "$term") 
+    format_args="{{.Repository}}:{{.Tag}}\t{{.CreatedAt}}\t{{.ID}}\t{{.Size}}"
+    if [ -n "$1" ]; then
+        result=$(docker image ls --format "${format_args}")
+        for term in "$@"; do
+            result=$(printf "%s" "$result" | fgrep "$term")
         done
         printf "%s\n" "$result"
     else
-        docker image ls --all --format=""
+        docker image ls --format "${format_args}"
     fi
+
 }
 
 docker-sha() { 
