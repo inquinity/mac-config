@@ -2,7 +2,7 @@
 
 # This script is authored by Robert Altman, OptumRx
 # robert.altman@optum.com
-# Version 0.2.0
+# Version 2.0.0
 # https://github.com/optum-rx-tech-ops/devsecops-team/blob/main/Docker/Scripts/grype-all.sh
 #
 # Purpose:
