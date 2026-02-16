@@ -1,7 +1,7 @@
 #!/bin/bash
 # docker.sh - Shell library for Docker container management functions
 # This file should be sourced, not executed directly
-# Usage: source ~/mac-config/docker.sh
+# Usage: source ~/path/docker.sh
 
 # Define color codes for terminal output
 COLOR_GREEN="\e[32m"         # Used for success messages and instructions

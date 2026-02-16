@@ -11,7 +11,7 @@
 # that introduced that layer.
 #
 # Requirements:
-# 1. docker cli installed
+# 1. A container runtime: nerdctl (Rancher Desktop, default namespace assumed) or docker
 # 2. grype installed
 # 3. jq installed
 
@@ -30,6 +30,37 @@ print_colored() {
     local color=$1
     local message=$2
     printf "${color}${message}${COLOR_RESET}\n"
+}
+
+# -----------------------
+# Container runtime detection (prefer nerdctl)
+# -----------------------
+typeset -g CONTAINER_BIN=""
+typeset -a CONTAINER_ARGS
+CONTAINER_ARGS=()
+NERDCTL_NS=${NERDCTL_NAMESPACE:-default}
+
+detect_container_runtime() {
+  if command -v nerdctl >/dev/null 2>&1 && nerdctl --namespace "${NERDCTL_NS}" info >/dev/null 2>&1; then
+    CONTAINER_BIN="nerdctl"
+    CONTAINER_ARGS=(--namespace "${NERDCTL_NS}")
+    print_colored "${COLOR_YELLOW}" "Using nerdctl (namespace ${NERDCTL_NS})."
+    return 0
+  fi
+
+  if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
+    CONTAINER_BIN="docker"
+    CONTAINER_ARGS=()
+    print_colored "${COLOR_YELLOW}" "Using docker daemon."
+    return 0
+  fi
+
+  print_colored "${COLOR_RED}" "No container runtime daemon reachable (tried nerdctl namespace '${NERDCTL_NS}' then docker)."
+  return 1
+}
+
+ctr() {
+  "${CONTAINER_BIN}" "${CONTAINER_ARGS[@]}" "$@"
 }
 
 usage() {
@@ -67,6 +98,9 @@ for a in "$@"; do
   fi
 done
 
+# Detect runtime early
+detect_container_runtime || exit 1
+
 # Wrapper mode (default): just run grype --by-cve with original args.
 if [[ "${want_layers}" != "true" ]]; then
   if ! command -v grype &> /dev/null; then
@@ -89,11 +123,6 @@ fi
 # -----------------------
 # Validate required tools (layers mode)
 # -----------------------
-
-if ! command -v docker &> /dev/null; then
-  print_colored "${COLOR_RED}" "Error: docker cli is not installed. Please install docker cli to use this script." >&2
-  exit 1
-fi
 
 if ! command -v grype &> /dev/null; then
   print_colored "${COLOR_RED}" "Error: grype is not installed. Please install grype to use this script." >&2
@@ -156,9 +185,9 @@ if [[ "${keep_files}" == "true" ]]; then
 fi
 
 # Validate image exists locally
-docker inspect "${image_name}" > /dev/null 2>&1
+ctr image inspect "${image_name}" > /dev/null 2>&1
 if [ $? -ne 0 ]; then
-  print_colored "${COLOR_RED}" "Requested image \"${image_name}\" does not exist locally (docker inspect failed)."
+  print_colored "${COLOR_RED}" "Requested image \"${image_name}\" does not exist locally (inspect failed)."
   exit 1
 fi
 
@@ -182,12 +211,14 @@ fi
 # -----------------------
 print_colored "${COLOR_YELLOW}" "Collecting layer metadata for ${image_name}..."
 
-# Build a reliable mapping of layer digest → Dockerfile created_by by reading
-# the image's config history (created_by) and manifest layer list.
+# Build a reliable mapping of layer digest/diff_id → Dockerfile created_by by reading
+# the image's config history (created_by), manifest layer list (compressed digests),
+# and rootfs diff_ids (uncompressed digests). Grype typically reports layerID as the
+# diff_id, so we index by diff_id to avoid mismatches.
 #
-# This is done entirely in-memory (no temp files) by streaming `docker image save`
+# This is done entirely in-memory (no temp files) by streaming `image save`
 # into `tar -xOf -`.
-manifest_json="$(docker image save "${image_name}" | tar -xOf - manifest.json 2>/dev/null)"
+manifest_json="$(ctr image save "${image_name}" | tar -xOf - manifest.json 2>/dev/null)"
 if [[ -z "${manifest_json}" ]]; then
   print_colored "${COLOR_RED}" "Error: failed to read manifest.json from docker image save stream."
   exit 1
@@ -199,7 +230,7 @@ if [[ -z "${config_path}" || "${config_path}" == "null" ]]; then
   exit 1
 fi
 
-config_json="$(docker image save "${image_name}" | tar -xOf - "${config_path}" 2>/dev/null)"
+config_json="$(ctr image save "${image_name}" | tar -xOf - "${config_path}" 2>/dev/null)"
 if [[ -z "${config_json}" ]]; then
   print_colored "${COLOR_RED}" "Error: failed to read image config JSON (${config_path}) from docker image save stream."
   exit 1
@@ -207,32 +238,32 @@ fi
 
 layers_len="$(print -r -- "${manifest_json}" | jq -r '.[0].Layers | length' 2>/dev/null)"
 hist_len="$(print -r -- "${config_json}" | jq -r '.history | map(select((.empty_layer // false) | not)) | length' 2>/dev/null)"
+diff_len="$(print -r -- "${config_json}" | jq -r '.rootfs.diff_ids | length' 2>/dev/null)"
 if [[ -n "${layers_len}" && -n "${hist_len}" && "${layers_len}" != "${hist_len}" ]]; then
-    print_colored "${COLOR_YELLOW}" "WARN: layer/history length mismatch: layers=${layers_len}, history(non-empty)=${hist_len}. Mapping will use the shortest length."
+    print_colored "${COLOR_YELLOW}" "WARN: layer/history length mismatch: layers=${layers_len}, history(non-empty)=${hist_len}. Mapping will align by index from start."
+fi
+if [[ -n "${diff_len}" && -n "${hist_len}" && "${diff_len}" != "${hist_len}" ]]; then
+    print_colored "${COLOR_YELLOW}" "WARN: diff_ids/history length mismatch: diff_ids=${diff_len}, history(non-empty)=${hist_len}. Mapping will use the shortest length."
 fi
 
 typeset -a layers
 typeset -a created_by
+typeset -a diff_ids
 layers=( ${(f)"$(print -r -- "${manifest_json}" | jq -r '.[0].Layers[]' 2>/dev/null)"} )
 created_by=( ${(f)"$(print -r -- "${config_json}" | jq -r '.history[] | select((.empty_layer // false) | not) | (.created_by // "")' 2>/dev/null)"} )
+diff_ids=( ${(f)"$(print -r -- "${config_json}" | jq -r '.rootfs.diff_ids[]' 2>/dev/null)"} )
 
-n_layers=${#layers[@]}
 n_hist=${#created_by[@]}
-if (( n_layers < n_hist )); then
-  n_map=${n_layers}
-else
-  n_map=${n_hist}
-fi
+n_diff=${#diff_ids[@]}
+n_map=$n_hist
+if (( n_diff < n_map )); then n_map=${n_diff}; fi
 
 typeset -A LAYER_CREATED_BY
 typeset -A LAYER_INDEX
 
 for (( i=1; i<=n_map; i++ )); do
-  layerPath="${layers[$i]}"
-  digest="${layerPath#blobs/sha256/}"
-  digest="${digest%.tar}"
-  digest="${digest%/layer.tar}"
-  digest="${digest#sha256:}"
+  diff="${diff_ids[$i]}"
+  diff="${diff#sha256:}"
 
   cmd="${created_by[$i]}"
   # Normalize the command similarly to docker history readability.
@@ -242,9 +273,9 @@ for (( i=1; i<=n_map; i++ )); do
   cmd="${cmd//$'\t'/ }"
   cmd="${cmd//  / }"
 
-  if [[ -n "${digest}" ]]; then
-    LAYER_CREATED_BY["${digest}"]="${cmd}"
-    LAYER_INDEX["${digest}"]="${i}"
+  if [[ -n "${diff}" ]]; then
+    LAYER_CREATED_BY["${diff}"]="${cmd}"
+    LAYER_INDEX["${diff}"]="${i}"
   fi
 done
 
@@ -300,8 +331,8 @@ command grype "${image_name}" --by-cve --scope all-layers -o json 2> /dev/null \
               ($a.type // ""),
               ($v.severity // ""),
               ($v.id // ""),
-              ($digest[0:12]),
-              $digest
+              ($digest | sub("^sha256:";"") | .[0:12]),
+              ($digest | sub("^sha256:";""))
             ] | @tsv
         end
     ' \
@@ -315,7 +346,7 @@ command grype "${image_name}" --by-cve --scope all-layers -o json 2> /dev/null \
             short_digest="-"
         elif [[ -z "${cmd}" ]]; then
           idx="${idx:-?}"
-          cmd="(no matching image history entry for this layer)"
+          cmd="(no matching image history entry for this layer diff_id)"
         fi
 
           printf "%-4s %-30s %-20s %-10s %-8s %-18s %-12s %s\n" \

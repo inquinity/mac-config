@@ -49,29 +49,64 @@ else
 fi
 printf "\n"
 
-# Clean docker images and containers
-if command -v docker &> /dev/null; then
-  print_colored "${COLOR_BRIGHTYELLOW}" "Cleaning docker images and containers"
-  # Check if there are any dangling volumes
-  dangling_volumes=$(docker volume ls --filter=dangling=true --quiet)
-
-  if [ -n "$dangling_volumes" ]; then
-    # If there are dangling volumes, remove them
-    docker volume rm $(docker volume ls --filter=dangling=true --quiet)
-  else
-    print_colored "${COLOR_YELLOW}" "No dangling volumes to remove."
+# Clean container images and volumes (Docker + Rancher Desktop)
+cleanup_docker() {
+  if ! command -v docker >/dev/null 2>&1; then
+    return
   fi
 
-  # Check if there are any dangling images
-  dangling_images=$(docker images --filter=dangling=true --quiet)
-
-  if [ -n "$dangling_images" ]; then
-    # If there are dangling images, remove them
-    docker rmi $(docker images --filter=dangling=true --quiet)
-  else
-    print_colored "${COLOR_YELLOW}" "No dangling images to remove."
+  if ! docker info >/dev/null 2>&1; then
+    return
   fi
-else
-  print_colored "${COLOR_YELLOW}" "Docker is not installed. Skipping docker cleanup."
-fi
 
+  print_colored "${COLOR_BRIGHTYELLOW}" "Cleaning Docker dangling volumes and images"
+
+  local dangling_volumes
+  dangling_volumes=$(docker volume ls --filter dangling=true --quiet 2>/dev/null | tr '\n' ' ')
+  if [ -n "${dangling_volumes}" ]; then
+    docker volume rm ${dangling_volumes} >/dev/null 2>&1
+  else
+    print_colored "${COLOR_YELLOW}" "No dangling Docker volumes to remove."
+  fi
+
+  local dangling_images
+  dangling_images=$(docker images --filter dangling=true --quiet 2>/dev/null | tr '\n' ' ')
+  if [ -n "${dangling_images}" ]; then
+    docker rmi ${dangling_images} >/dev/null 2>&1
+  else
+    print_colored "${COLOR_YELLOW}" "No dangling Docker images to remove."
+  fi
+}
+
+cleanup_nerdctl() {
+  if ! command -v nerdctl >/dev/null 2>&1; then
+    return
+  fi
+
+  local ns="${NERDCTL_NAMESPACE:-k8s.io}"
+
+  if ! nerdctl --namespace "${ns}" info >/dev/null 2>&1; then
+    return
+  fi
+
+  print_colored "${COLOR_BRIGHTYELLOW}" "Cleaning nerdctl (namespace ${ns}) dangling volumes and images"
+
+  local dangling_volumes
+  dangling_volumes=$(nerdctl --namespace "${ns}" volume ls --filter dangling=true --quiet 2>/dev/null | tr '\n' ' ')
+  if [ -n "${dangling_volumes}" ]; then
+    nerdctl --namespace "${ns}" volume rm ${dangling_volumes} >/dev/null 2>&1
+  else
+    print_colored "${COLOR_YELLOW}" "No dangling nerdctl volumes to remove."
+  fi
+
+  local dangling_images
+  dangling_images=$(nerdctl --namespace "${ns}" images --filter dangling=true --quiet 2>/dev/null | tr '\n' ' ')
+  if [ -n "${dangling_images}" ]; then
+    nerdctl --namespace "${ns}" rmi ${dangling_images} >/dev/null 2>&1
+  else
+    print_colored "${COLOR_YELLOW}" "No dangling nerdctl images to remove."
+  fi
+}
+
+cleanup_docker
+cleanup_nerdctl

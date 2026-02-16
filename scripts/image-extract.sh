@@ -2,11 +2,11 @@
 
 # This script is authored by Robert Altman, OptumRx
 # robert.altman@optum.com
-# Version 1.2.5
+# Version 2.0.0
 # https://github.com/optum-rx-tech-ops/devsecops-team/blob/main/Docker/Scripts/image-extract.sh
 
 # Requirements:
-# * Docker Desktop, or docker cli
+# * Container runtime: nerdctl (Rancher Desktop, default namespace) or docker
 # * jq formatter - https://jqlang.github.io/jq/
 
 # Define color codes for terminal output
@@ -24,6 +24,36 @@ print_colored() {
     local color=$1
     local message=$2
     printf "${color}${message}${COLOR_RESET}\n"
+}
+
+overall_status=0
+
+# Detect container runtime (prefer nerdctl default namespace)
+CTR_BIN=""
+CTR_ARGS=()
+NERDCTL_NS=${NERDCTL_NAMESPACE:-default}
+
+detect_container_runtime() {
+  if command -v nerdctl >/dev/null 2>&1 && nerdctl --namespace "${NERDCTL_NS}" info >/dev/null 2>&1; then
+    CTR_BIN="nerdctl"
+    CTR_ARGS=(--namespace "${NERDCTL_NS}")
+    print_colored "${COLOR_YELLOW}" "Using nerdctl (namespace ${NERDCTL_NS})."
+    return 0
+  fi
+
+  if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
+    CTR_BIN="docker"
+    CTR_ARGS=()
+    print_colored "${COLOR_YELLOW}" "Using docker daemon."
+    return 0
+  fi
+
+  print_colored "${COLOR_RED}" "No container runtime daemon reachable (tried nerdctl then docker)."
+  return 1
+}
+
+ctr() {
+  "${CTR_BIN}" "${CTR_ARGS[@]}" "$@"
 }
 
 # Format a JSON file; tests file existence and type, so it is safe to use on any filename
@@ -55,11 +85,7 @@ is_sha256()
     return $?
 }
 
-# Validate required tool: docker cli
-if ! command -v docker &> /dev/null; then
-  print_colored "${COLOR_RED}" "Error: docker cli is not installed. Please install docker cli to use this script." >&2
-  exit 1
-fi
+detect_container_runtime || exit 1
 
 # Validate required tool: jq
 if ! command -v jq &> /dev/null; then
@@ -71,7 +97,7 @@ fi
 # TBD
 
 # Set variables and save context
-pushd .
+pushd . >/dev/null
 image_name="${1}"
 extract_type=image
 image_folder="$(basename ${image_name} | sed 's/:/--/').${extract_type}"
@@ -79,10 +105,10 @@ image_tar="${image_folder}".tar
 blobs_path="blobs/sha256/"
 blobs_path_len=${#blobs_path}
 
-printf "image_name: ${image_name}\n"
-printf "image_folder: ${image_folder}\n"
-printf "image_tar: ${image_tar}\n"
-printf "tmp_file: ${tmp_file}\n"
+#printf "image_name: ${image_name}\n"
+#printf "image_folder: ${image_folder}\n"
+#printf "image_tar: ${image_tar}\n"
+#printf "tmp_file: ${tmp_file}\n"
 
 # Check if folder exists; if it does, query user and remove it
 # TBD - query user before continuing
@@ -98,9 +124,9 @@ if is_sha256 "${image_name}"; then
       print_colored "${COLOR_BLUE}" "Image name is a sha256 hash"
     else
     # Check for the docker image and download if needed
-    if [ -z "$(docker image ls -q ${image_name} 2> /dev/null)" ]; then
+    if [ -z "$(ctr image ls -q ${image_name} 2> /dev/null)" ]; then
       print_colored "${COLOR_BLUE}" "Pulling image ${image_name}"
-      docker image pull "${image_name}"
+      ctr image pull "${image_name}"
       if [ $? -ne 0 ]; then
 	    print_colored "${COLOR_RED}" "Could not pull docker image; exiting"
 	    rm -rf "${image_folder}"
@@ -109,27 +135,24 @@ if is_sha256 "${image_name}"; then
     fi
 fi
 
-# Display layer info (visual nicety)
-docker image history ${image_name}
-docker image history --no-trunc --format 'table {{.ID}}\t{{printf "%.10s" .CreatedAt}}\t{{.Size}}\t{{.Comment}}\n{{.CreatedBy}}\n' "${image_name}" > "${image_folder}/${image_folder}"_history.txt
-
 # Export the image
 print_colored "${COLOR_BLUE}" "Exporting image ..."
-docker image save "${image_name}" -o "${image_tar}"
+ctr image save "${image_name}" -o "${image_tar}"
 if [ $? -ne 0 ] 
 then
     print_colored "${COLOR_RED}" "Save failed; exiting"
+    overall_status=1
     rm -rf "${image_folder}"
     exit $?
 fi
 
 # Extract image
 print_colored "${COLOR_BLUE}" "Extracting image ..."
-tar -xvf "${image_tar}" -C "${image_folder}"
-if [ $? -ne 0 ] 
-then
-    print_colored "${COLOR_RED}" "Error unarchive tar file: ${image_tar}"
-    exit $?
+tar_status=0
+tar -xpf "${image_tar}" --exclude='dev/*' -C "${image_folder}" >/dev/null 2>&1 || tar_status=$?
+if [ ${tar_status} -ne 0 ]; then
+    print_colored "${COLOR_YELLOW}" "tar reported warnings/errors (exit ${tar_status}) while extracting ${image_tar}. See messages above."
+    overall_status=${tar_status}
 fi
 
 cd "${image_folder}"
@@ -150,27 +173,70 @@ for filename in ${blobs_path}*; do
     jq_format_file "${filename}"
 done
 
+##############################
+# Layer extraction and history
+##############################
+
 # Determine which sha files are tars - Rename them; extract them; add layer number to folders
 layer_counter=0
 jq --raw-output ".[0].Layers[]" manifest.json | \
     while read layer_name
     do
-	(( layer_counter++ ))
-	layer_file="${layer_name}"
-	layer_folder="${blobs_path}$(printf '%02d' $layer_counter)-${layer_name:(${#blobs_path})}"
-	tar_file="${layer_name}".tar
-	print_colored "${COLOR_BLUE}" "Found layer $layer_counter: ${layer_name}"
-	printf "${layer_folder}\n"
-	if [ -f "${layer_file}" ]; then
-	    mv "${layer_file}" "${tar_file}"
-	    print_colored "${COLOR_BLUE}" "Extracting ${tar_file}..."
-	    mkdir -p "${layer_folder}"
-	    tar -xvf "${tar_file}" -C "${layer_folder}"
-	else
-	    print_colored "${COLOR_YELLOW}" "Skipping duplicate layer blob"
-	fi
+        (( layer_counter++ ))
+        layer_file="${layer_name}"
+        layer_folder="${blobs_path}$(printf '%02d' $layer_counter)-${layer_name:(${#blobs_path})}"
+        tar_file="${layer_name}".tar
+        print_colored "${COLOR_BLUE}" "Found layer $layer_counter: ${layer_name}"
+        if [ -f "${layer_file}" ]; then
+            mv "${layer_file}" "${tar_file}"
+            mkdir -p "${layer_folder}"
+            tar -xpf "${tar_file}" --exclude='dev/*' -C "${layer_folder}" >/dev/null 2>&1 || overall_status=$?
+        else
+            print_colored "${COLOR_YELLOW}" "Skipping duplicate layer blob"
+        fi
     done
 
+# Build a clean layer history table (avoids nerdctl template warnings)
+history_out="${image_folder}_history.txt"
+config_file="$(jq --raw-output '.[0].Config' manifest.json)"
+config_json="${config_file}-config.json"
+print_colored "${COLOR_BLUE}" "Writing layer history to ${history_out}"
 
-# Restore origial context
-popd
+jq -r '
+  .history as $h
+  | .rootfs.diff_ids as $d
+  | [range(0; ($h|length))] as $idxs
+  | $idxs
+  | map(
+      {
+        idx: (. + 1),
+        created: ($h[.]?.created // ""),
+        created_by: ($h[.]?.created_by // ""),
+        size: ($h[.]?.size // 0),
+        diff_id: ($d[.] // "")
+      }
+    )
+  ' "${config_json}" \
+  | jq -r '
+      ["#","DIFF_ID","CREATED","SIZE","CREATED_BY"],
+      ( .[] | [
+          (.idx|tostring),
+          ((.diff_id|sub("^sha256:";""))[0:12]),
+          (.created),
+          (.size|tostring),
+          (.created_by|gsub("\n";" ")|gsub("\t";" ") )
+        ])
+      | @tsv
+    ' \
+  | column -t -s $'\t' > "${history_out}"
+
+
+# Restore original context
+popd >/dev/null
+
+# Final assessment
+if [ ${overall_status} -eq 0 ]; then
+  print_colored "${COLOR_GREEN}" "Image extract completed successfully: ${image_folder}"
+else
+  print_colored "${COLOR_YELLOW}" "Image extract completed with warnings/errors; see messages above."
+fi

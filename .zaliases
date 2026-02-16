@@ -162,15 +162,19 @@ convert-video() {
    ffmpeg -i "${source_file}" -vcodec h264 -acodec aac "${destination_file}"
 }
 
-# ------
-# docker
-# ------
+# -----------------
+# Container Runtime
+# -----------------
 
-# Source Docker functions from external library
+# Source nerdctl (Rancher Desktop) functions from external library
+if test -f ~/mac-config/scripts/nerdctl.sh; then 
+    source ~/mac-config/scripts/nerdctl.sh
+fi
+
+# Source Docker Deamon functions from external library
 if test -f ~/mac-config/scripts/docker.sh; then 
     source ~/mac-config/scripts/docker.sh
 fi
-
 # Source APK functions from external library
 if test -f ~/dev/GoldenImageCoP/cookbook/apk-search/apk-functions.sh; then 
     source ~/dev/GoldenImageCoP/cookbook/apk-search/apk-functions.sh
