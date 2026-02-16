@@ -162,27 +162,42 @@ convert-video() {
    ffmpeg -i "${source_file}" -vcodec h264 -acodec aac "${destination_file}"
 }
 
+# ----------
+# Encryption
+# ----------
+
+# Source Encryption functions from external library
+if test -f ~/mac-config/scripts/encryption.sh; then 
+    source ~/mac-config/scripts/encryption.sh
+fi
+
 # -----------------
 # Container Runtime
 # -----------------
 
 # Source nerdctl (Rancher Desktop) functions from external library
-if test -f ~/mac-config/scripts/nerdctl.sh; then 
-    source ~/mac-config/scripts/nerdctl.sh
-fi
+if test -f ~/mac-config/scripts/nerdctl.sh; then source ~/mac-config/scripts/nerdctl.sh; fi
 
 # Source Docker Deamon functions from external library
-if test -f ~/mac-config/scripts/docker.sh; then 
-    source ~/mac-config/scripts/docker.sh
-fi
-# Source APK functions from external library
-if test -f ~/dev/GoldenImageCoP/cookbook/apk-search/apk-functions.sh; then 
-    source ~/dev/GoldenImageCoP/cookbook/apk-search/apk-functions.sh
+if test -f ~/mac-config/scripts/docker.sh; then source ~/mac-config/scripts/docker.sh; fi
+
+if test -f ~/mac-config/scripts/grype.sh; then alias grype='~/mac-config/scripts/grype.sh'; fi
+if test -f ~/mac-config/scripts/get-main-package.sh; then alias get-main-package='~/mac-config/scripts/get-main-package.sh'; fi
+
+if test -f ~/dev/team/docker/scripts/container-extract.sh; then alias container-extract='~/dev/team/docker/scripts/container-extract.sh';
+  elif test -f ~/mac-config/scripts/container-extract.sh; then alias container-extract='~/mac-config/scripts/container-extract.sh';
 fi
 
-# Source Encryption functions from external library
-if test -f ~/mac-config/scripts/encryption.sh; then 
-    source ~/mac-config/scripts/encryption.sh
+if test -f ~/dev/team/docker/scripts/image-extract.sh; then alias image-extract='~/dev/team/docker/scripts/image-extract.sh';
+  elif test -f ~/mac-config/scripts/image-extract.sh; then alias image-extract='~/mac-config/scripts/image-extract.sh';
+fi
+
+# SBOM comparison
+if test -f ~/dev/team/docker/sbom-compare/sbom-diff.sh; then alias sbom-diff='~/dev/team/docker/sbom-compare/sbom-diff.sh';
+  elif test -f ~/mac-config/sbom-compare/sbom-diff.sh; then alias sbom-diff='~/mac-config/sbom-compare/sbom-diff.sh';
+fi
+if test -f ~/dev/team/docker/sbom-compare/sbom-analyze.sh; then alias sbom-analyze='~/dev/team/docker/sbom-compare/sbom-analyze.sh';
+  elif test -f ~/mac-config/sbom-compare/sbom-analyze.sh; then alias sbom-analyze='~/mac-config/sbom-compare/sbom-analyze.sh';
 fi
 
 # ---------
@@ -195,23 +210,10 @@ alias mpt='npx @optum-rx-platform/cli@latest'
 # docker scripts
 if test -f ~/dev/team/docker/scripts/prisma.sh; then alias prisma='~/dev/team/docker/scripts/prisma.sh'; fi
 if test -f ~/dev/team/docker/scripts/xray.sh; then alias xray='~/dev/team/docker/scripts/xray.sh'; fi
-if test -f ~/dev/team/docker/scripts/container-extract.sh; then alias container-extract='~/dev/team/docker/scripts/container-extract.sh';
-  elif test -f ~/mac-config/scripts/container-extract.sh; then alias container-extract='~/mac-config/scripts/container-extract.sh';
-fi
-if test -f ~/dev/team/docker/scripts/image-extract.sh; then alias image-extract='~/dev/team/docker/scripts/image-extract.sh';
-  elif test -f ~/mac-config/scripts/image-extract.sh; then alias image-extract='~/mac-config/scripts/image-extract.sh';
-fi
 
-if test -f ~/dev/team/docker/scripts/grype.sh; then alias grype='~/dev/team/docker/scripts/grype.sh';
-  elif test -f ~/mac-config/scripts/grype.sh; then alias grype='~/mac-config/scripts/grype.sh';
-fi
-
-# SBOM comparison
-if test -f ~/dev/team/docker/sbom-compare/sbom-diff.sh; then alias sbom-diff='~/dev/team/docker/sbom-compare/sbom-diff.sh';
-  elif test -f ~/mac-config/sbom-compare/sbom-diff.sh; then alias sbom-diff='~/mac-config/sbom-compare/sbom-diff.sh';
-fi
-if test -f ~/dev/team/docker/sbom-compare/sbom-analyze.sh; then alias sbom-analyze='~/dev/team/docker/sbom-compare/sbom-analyze.sh';
-  elif test -f ~/mac-config/sbom-compare/sbom-analyze.sh; then alias sbom-analyze='~/mac-config/sbom-compare/sbom-analyze.sh';
+# Source APK functions from external library
+if test -f ~/dev/GoldenImageCoP/cookbook/apk-search/apk-functions.sh; then 
+    source ~/dev/GoldenImageCoP/cookbook/apk-search/apk-functions.sh
 fi
 
 if test -f ~/dev/team/scripts/hcc-auth.sh; then alias hcc-auth='~/dev/team/scripts/hcc-auth.sh'; fi
