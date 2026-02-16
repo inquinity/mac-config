@@ -1,7 +1,7 @@
 #!/bin/bash
-# docker.shlib - Shell library for Docker container management functions
+# docker.sh - Shell library for Docker container management functions
 # This file should be sourced, not executed directly
-# Usage: source ~/mac-config/docker.shlib
+# Usage: source ~/mac-config/docker.sh
 
 # Define color codes for terminal output
 COLOR_GREEN="\e[32m"         # Used for success messages and instructions
@@ -20,17 +20,25 @@ print_colored() {
     printf "${color}${message}${COLOR_RESET}\n"
 }
 
+# Ensure Docker CLI and daemon are reachable before running commands
+docker_ready() {
+    if ! command -v docker >/dev/null 2>&1; then
+        print_colored "$COLOR_RED" "docker CLI not found in PATH."
+        return 1
+    fi
+
+    if ! docker info >/dev/null 2>&1; then
+        print_colored "$COLOR_YELLOW" "docker CLI found but daemon/socket is unreachable."
+        return 1
+    fi
+}
+
 # printf "Sourcing docker.shlib...\n"
 
 docker-ls() {
-    storage_driver=$(docker info 2>/dev/null | grep -i "Storage Driver:" | awk '{print $NF}')
-    if [ "$storage_driver" = "overlayfs" ]
-    then
-        print_colored "$COLOR_YELLOW" "Using containerd"
-    else
-        print_colored "$COLOR_YELLOW" "Using standard container"
-    fi
-    
+    docker_ready || return 1
+
+  
     if [ -n "$1" ]
     then
         result=$(docker image ls --all --format="")
@@ -46,14 +54,17 @@ docker-ls() {
 }
 
 docker-sha() { 
+    docker_ready || return 1
     docker inspect "$1" | jq '"Image: "+.[0].Id, "Repository: "+.[0].RepoDigests[0]' 
 }
 
 docker-os() { 
+    docker_ready || return 1
     docker run --rm --interactive --tty --entrypoint "sh" --user root "$1" -c "grep ^ID= /etc/os-release | cut -c 4-" 
 }
 
 docker-info() {
+    docker_ready || return 1
     printf "Inspecting Docker image: %s\n" "$1"
     docker inspect "$1" | jq -r '.[0] | "
     Instance ID: " + .Id + "
@@ -69,9 +80,11 @@ docker-info() {
 }
 
 docker-run() { 
+    docker_ready || return 1
     docker run --rm --interactive --tty --entrypoint "sh" --user root "$1" 
 }
 
 docker-exec() { 
+    docker_ready || return 1
     docker exec --interactive --tty "$1" sh 
 }
