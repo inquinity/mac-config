@@ -28,9 +28,9 @@ lr () { for pattern in "$@"; do find . -name "$pattern" -type f ; done ; }
 # ls for resources MacOS fork
 lsr () { ls -lh "$@"/..namedfork/rsrc ; }
 
-#--------------
+#----------------
 # Markdown viewer
-#--------------
+#----------------
 
 if command -v treemd &> /dev/null; then
   alias md=treemd
@@ -183,6 +183,9 @@ if test -f ~/mac-config/scripts/docker.sh; then source ~/mac-config/scripts/dock
 
 if test -f ~/mac-config/scripts/grype.sh; then alias grype='~/mac-config/scripts/grype.sh'; fi
 if test -f ~/mac-config/scripts/get-main-package.sh; then alias get-main-package='~/mac-config/scripts/get-main-package.sh'; fi
+
+# compatibility work-around for dive and contaierd
+if test -f ~/mac-config/scripts/dive.sh; then alias dive='~/mac-config/scripts/dive.sh'; fi
 
 if test -f ~/dev/team/docker/scripts/container-extract.sh; then alias container-extract='~/dev/team/docker/scripts/container-extract.sh';
   elif test -f ~/mac-config/scripts/container-extract.sh; then alias container-extract='~/mac-config/scripts/container-extract.sh';
