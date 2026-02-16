@@ -1,4 +1,7 @@
-#!/bin/zsh
+#!/bin/z
+# This script is authored by Robert Altman, OptumRx
+# robert.altman@optum.com
+# Version 1.0.1
 
 # Define color codes for terminal output
 COLOR_GREEN="\e[32m"         # Used for success messages and instructions
@@ -72,11 +75,21 @@ fi
 
 # Extract version
 if [[ "$debug_mode" == true ]]; then
-    print_colored "$COLOR_CYAN" "$ jq -r '.artifacts[] | select(.name==\"\${main_pkg}\") | .version' $sbom_file"
+    print_colored "$COLOR_CYAN" "$ jq -r '.artifacts[] | select(.name==\"\${main_pkg}\" or (.name|startswith(\"\${main_pkg}-\")) or (.name|startswith(\"\${main_pkg}:\"))) | .version' $sbom_file | head -n1"
 fi
-version=$(jq -r ".artifacts[] | select(.name==\"${main_pkg}\") | .version" "$sbom_file")
+version=$(jq -r --arg pkg "${main_pkg}" '
+  .artifacts[]
+  | select(.name==$pkg or (.name|startswith($pkg+"-")) or (.name|startswith($pkg+":")))
+  | .version
+' "$sbom_file" | head -n1)
 if [[ -z "$version" ]]; then
+    # last resort: show nearby package names to aid debugging
     print_colored "$COLOR_RED" "Error: Could not find version for package '$main_pkg'"
+    nearby=$(jq -r --arg pkg "${main_pkg}" '.artifacts[].name | select(contains($pkg))' "$sbom_file" | head -n5)
+    if [[ -n "$nearby" ]]; then
+      print_colored "$COLOR_YELLOW" "Packages containing '${main_pkg}' seen in SBOM:"
+      print_colored "$COLOR_YELLOW" "$nearby"
+    fi
     exit 1
 fi
 
