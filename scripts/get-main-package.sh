@@ -1,4 +1,4 @@
-#!/bin/z
+#!/bin/zsh
 # This script is authored by Robert Altman, OptumRx
 # robert.altman@optum.com
 # Version 1.0.1
