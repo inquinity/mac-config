@@ -63,6 +63,17 @@ ctr() {
   "${CONTAINER_BIN}" "${CONTAINER_ARGS[@]}" "$@"
 }
 
+# Extract a file from either a local image (via container runtime) or a saved image tarball
+extract_from_source() {
+  local inner_path="$1"
+
+  if [[ "${is_tar}" == "true" ]]; then
+    tar -xOf "${tar_path}" "${inner_path}" 2>/dev/null
+  else
+    ctr image save "${image_name}" | tar -xOf - "${inner_path}" 2>/dev/null
+  fi
+}
+
 usage() {
     cat <<EOF
 Usage:
@@ -97,9 +108,6 @@ for a in "$@"; do
     args+=("$a")
   fi
 done
-
-# Detect runtime early
-detect_container_runtime || exit 1
 
 # Wrapper mode (default): just run grype --by-cve with original args.
 if [[ "${want_layers}" != "true" ]]; then
@@ -171,6 +179,22 @@ if [[ -z "${image_name}" ]]; then
   usage
   exit 1
 fi
+
+is_tar=false
+tar_path=""
+if [[ -f "${image_name}" ]]; then
+  case "${image_name}" in
+    *.tar|*.tar.gz|*.tgz)
+      is_tar=true
+      tar_path="${image_name}"
+      ;;
+  esac
+fi
+
+if [[ "${is_tar}" != "true" ]]; then
+  # We need a container runtime only when working with a local image name
+  detect_container_runtime || exit 1
+fi
 username=${USER}
 datestr="$(date +%Y-%m-%d)"
 basestr=$(echo "$(basename "${image_name}")" | sed -r "s/:/--/g")
@@ -184,11 +208,19 @@ if [[ "${keep_files}" == "true" ]]; then
   scan_grype_json="${datestr}_${basestr}_grype.json"
 fi
 
-# Validate image exists locally
-ctr image inspect "${image_name}" > /dev/null 2>&1
-if [ $? -ne 0 ]; then
-  print_colored "${COLOR_RED}" "Requested image \"${image_name}\" does not exist locally (inspect failed)."
-  exit 1
+# Validate source
+if [[ "${is_tar}" == "true" ]]; then
+  if [[ ! -f "${tar_path}" ]]; then
+    print_colored "${COLOR_RED}" "Requested tar file \"${tar_path}\" does not exist."
+    exit 1
+  fi
+  print_colored "${COLOR_YELLOW}" "Using docker-archive tar source: ${tar_path}"
+else
+  ctr image inspect "${image_name}" > /dev/null 2>&1
+  if [ $? -ne 0 ]; then
+    print_colored "${COLOR_RED}" "Requested image \"${image_name}\" does not exist locally (inspect failed)."
+    exit 1
+  fi
 fi
 
 # Clean up any previous scan results (only if we are persisting files)
@@ -217,8 +249,8 @@ print_colored "${COLOR_YELLOW}" "Collecting layer metadata for ${image_name}..."
 # diff_id, so we index by diff_id to avoid mismatches.
 #
 # This is done entirely in-memory (no temp files) by streaming `image save`
-# into `tar -xOf -`.
-manifest_json="$(ctr image save "${image_name}" | tar -xOf - manifest.json 2>/dev/null)"
+# into `tar -xOf -`, or reading directly from a docker-archive tar.
+manifest_json="$(extract_from_source "manifest.json")"
 if [[ -z "${manifest_json}" ]]; then
   print_colored "${COLOR_RED}" "Error: failed to read manifest.json from docker image save stream."
   exit 1
@@ -230,7 +262,7 @@ if [[ -z "${config_path}" || "${config_path}" == "null" ]]; then
   exit 1
 fi
 
-config_json="$(ctr image save "${image_name}" | tar -xOf - "${config_path}" 2>/dev/null)"
+config_json="$(extract_from_source "${config_path}")"
 if [[ -z "${config_json}" ]]; then
   print_colored "${COLOR_RED}" "Error: failed to read image config JSON (${config_path}) from docker image save stream."
   exit 1
@@ -290,7 +322,12 @@ fi
 # -----------------------
 # Run grype and enrich with layer + command
 # -----------------------
-print_colored "${COLOR_YELLOW}" "Running grype scan on ${image_name} (scope: all-layers)..."
+grype_target="${image_name}"
+if [[ "${is_tar}" == "true" ]]; then
+  grype_target="docker-archive:${tar_path}"
+fi
+
+print_colored "${COLOR_YELLOW}" "Running grype scan on ${grype_target} (scope: all-layers)..."
 
 # Column headers for the enriched output
 print_colored "${COLOR_BRIGHTYELLOW}" "LYR  PACKAGE                        VERSION              TYPE       SEVERITY CVE                LAYER_SHA     DOCKERFILE_COMMAND"
@@ -302,7 +339,7 @@ print_colored "${COLOR_BRIGHTYELLOW}" "-----------------------------------------
 # 3. Join to the layer_map_file to pull in the Dockerfile CreatedBy line
 # 4. Print a nicely formatted table to ${scan_results}
 
-command grype "${image_name}" --by-cve --scope all-layers -o json 2> /dev/null \
+command grype "${grype_target}" --by-cve --scope all-layers -o json 2> /dev/null \
   | ( if [[ "${keep_files}" == "true" ]]; then tee "${scan_grype_json}"; else cat; fi ) \
   | jq -r '
       .matches[]
