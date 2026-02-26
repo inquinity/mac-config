@@ -2,7 +2,7 @@
 
 # This script is authored by Robert Altman, OptumRx
 # robert.altman@optum.com
-# Version 2.0.0
+# Version 2.1.0
 # https://github.com/optum-rx-tech-ops/devsecops-team/blob/main/Docker/Scripts/grype-all.sh
 #
 # Purpose:
@@ -14,6 +14,11 @@
 # 1. A container runtime: nerdctl (Rancher Desktop, default namespace assumed) or docker
 # 2. grype installed
 # 3. jq installed
+#
+# Runtime support:
+# - dockerd: supported
+# - containerd/nerdctl: supported
+# - layer mode uses internal image-save tar streaming for metadata mapping
 
 # Define color codes for terminal output
 COLOR_GREEN="\e[32m"         # Used for success messages and instructions
@@ -32,35 +37,46 @@ print_colored() {
     printf "${color}${message}${COLOR_RESET}\n"
 }
 
-# -----------------------
-# Container runtime detection (prefer nerdctl)
-# -----------------------
-typeset -g CONTAINER_BIN=""
-typeset -a CONTAINER_ARGS
-CONTAINER_ARGS=()
-NERDCTL_NS=${NERDCTL_NAMESPACE:-default}
+RUNTIME_BIN=""
+RUNTIME_NERDCTL_NS="${NERDCTL_NAMESPACE:-default}"
 
-detect_container_runtime() {
-  if command -v nerdctl >/dev/null 2>&1 && nerdctl --namespace "${NERDCTL_NS}" info >/dev/null 2>&1; then
-    CONTAINER_BIN="nerdctl"
-    CONTAINER_ARGS=(--namespace "${NERDCTL_NS}")
-    print_colored "${COLOR_YELLOW}" "Using nerdctl (namespace ${NERDCTL_NS})."
-    return 0
+runtime_image_inspect() {
+  local image_ref="$1"
+  if [[ "${RUNTIME_BIN}" == "nerdctl" ]]; then
+    command nerdctl --namespace "${RUNTIME_NERDCTL_NS}" image inspect "${image_ref}"
+  else
+    command docker image inspect "${image_ref}"
   fi
-
-  if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
-    CONTAINER_BIN="docker"
-    CONTAINER_ARGS=()
-    print_colored "${COLOR_YELLOW}" "Using docker daemon."
-    return 0
-  fi
-
-  print_colored "${COLOR_RED}" "No container runtime daemon reachable (tried nerdctl namespace '${NERDCTL_NS}' then docker)."
-  return 1
 }
 
-ctr() {
-  "${CONTAINER_BIN}" "${CONTAINER_ARGS[@]}" "$@"
+runtime_image_save() {
+  local image_ref="$1"
+  if [[ "${RUNTIME_BIN}" == "nerdctl" ]]; then
+    command nerdctl --namespace "${RUNTIME_NERDCTL_NS}" image save "${image_ref}"
+  else
+    command docker image save "${image_ref}"
+  fi
+}
+
+detect_local_runtime_for_image() {
+  local image_ref="$1"
+
+  if whence -p docker >/dev/null 2>&1 && command docker image inspect "${image_ref}" >/dev/null 2>&1; then
+    RUNTIME_BIN="docker"
+    return 0
+  fi
+
+  if whence -p nerdctl >/dev/null 2>&1 && command nerdctl --namespace "${RUNTIME_NERDCTL_NS}" image inspect "${image_ref}" >/dev/null 2>&1; then
+    RUNTIME_BIN="nerdctl"
+    return 0
+  fi
+
+  if whence -p nerdctl >/dev/null 2>&1 && command nerdctl image inspect "${image_ref}" >/dev/null 2>&1; then
+    RUNTIME_BIN="nerdctl"
+    return 0
+  fi
+
+  return 1
 }
 
 # Extract a file from either a local image (via container runtime) or a saved image tarball
@@ -70,7 +86,7 @@ extract_from_source() {
   if [[ "${is_tar}" == "true" ]]; then
     tar -xOf "${tar_path}" "${inner_path}" 2>/dev/null
   else
-    ctr image save "${image_name}" | tar -xOf - "${inner_path}" 2>/dev/null
+    runtime_image_save "${image_name}" | tar -xOf - "${inner_path}" 2>/dev/null
   fi
 }
 
@@ -109,13 +125,22 @@ for a in "$@"; do
   fi
 done
 
+# -----------------------
+# Validate required tools
+# -----------------------
+
+if ! command -v grype &> /dev/null; then
+  print_colored "${COLOR_RED}" "Error: grype is not installed. Please install grype to use this script." >&2
+  exit 1
+fi
+
+if [[ "${want_layers}" == "true" ]] && ! command -v jq &> /dev/null; then
+  print_colored "${COLOR_RED}" "Error: jq is not installed. Please install jq to use this script." >&2
+  exit 1
+fi
+
 # Wrapper mode (default): just run grype --by-cve with original args.
 if [[ "${want_layers}" != "true" ]]; then
-  if ! command -v grype &> /dev/null; then
-    print_colored "${COLOR_RED}" "Error: grype is not installed. Please install grype to use this script." >&2
-    exit 1
-  fi
-
   # Avoid injecting --by-cve for grype subcommands where it can break behavior.
   if [[ "${#args[@]}" -gt 0 ]]; then
     case "${args[1]}" in
@@ -126,20 +151,6 @@ if [[ "${want_layers}" != "true" ]]; then
   fi
 
   exec command grype --by-cve "${args[@]}"
-fi
-
-# -----------------------
-# Validate required tools (layers mode)
-# -----------------------
-
-if ! command -v grype &> /dev/null; then
-  print_colored "${COLOR_RED}" "Error: grype is not installed. Please install grype to use this script." >&2
-  exit 1
-fi
-
-if ! command -v jq &> /dev/null; then
-  print_colored "${COLOR_RED}" "Error: jq is not installed. Please install jq to use this script." >&2
-  exit 1
 fi
 
 # -----------------------
@@ -191,10 +202,6 @@ if [[ -f "${image_name}" ]]; then
   esac
 fi
 
-if [[ "${is_tar}" != "true" ]]; then
-  # We need a container runtime only when working with a local image name
-  detect_container_runtime || exit 1
-fi
 username=${USER}
 datestr="$(date +%Y-%m-%d)"
 basestr=$(echo "$(basename "${image_name}")" | sed -r "s/:/--/g")
@@ -216,10 +223,16 @@ if [[ "${is_tar}" == "true" ]]; then
   fi
   print_colored "${COLOR_YELLOW}" "Using docker-archive tar source: ${tar_path}"
 else
-  ctr image inspect "${image_name}" > /dev/null 2>&1
+  detect_local_runtime_for_image "${image_name}"
   if [ $? -ne 0 ]; then
     print_colored "${COLOR_RED}" "Requested image \"${image_name}\" does not exist locally (inspect failed)."
     exit 1
+  fi
+
+  if [[ "${RUNTIME_BIN}" == "nerdctl" ]]; then
+    print_colored "${COLOR_YELLOW}" "Using local image from nerdctl namespace ${RUNTIME_NERDCTL_NS}."
+  else
+    print_colored "${COLOR_YELLOW}" "Using local image from docker daemon."
   fi
 fi
 

@@ -1,7 +1,15 @@
-#!/bin/bash
+#!/bin/zsh
 # nerdctl.sh - Shell library for Rancher Desktop / nerdctl container management functions
 # This file should be sourced, not executed directly
 # Usage: source ~/mac-config/scripts/nerdctl.sh
+
+# Guard: this library must be sourced, not executed directly.
+(return 0 2>/dev/null) || {
+    script_name="$(basename "$0")"
+    echo "This file is a shell library and must be sourced, not executed." >&2
+    echo "Usage: source path/to/${script_name}" >&2
+    exit 1
+}
 
 # Define color codes for terminal output
 COLOR_GREEN="\e[32m"         # Used for success messages and instructions
@@ -23,18 +31,46 @@ print_colored() {
 # Namespace used by Rancher Desktop's containerd
 # User images typically live in the \"default\" namespace; Rancher system/K8s images in \"k8s.io\".
 NERDCTL_NS=${NERDCTL_NAMESPACE:-default}
+NERDCTL_READY_CACHE_TTL=${NERDCTL_READY_CACHE_TTL:-3}
+NERDCTL_READY_CACHE_STATE=""
+NERDCTL_READY_CACHE_TS=0
 
 # Utility to ensure nerdctl + daemon are reachable before running a command
 nerdctl_ready() {
-    if ! command -v nerdctl >/dev/null 2>&1; then
-        print_colored "$COLOR_RED" "nerdctl not found in PATH."
+    local quiet=false
+    local refresh=false
+    local now
+    local arg
+
+    for arg in "$@"; do
+        case "$arg" in
+            --quiet) quiet=true ;;
+            --refresh) refresh=true ;;
+        esac
+    done
+
+    now=${EPOCHSECONDS:-$(date +%s)}
+    if [[ "${refresh}" != "true" ]] && (( now - NERDCTL_READY_CACHE_TS < NERDCTL_READY_CACHE_TTL )); then
+        [[ "${NERDCTL_READY_CACHE_STATE}" == "ok" ]] && return 0 || return 1
+    fi
+
+    if ! whence -p nerdctl >/dev/null 2>&1; then
+        NERDCTL_READY_CACHE_STATE="down"
+        NERDCTL_READY_CACHE_TS=${now}
+        [[ "${quiet}" != "true" ]] && print_colored "$COLOR_RED" "nerdctl not found in PATH."
         return 1
     fi
 
-    if ! nerdctl --namespace "${NERDCTL_NS}" info >/dev/null 2>&1; then
-        print_colored "$COLOR_RED" "namespace '${NERDCTL_NS}' is unreachable."
+    if ! command nerdctl --namespace "${NERDCTL_NS}" info >/dev/null 2>&1; then
+        NERDCTL_READY_CACHE_STATE="down"
+        NERDCTL_READY_CACHE_TS=${now}
+        [[ "${quiet}" != "true" ]] && print_colored "$COLOR_RED" "namespace '${NERDCTL_NS}' is unreachable."
         return 1
     fi
+
+    NERDCTL_READY_CACHE_STATE="ok"
+    NERDCTL_READY_CACHE_TS=${now}
+    return 0
 }
 
 nerdctl-ls() {

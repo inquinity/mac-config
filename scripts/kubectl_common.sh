@@ -3,13 +3,21 @@
 # kubectl_common.sh - Common functions for kubectl deployment scripts
 # Source this file in your scripts with: source ./path/to/file/kubectl_common.sh
 
+# Guard: this library must be sourced, not executed directly.
+(return 0 2>/dev/null) || {
+    script_name="$(basename "$0")"
+    echo "This file is a shell library and must be sourced, not executed." >&2
+    echo "Usage: source path/to/${script_name}" >&2
+    exit 1
+}
+
 # Define color codes for terminal output
 COLOR_GREEN="\e[32m"         # Used for success messages and instructions
 COLOR_RED="\e[31m"           # Used for error messages and warnings
 COLOR_YELLOW="\e[33m"        # Used for help text, lists, and informational content
-COLOR_BLUE="\e[34m"          # Available for general use; does not show on screen well
 COLOR_MAGENTA="\e[35m"       # Available for general use
-COLOR_TEAL="\e[36m"          # Available for general use
+COLOR_CYAN="\e[36m"          # Available for general use
+COLOR_BLUE="\e[34m"          # Available for general use; does not show on screen well
 COLOR_BRIGHTYELLOW="\e[93m"  # Used for highlighting important actions and status
 COLOR_RESET="\e[0m"          # Used to reset color formatting
 
@@ -26,6 +34,65 @@ print_colored() {
     printf "${color}${message}${COLOR_RESET}\n"
 }
 
+# Runtime selection (prefer nerdctl when reachable)
+RUNTIME_BIN=""
+RUNTIME_NERDCTL_NS="${NERDCTL_NAMESPACE:-default}"
+
+runtime_cmd() {
+    if [[ "${RUNTIME_BIN}" == "nerdctl" ]]; then
+        command nerdctl --namespace "${RUNTIME_NERDCTL_NS}" "$@"
+    else
+        command docker "$@"
+    fi
+}
+
+detect_container_runtime() {
+    if command -v nerdctl >/dev/null 2>&1 && command nerdctl --namespace "${RUNTIME_NERDCTL_NS}" info >/dev/null 2>&1; then
+        RUNTIME_BIN="nerdctl"
+        return 0
+    fi
+
+    if command -v docker >/dev/null 2>&1 && command docker info >/dev/null 2>&1; then
+        RUNTIME_BIN="docker"
+        return 0
+    fi
+
+    return 1
+}
+
+# Validate required tools
+if ! command -v docker >/dev/null 2>&1 && ! command -v nerdctl >/dev/null 2>&1; then
+    print_colored "${COLOR_RED}" "Error: neither docker nor nerdctl is installed. Please install a container runtime CLI." >&2
+    return 1
+fi
+
+if ! command -v kubectl >/dev/null 2>&1; then
+    print_colored "${COLOR_RED}" "Error: kubectl is not installed. Please install kubectl to use kubectl_common.sh." >&2
+    return 1
+fi
+
+if ! command -v jq >/dev/null 2>&1; then
+    print_colored "${COLOR_RED}" "Error: jq is not installed. Please install jq to use kubectl_common.sh." >&2
+    return 1
+fi
+
+if ! detect_container_runtime; then
+    print_colored "${COLOR_RED}" "Error: no reachable container runtime engine found (tried nerdctl then docker)." >&2
+    return 1
+fi
+
+docker_pull_with_error() {
+    local image_name=$1
+    local pull_output
+    pull_output=$(runtime_cmd image pull "$image_name" 2>&1)
+    if [[ $? -eq 0 ]]; then
+        return 0
+    fi
+
+    printf "${COLOR_YELLOW}    Pull error: %s${COLOR_RESET}\n" "$pull_output" >&2
+    return 1
+}
+
 # Check if arguments are provided
 check_arguments() {
     if [ $# -eq 0 ]; then
@@ -40,7 +107,7 @@ switch_context() {
     local current_context=$(kubectl config current-context)
     
     if [ "$current_context" != "$target_context" ]; then
-        printf "${COLOR_TEAL}Switching context to: ${target_context}${COLOR_RESET}\n"
+        printf "${COLOR_CYAN}Switching context to: ${target_context}${COLOR_RESET}\n"
         kubectl config use-context $target_context
     fi
 }
@@ -54,18 +121,18 @@ docker_inspect_with_retry() {
     
     # Always pull first to ensure we have the latest image
     # (image tags can be reused with different content)
-    printf "${COLOR_TEAL}    Pulling image: ${image_name}${COLOR_RESET}\n" >&2
+    printf "${COLOR_CYAN}    Pulling image: ${image_name}${COLOR_RESET}\n" >&2
     
-    if docker pull "$image_name" > /dev/null 2>&1; then
+    if docker_pull_with_error "$image_name"; then
         printf "${COLOR_GREEN}    Successfully pulled image${COLOR_RESET}\n" >&2
     else
         printf "${COLOR_YELLOW}    Pull failed, attempting to use local image if available${COLOR_RESET}\n" >&2
     fi
     
     # Inspect the image
-    local result=$(docker inspect "$image_name" 2>/dev/null | jq -r "$jq_expr_param" 2>/dev/null)
-    
-    if [ $? -eq 0 ] && [ "$result" != "null" ] && [ -n "$result" ]; then
+    local result
+    result=$(runtime_cmd inspect "$image_name" 2>/dev/null | jq -r "$jq_expr_param" 2>/dev/null)
+    if [[ "$result" != "null" && -n "$result" ]]; then
         echo "$result"
         return 0
     fi
@@ -86,13 +153,15 @@ print_release_date() {
     release_date=$(docker_inspect_with_retry "$image" "$jq_expr_param")
     
     # Print the Image ID
-    local image_id=$(docker inspect --format='{{.Id}}' "$image" 2>/dev/null)
+    local image_id
+    image_id=$(runtime_cmd inspect --format='{{.Id}}' "$image" 2>/dev/null)
     if [[ -n "$image_id" ]]; then
         printf "    Image ID: %s\n" "$image_id"
     fi
     
     # Print Image Created date with age
-    local created_raw=$(docker inspect --format='{{.Created}}' "$image" 2>/dev/null)
+    local created_raw
+    created_raw=$(runtime_cmd inspect --format='{{.Created}}' "$image" 2>/dev/null)
     if [[ -n "$created_raw" ]]; then
         # Extract date portion (YYYY-MM-DD) from ISO timestamp
         local created_date="${created_raw:0:10}"
@@ -153,9 +222,15 @@ query_and_print_image() {
     local resource_name=$3
     local jq_expr_param=${4:-$jq_expr}
     
-    printf "${COLOR_TEAL}Querying ${resource_type}: ${resource_name}${COLOR_RESET}\n"
+    printf "${COLOR_CYAN}Querying ${resource_type}: ${resource_name}${COLOR_RESET}\n"
     
-    local image_name=$(kubectl -n $namespace describe $resource_type $resource_name 2>/dev/null | grep Image | sed 's!^[[:blank:]]*Image:[[:blank:]]*!!g' | head -1)
+    local image_name
+    if [[ "$resource_type" == "deployment" ]]; then
+        image_name=$(kubectl -n "$namespace" get deployment "$resource_name" -o jsonpath='{.spec.template.spec.containers[0].image}' 2>/dev/null)
+    else
+        image_name=$(kubectl -n "$namespace" get cronjob "$resource_name" -o jsonpath='{.spec.jobTemplate.spec.template.spec.containers[0].image}' 2>/dev/null)
+    fi
+    image_name="${image_name//$'\r'/}"
     if [ -z "$image_name" ]; then
         printf "${COLOR_RED}Failed to get image from ${resource_type}: ${resource_name}${COLOR_RESET}\n"
         return 1
@@ -171,7 +246,7 @@ pull_docker_image() {
     local deployment_type=$2  # "deployment" or "cronjob"
     local resource_name=$3
     
-    printf "${COLOR_TEAL}Querying ${deployment_type}: ${resource_name}${COLOR_RESET}\n"
+    printf "${COLOR_CYAN}Querying ${deployment_type}: ${resource_name}${COLOR_RESET}\n"
     
     if [ -z "$image_name" ]; then
         printf "${COLOR_RED}Failed to extract image name from ${deployment_type} ${resource_name}${COLOR_RESET}\n"
@@ -181,7 +256,7 @@ pull_docker_image() {
     printf "${COLOR_YELLOW}Pulling image: ${image_name}${COLOR_RESET}\n"
     
     # First attempt
-    if docker image pull "$image_name" > /dev/null 2>&1; then
+    if docker_pull_with_error "$image_name"; then
         printf "${COLOR_GREEN}Successfully pulled image: ${image_name}${COLOR_RESET}\n"
         return 0
     fi
@@ -189,7 +264,7 @@ pull_docker_image() {
     printf "${COLOR_YELLOW}First pull attempt failed, retrying with force...${COLOR_RESET}\n"
     
     # Second attempt with force
-    if docker image pull "$image_name" --quiet 2>&1; then
+    if docker_pull_with_error "$image_name"; then
         printf "${COLOR_GREEN}Successfully pulled image on retry: ${image_name}${COLOR_RESET}\n"
         return 0
     fi
@@ -204,7 +279,9 @@ process_deployment() {
     local namespace=$1
     local deployment_name=$2
     
-    local image_name=$(kubectl -n $namespace describe deployment $deployment_name 2>/dev/null | grep Image | sed 's/[[:blank:]]*Image:[[:blank:]]*//' | head -1)
+    local image_name
+    image_name=$(kubectl -n "$namespace" get deployment "$deployment_name" -o jsonpath='{.spec.template.spec.containers[0].image}' 2>/dev/null)
+    image_name="${image_name//$'\r'/}"
     if [ -z "$image_name" ]; then
         printf "${COLOR_RED}Failed to get image from deployment: ${deployment_name}${COLOR_RESET}\n"
         return 1
@@ -218,7 +295,9 @@ process_cronjob() {
     local namespace=$1
     local cronjob_name=$2
     
-    local image_name=$(kubectl -n $namespace describe cronjob $cronjob_name 2>/dev/null | grep Image | sed 's/[[:blank:]]*Image:[[:blank:]]*//' | head -1)
+    local image_name
+    image_name=$(kubectl -n "$namespace" get cronjob "$cronjob_name" -o jsonpath='{.spec.jobTemplate.spec.template.spec.containers[0].image}' 2>/dev/null)
+    image_name="${image_name//$'\r'/}"
     if [ -z "$image_name" ]; then
         printf "${COLOR_RED}Failed to get image from cronjob: ${cronjob_name}${COLOR_RESET}\n"
         return 1

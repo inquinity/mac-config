@@ -1,7 +1,14 @@
 #!/bin/zsh
 # This script is authored by Robert Altman, OptumRx
 # robert.altman@optum.com
-# Version 1.0.2
+# Version 2.0.0
+#
+# Runtime support:
+# - dockerd: local docker source supported via syft docker:<image>
+# - containerd/nerdctl: local images exported to docker-archive tar for syft scan
+# - tar input: supported via syft docker-archive:<tar>
+
+set -o pipefail
 
 # Define color codes for terminal output
 COLOR_GREEN="\e[32m"         # Used for success messages and instructions
@@ -20,6 +27,49 @@ print_colored() {
     printf "${color}${message}${COLOR_RESET}\n"
 }
 
+RUNTIME_BIN=""
+RUNTIME_NERDCTL_NS="${NERDCTL_NAMESPACE:-default}"
+
+runtime_image_inspect() {
+    local image_ref="$1"
+    if [[ "${RUNTIME_BIN}" == "nerdctl" ]]; then
+        command nerdctl --namespace "${RUNTIME_NERDCTL_NS}" image inspect "${image_ref}" >/dev/null 2>&1
+    else
+        command docker image inspect "${image_ref}" >/dev/null 2>&1
+    fi
+}
+
+runtime_image_save() {
+    local image_ref="$1"
+    local out_file="$2"
+    if [[ "${RUNTIME_BIN}" == "nerdctl" ]]; then
+        command nerdctl --namespace "${RUNTIME_NERDCTL_NS}" image save "${image_ref}" -o "${out_file}"
+    else
+        command docker image save "${image_ref}" -o "${out_file}"
+    fi
+}
+
+detect_local_runtime_for_image() {
+    local image_ref="$1"
+
+    if command -v docker >/dev/null 2>&1 && command docker image inspect "${image_ref}" >/dev/null 2>&1; then
+        RUNTIME_BIN="docker"
+        return 0
+    fi
+
+    if command -v nerdctl >/dev/null 2>&1 && command nerdctl --namespace "${RUNTIME_NERDCTL_NS}" image inspect "${image_ref}" >/dev/null 2>&1; then
+        RUNTIME_BIN="nerdctl"
+        return 0
+    fi
+
+    if command -v nerdctl >/dev/null 2>&1 && command nerdctl image inspect "${image_ref}" >/dev/null 2>&1; then
+        RUNTIME_BIN="nerdctl"
+        return 0
+    fi
+
+    return 1
+}
+
 # Parse arguments
 debug_mode=false
 image_url=""
@@ -27,13 +77,14 @@ image_url=""
 while [[ $# -gt 0 ]]; do
     case "$1" in
         -h|--help)
-            print_colored "$COLOR_YELLOW" "Usage: $(basename "$0") [OPTIONS] IMAGE_URL"
+            print_colored "$COLOR_YELLOW" "Usage: $(basename "$0") [OPTIONS] IMAGE_OR_TAR"
             print_colored "$COLOR_YELLOW" ""
             print_colored "$COLOR_YELLOW" "Options:"
             print_colored "$COLOR_YELLOW" "  --debug  Show CLI commands before execution"
             print_colored "$COLOR_YELLOW" ""
             print_colored "$COLOR_YELLOW" "Example:"
             print_colored "$COLOR_YELLOW" "  $(basename "$0") edgecore.optum.com/glb-docker-uhg-loc/uhg-goldenimages/external-dns:latest"
+            print_colored "$COLOR_YELLOW" "  $(basename "$0") ./airflow--2-latest.image.tar"
             exit 0
             ;;
         --debug)
@@ -52,18 +103,60 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ -z "$image_url" ]]; then
-    print_colored "$COLOR_RED" "Error: IMAGE_URL is required"
+    print_colored "$COLOR_RED" "Error: IMAGE_OR_TAR is required"
     exit 1
 fi
-sbom_file="/tmp/sbom-$$.json"
-trap "rm -f '$sbom_file'" EXIT
+
+for tool in syft jq base64; do
+    if ! command -v "${tool}" >/dev/null 2>&1; then
+        print_colored "$COLOR_RED" "Error: ${tool} is not installed."
+        exit 1
+    fi
+done
+
+sbom_file="$(mktemp "${TMPDIR:-/tmp}/sbom-XXXXXX.json")"
+image_archive=""
+trap 'rm -f "${sbom_file}" "${image_archive}"' EXIT
+
+syft_source="registry:${image_url}"
+is_tar_input=false
+if [[ -f "${image_url}" ]]; then
+    case "${image_url}" in
+        *.tar|*.tar.gz|*.tgz)
+            is_tar_input=true
+            ;;
+    esac
+fi
+
+if [[ "${is_tar_input}" == "true" ]]; then
+    syft_source="docker-archive:${image_url}"
+    print_colored "$COLOR_YELLOW" "Using docker-archive tar source: ${image_url}"
+elif detect_local_runtime_for_image "${image_url}"; then
+    if [[ "${RUNTIME_BIN}" == "docker" ]]; then
+        syft_source="docker:${image_url}"
+        print_colored "$COLOR_YELLOW" "Using local image from docker daemon."
+    else
+        image_archive="$(mktemp "${TMPDIR:-/tmp}/get-main-package-XXXXXX.tar")"
+        if [[ "$debug_mode" == true ]]; then
+            print_colored "$COLOR_CYAN" "$ nerdctl --namespace ${RUNTIME_NERDCTL_NS} image save ${image_url} -o ${image_archive}"
+        fi
+        if runtime_image_save "${image_url}" "${image_archive}" >/dev/null 2>&1; then
+            syft_source="docker-archive:${image_archive}"
+            print_colored "$COLOR_YELLOW" "Using local image from nerdctl namespace ${RUNTIME_NERDCTL_NS}."
+        else
+            print_colored "$COLOR_YELLOW" "Warning: failed to export local image; falling back to registry source."
+            rm -f "${image_archive}"
+            image_archive=""
+        fi
+    fi
+fi
 
 # Generate SBOM
 print_colored "$COLOR_GREEN" "Generating SBOM for image: $image_url"
 if [[ "$debug_mode" == true ]]; then
-    print_colored "$COLOR_CYAN" "$ syft scan registry:${image_url} -o syft-json > $sbom_file"
+    print_colored "$COLOR_CYAN" "$ syft scan ${syft_source} -o syft-json > ${sbom_file}"
 fi
-syft scan "registry:${image_url}" -o syft-json > "$sbom_file" 2>/dev/null
+syft scan "${syft_source}" -o syft-json > "$sbom_file" 2>/dev/null
 if [[ $? -ne 0 ]]; then
     print_colored "$COLOR_RED" "Error: Failed to generate SBOM for image"
     exit 1

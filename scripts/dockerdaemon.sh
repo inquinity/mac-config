@@ -1,7 +1,7 @@
 #!/bin/zsh
-# docker.sh - Shell library for Docker daemon management functions
+# dockerdaemon.sh - Shell library for Docker daemon management functions
 # This file should be sourced, not executed directly
-# Usage: source ~/mac-config/scripts/docker.sh
+# Usage: source ~/mac-config/scripts/dockerdaemon.sh
 
 # Guard: this library must be sourced, not executed directly.
 (return 0 2>/dev/null) || {
@@ -70,7 +70,7 @@ dockerdaemon_ready() {
     return 0
 }
 
-docker-ls() {
+dockerd-ls() {
     dockerdaemon_ready || return 1
 
     local format_args="{{.Repository}}:{{.Tag}}\t{{.CreatedAt}}\t{{.ID}}\t{{.Size}}"
@@ -86,17 +86,17 @@ docker-ls() {
     fi
 }
 
-docker-sha() {
+dockerd-sha() {
     dockerdaemon_ready || return 1
     command docker inspect "$1" | jq '"Image: "+.[0].Id, "Repository: "+.[0].RepoDigests[0]'
 }
 
-docker-os() {
+dockerd-os() {
     dockerdaemon_ready || return 1
     command docker run --rm --interactive --tty --entrypoint "sh" --user root "$1" -c "grep ^ID= /etc/os-release | cut -c 4-"
 }
 
-docker-info() {
+dockerd-info() {
     dockerdaemon_ready || return 1
     printf "Inspecting Docker image: %s\n" "$1"
     command docker inspect "$1" | jq -r '.[0] | "
@@ -112,12 +112,12 @@ docker-info() {
 '
 }
 
-docker-run() {
+dockerd-run() {
     dockerdaemon_ready || return 1
     command docker run --rm --interactive --tty --entrypoint "sh" --user root "$1"
 }
 
-docker-exec() {
+dockerd-exec() {
     dockerdaemon_ready || return 1
     command docker exec --interactive --tty "$1" sh
 }

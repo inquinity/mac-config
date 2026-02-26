@@ -4,8 +4,9 @@
 COLOR_GREEN="\e[32m"         # Used for success messages and instructions
 COLOR_RED="\e[31m"           # Used for error messages and warnings
 COLOR_YELLOW="\e[33m"        # Used for help text, lists, and informational content
-COLOR_BLUE="\e[34m"          # Available for general use
 COLOR_MAGENTA="\e[35m"       # Available for general use
+COLOR_CYAN="\e[36m"          # Available for general use
+COLOR_BLUE="\e[34m"          # Available for general use; does not show on screen well
 COLOR_BRIGHTYELLOW="\e[93m"  # Used for highlighting important actions and status
 COLOR_RESET="\e[0m"          # Used to reset color formatting
 
@@ -15,6 +16,15 @@ print_colored() {
     local message=$2
     printf "${color}${message}${COLOR_RESET}\n"
 }
+
+# Load foundational container runtime libraries (if available)
+SCRIPT_DIR="${0:A:h}"
+RUNTIME_LIB_DIR="${SCRIPT_DIR}"
+if [[ ! -f "${RUNTIME_LIB_DIR}/nerdctl.sh" && -d "${HOME}/mac-config/scripts" ]]; then
+  RUNTIME_LIB_DIR="${HOME}/mac-config/scripts"
+fi
+if [[ -f "${RUNTIME_LIB_DIR}/nerdctl.sh" ]]; then source "${RUNTIME_LIB_DIR}/nerdctl.sh"; fi
+if [[ -f "${RUNTIME_LIB_DIR}/dockerdaemon.sh" ]]; then source "${RUNTIME_LIB_DIR}/dockerdaemon.sh"; fi
 
 # Upgrade homebrew formulas and casks
 if command -v brew &> /dev/null; then
@@ -51,61 +61,63 @@ printf "\n"
 
 # Clean container images and volumes (Docker + Rancher Desktop)
 cleanup_docker() {
-  if ! command -v docker >/dev/null 2>&1; then
+  if ! whence -w dockerdaemon_ready >/dev/null 2>&1; then
     return
   fi
 
-  if ! docker info >/dev/null 2>&1; then
+  if ! dockerdaemon_ready --quiet; then
     return
   fi
 
-  print_colored "${COLOR_BRIGHTYELLOW}" "Cleaning Docker dangling volumes and images"
-
-  local dangling_volumes
-  dangling_volumes=$(docker volume ls --filter dangling=true --quiet 2>/dev/null | tr '\n' ' ')
-  if [ -n "${dangling_volumes}" ]; then
-    docker volume rm ${dangling_volumes} >/dev/null 2>&1
-  else
-    print_colored "${COLOR_YELLOW}" "No dangling Docker volumes to remove."
-  fi
-
-  local dangling_images
-  dangling_images=$(docker images --filter dangling=true --quiet 2>/dev/null | tr '\n' ' ')
-  if [ -n "${dangling_images}" ]; then
-    docker rmi ${dangling_images} >/dev/null 2>&1
-  else
-    print_colored "${COLOR_YELLOW}" "No dangling Docker images to remove."
-  fi
+  print_colored "${COLOR_BRIGHTYELLOW}" "Pruning Docker dangling volumes and images"
+  command docker volume prune --force >/dev/null 2>&1
+  command docker image prune --force >/dev/null 2>&1
+  print_colored "${COLOR_GREEN}" "Docker prune completed."
 }
 
 cleanup_nerdctl() {
+  if ! whence -w nerdctl_ready >/dev/null 2>&1; then
+    return
+  fi
+
   if ! command -v nerdctl >/dev/null 2>&1; then
     return
   fi
 
-  local ns="${NERDCTL_NAMESPACE:-k8s.io}"
-
-  if ! nerdctl --namespace "${ns}" info >/dev/null 2>&1; then
+  if ! nerdctl_ready --quiet; then
     return
   fi
 
-  print_colored "${COLOR_BRIGHTYELLOW}" "Cleaning nerdctl (namespace ${ns}) dangling volumes and images"
+  # First pass: exactly what you run manually.
+  print_colored "${COLOR_BRIGHTYELLOW}" "Pruning nerdctl dangling volumes and images (default CLI context)"
+  command nerdctl volume prune --force >/dev/null 2>&1
+  command nerdctl image prune --force >/dev/null 2>&1
+  print_colored "${COLOR_GREEN}" "nerdctl prune completed (default context)."
 
-  local dangling_volumes
-  dangling_volumes=$(nerdctl --namespace "${ns}" volume ls --filter dangling=true --quiet 2>/dev/null | tr '\n' ' ')
-  if [ -n "${dangling_volumes}" ]; then
-    nerdctl --namespace "${ns}" volume rm ${dangling_volumes} >/dev/null 2>&1
+  # Secondary pass: sweep explicit namespaces to catch drift.
+  local default_ns="${NERDCTL_NS:-${NERDCTL_NAMESPACE:-default}}"
+  local ns
+  local ns_list_raw
+  local -a namespaces
+
+  ns_list_raw="$(command nerdctl namespace ls --quiet 2>/dev/null)"
+  if [ -n "${ns_list_raw}" ]; then
+    namespaces=( ${(f)ns_list_raw} )
   else
-    print_colored "${COLOR_YELLOW}" "No dangling nerdctl volumes to remove."
+    namespaces=( "${default_ns}" )
   fi
 
-  local dangling_images
-  dangling_images=$(nerdctl --namespace "${ns}" images --filter dangling=true --quiet 2>/dev/null | tr '\n' ' ')
-  if [ -n "${dangling_images}" ]; then
-    nerdctl --namespace "${ns}" rmi ${dangling_images} >/dev/null 2>&1
-  else
-    print_colored "${COLOR_YELLOW}" "No dangling nerdctl images to remove."
-  fi
+  for ns in "${namespaces[@]}"; do
+    # default context already handled above
+    if [[ "${ns}" == "${default_ns}" ]]; then
+      continue
+    fi
+
+    print_colored "${COLOR_BRIGHTYELLOW}" "Pruning nerdctl (namespace ${ns}) dangling volumes and images"
+    command nerdctl --namespace "${ns}" volume prune --force >/dev/null 2>&1
+    command nerdctl --namespace "${ns}" image prune --force >/dev/null 2>&1
+    print_colored "${COLOR_GREEN}" "nerdctl prune completed in namespace ${ns}."
+  done
 }
 
 cleanup_docker

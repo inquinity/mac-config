@@ -178,8 +178,14 @@ fi
 # Source nerdctl (Rancher Desktop) functions from external library
 if test -f ~/mac-config/scripts/nerdctl.sh; then source ~/mac-config/scripts/nerdctl.sh; fi
 
-# Source Docker Deamon functions from external library
+# Source docker daemon-specific functions from external library
+if test -f ~/mac-config/scripts/dockerdaemon.sh; then source ~/mac-config/scripts/dockerdaemon.sh; fi
+
+# Source context-switched docker functions from external library
 if test -f ~/mac-config/scripts/docker.sh; then source ~/mac-config/scripts/docker.sh; fi
+
+# If you want switched-docker methods/aliases then source the following file
+# source ~/mac-config/scripts/docker-utils-switched.sh.sh; fi
 
 if test -f ~/mac-config/scripts/grype.sh; then alias grype='~/mac-config/scripts/grype.sh'; fi
 if test -f ~/mac-config/scripts/get-main-package.sh; then alias get-main-package='~/mac-config/scripts/get-main-package.sh'; fi
