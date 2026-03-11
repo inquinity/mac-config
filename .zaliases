@@ -5,7 +5,7 @@
 # imported from sample file
 # From http://hayne.net/MacDev/Bash/aliases.bash
 
-# printf "Sourcing .zaliases\n"
+# printf "Sourcing ${$(basename "$0")}\n"
 
 #-----------------
 # Directory / list
@@ -176,16 +176,16 @@ fi
 # -----------------
 
 # Source nerdctl (Rancher Desktop) functions from external library
-if test -f ~/mac-config/scripts/nerdctl.sh; then source ~/mac-config/scripts/nerdctl.sh; fi
+#if test -f ~/mac-config/scripts/nerdctl.sh; then source ~/mac-config/scripts/nerdctl.sh; fi
 
 # Source docker daemon-specific functions from external library
-if test -f ~/mac-config/scripts/dockerdaemon.sh; then source ~/mac-config/scripts/dockerdaemon.sh; fi
+#if test -f ~/mac-config/scripts/dockerdaemon.sh; then source ~/mac-config/scripts/dockerdaemon.sh; fi
 
-# Source context-switched docker functions from external library
+# Source docker functions from external library
 if test -f ~/mac-config/scripts/docker.sh; then source ~/mac-config/scripts/docker.sh; fi
 
 # If you want switched-docker methods/aliases then source the following file
-# source ~/mac-config/scripts/docker-utils-switched.sh.sh; fi
+# if test -f ~/mac-config/scripts/docker-utils-switched.sh; then source ~/mac-config/scripts/docker-utils-switched.sh.sh; fi
 
 if test -f ~/mac-config/scripts/grype.sh; then alias grype='~/mac-config/scripts/grype.sh'; fi
 if test -f ~/mac-config/scripts/get-main-package.sh; then alias get-main-package='~/mac-config/scripts/get-main-package.sh'; fi
@@ -208,6 +208,12 @@ fi
 if test -f ~/dev/team/docker/sbom-compare/sbom-analyze.sh; then alias sbom-analyze='~/dev/team/docker/sbom-compare/sbom-analyze.sh';
   elif test -f ~/mac-config/sbom-compare/sbom-analyze.sh; then alias sbom-analyze='~/mac-config/sbom-compare/sbom-analyze.sh';
 fi
+
+# -----
+# Codex
+# -----
+
+if test -f ~/mac-config/scripts/codex-exec.sh; then source ~/mac-config/scripts/codex-exec.sh; fi
 
 # ---------
 # Optum/UHG

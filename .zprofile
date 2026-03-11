@@ -6,15 +6,15 @@
 # After .zshenv 
 # Before .zshrc .zlogin
 
-# printf "Sourcing .zprofile\n"
+# printf "Sourcing $0...\n"
 
-# This is the easiest way to "fix" the path ordering issue and make sure that homebrew is search before /usr/*/bin
+# This is the easiest way to "fix" the path ordering issue and make sure that homebrew is searched before /usr/*/bin
 if [[ $(uname -m) == 'arm64' ]]; then
-  eval "$(/opt/homebrew/bin/brew shellenv)"
-  addpath "/opt/bin"
-  if [ -d /opt/homebrew/opt/mysql-client/bin ]; then
-      addpath "/opt/homebrew/opt/mysql-client/bin"
-  fi
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+    addpath "/opt/bin"
+    if [ -d /opt/homebrew/opt/mysql-client/bin ]; then
+	addpath "/opt/homebrew/opt/mysql-client/bin"
+    fi
 fi
 
 #kubectl autocompletion

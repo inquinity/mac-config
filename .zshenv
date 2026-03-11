@@ -9,7 +9,7 @@
 # /etc/paths
 # /etc/paths.d
 
-# printf "Sourcing .zshenv\n"
+# printf "Sourcing $0...\n"
 
 # define addpath() here since this is the first sourced file
 addpath() {
@@ -19,18 +19,18 @@ addpath() {
     fi
 }
 
-#export PATH=$PATH:~/.docker/bin:/Applications/Docker.app/Contents/Resources/bin/
-addpath :~/.docker/bin
-addpath /Applications/Docker.app/Contents/Resources/bin/
+#addpath :~/.docker/bin
+#addpath /Applications/Docker.app/Contents/Resources/bin/
+addpath ~/.rd/bin
 
 # this is repeated in zprofile to ensure correct path ordering so brew folders come before /usr/*/bin
 if [[ $(uname -m) == 'arm64' ]]; then
-  # Apple chips
-  eval "$(/opt/homebrew/bin/brew shellenv)"
-  addpath "/opt/bin"
-  if [ -d /opt/homebrew/opt/mysql-client/bin ]; then
-      addpath "/opt/homebrew/opt/mysql-client/bin"
-  fi
+    # Apple chips
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+    addpath "/opt/bin"
+    if [ -d /opt/homebrew/opt/mysql-client/bin ]; then
+	addpath "/opt/homebrew/opt/mysql-client/bin"
+    fi
 else
     # Intel chips
     addpath "/usr/local/sbin"

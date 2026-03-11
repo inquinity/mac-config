@@ -7,6 +7,6 @@
 
 # See also: .zlogout
 
-# printf "Sourcing .zlogin\n"
+# printf "Sourcing $0...\n"
 
 #cd ~/dev

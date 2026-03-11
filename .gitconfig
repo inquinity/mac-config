@@ -43,6 +43,8 @@
 	origin = config --get remote.origin.url
 	cp = cherry-pick
 	purge = !git reflog expire --expire=now --all && git gc --prune=now --aggressive
+[init]
+	defaultBranch = main
 [credential]
 	helper = 
 	helper = /usr/local/share/gcm-core/git-credential-manager

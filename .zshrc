@@ -5,7 +5,7 @@
 # After .zshenv .zprofile
 # Before .zlogin
 
-# printf "Sourcing .zshrc\n"
+# printf "Sourcing .zprofile\n"
 
 # History options
 # Good source of info: https://zsh.sourceforge.io/Guide/zshguide02.html#l17
@@ -114,3 +114,7 @@ export DOTNET_CLI_TELEMETRY_OPTOUT=1
 
 # Configure eza - see https://github.com/eza-community/eza-themes
 export EZA_CONFIG_DIR=~/.config/eza
+
+### MANAGED BY RANCHER DESKTOP START (DO NOT EDIT)
+export PATH="/Users/raltman2/.rd/bin:$PATH"
+### MANAGED BY RANCHER DESKTOP END (DO NOT EDIT)
