@@ -11,6 +11,8 @@
     exit 1
 }
 
+# printf "Sourcing $0...\n"
+
 # Define color codes for terminal output
 COLOR_GREEN="\e[32m"         # Used for success messages and instructions
 COLOR_RED="\e[31m"           # Used for error messages and warnings
@@ -74,16 +76,17 @@ docker-ls() {
     dockerdaemon_ready || return 1
 
     local format_args="{{.Repository}}:{{.Tag}}\t{{.CreatedAt}}\t{{.ID}}\t{{.Size}}"
+    local result
+    result=$(command docker image ls --format "${format_args}")
+
     if [ -n "$1" ]; then
-        local result
-        result=$(command docker image ls --format "${format_args}")
         for term in "$@"; do
-            result=$(printf "%s" "$result" | fgrep "$term")
+            result=$(printf "%s\n" "$result" | fgrep "$term")
         done
-        printf "%s\n" "$result"
-    else
-        command docker image ls --format "${format_args}"
     fi
+
+    # Sort by repository:tag (first tab-delimited column) for deterministic output.
+    printf "%s\n" "$result" | LC_ALL=C sort -t $'\t' -k1,1
 }
 
 docker-sha() {

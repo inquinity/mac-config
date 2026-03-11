@@ -11,6 +11,8 @@
     exit 1
 }
 
+# printf "Sourcing $0...\n"
+
 # Define color codes for terminal output
 COLOR_GREEN="\e[32m"         # Used for success messages and instructions
 COLOR_RED="\e[31m"           # Used for error messages and warnings
@@ -79,16 +81,18 @@ nerdctl-ls() {
     # nerdctl's Go template doesn't interpret escape sequences, so embed real tabs
     local format_args=$'{{.Repository}}:{{.Tag}}\t{{.CreatedAt}}\t{{.ID}}\t{{.Size}}'
     local tab=$'\t'
+    local result
+
+    result=$(nerdctl --namespace "${NERDCTL_NS}" image ls --format "${format_args}")
 
     if [ -n "$1" ]; then
-        result=$(nerdctl --namespace "${NERDCTL_NS}" image ls --format "${format_args}")
         for term in "$@"; do
-            result=$(printf "%s" "$result" | fgrep "$term")
+            result=$(printf "%s\n" "$result" | fgrep "$term")
         done
-        printf "%s\n" "$result" | column -t -s "${tab}"
-    else
-        nerdctl --namespace "${NERDCTL_NS}" image ls --format "${format_args}" | column -t -s "${tab}"
     fi
+
+    # Sort by repository:tag (first tab-delimited column) for deterministic output.
+    printf "%s\n" "$result" | LC_ALL=C sort -t "${tab}" -k1,1 | column -t -s "${tab}"
 }
 
 nerdctl-sha() {
