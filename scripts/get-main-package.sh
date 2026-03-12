@@ -29,6 +29,11 @@ print_colored() {
 
 RUNTIME_BIN=""
 RUNTIME_NERDCTL_NS="${NERDCTL_NAMESPACE:-default}"
+debug_mode=false
+image_url=""
+sbom_file=""
+image_archive=""
+syft_error_file=""
 
 runtime_image_inspect() {
     local image_ref="$1"
@@ -70,144 +75,260 @@ detect_local_runtime_for_image() {
     return 1
 }
 
-# Parse arguments
-debug_mode=false
-image_url=""
+show_help() {
+    print_colored "$COLOR_YELLOW" "Usage: $(basename "$0") [OPTIONS] IMAGE_OR_TAR"
+    print_colored "$COLOR_YELLOW" ""
+    print_colored "$COLOR_YELLOW" "Options:"
+    print_colored "$COLOR_YELLOW" "  --debug  Show CLI commands before execution"
+    print_colored "$COLOR_YELLOW" ""
+    print_colored "$COLOR_YELLOW" "Example:"
+    print_colored "$COLOR_YELLOW" "  $(basename "$0") edgecore.optum.com/glb-docker-uhg-loc/uhg-goldenimages/external-dns:latest"
+    print_colored "$COLOR_YELLOW" "  $(basename "$0") ./airflow--2-latest.image.tar"
+}
 
-while [[ $# -gt 0 ]]; do
-    case "$1" in
-        -h|--help)
-            print_colored "$COLOR_YELLOW" "Usage: $(basename "$0") [OPTIONS] IMAGE_OR_TAR"
-            print_colored "$COLOR_YELLOW" ""
-            print_colored "$COLOR_YELLOW" "Options:"
-            print_colored "$COLOR_YELLOW" "  --debug  Show CLI commands before execution"
-            print_colored "$COLOR_YELLOW" ""
-            print_colored "$COLOR_YELLOW" "Example:"
-            print_colored "$COLOR_YELLOW" "  $(basename "$0") edgecore.optum.com/glb-docker-uhg-loc/uhg-goldenimages/external-dns:latest"
-            print_colored "$COLOR_YELLOW" "  $(basename "$0") ./airflow--2-latest.image.tar"
-            exit 0
-            ;;
-        --debug)
-            debug_mode=true
-            shift
-            ;;
-        -*)
-            print_colored "$COLOR_RED" "Error: Unknown option '$1'"
-            exit 1
-            ;;
-        *)
-            image_url="$1"
-            shift
-            ;;
-    esac
-done
+parse_args() {
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -h|--help)
+                show_help
+                exit 0
+                ;;
+            --debug)
+                debug_mode=true
+                shift
+                ;;
+            -*)
+                print_colored "$COLOR_RED" "Error: Unknown option '$1'"
+                exit 1
+                ;;
+            *)
+                image_url="$1"
+                shift
+                ;;
+        esac
+    done
 
-if [[ -z "$image_url" ]]; then
-    print_colored "$COLOR_RED" "Error: IMAGE_OR_TAR is required"
-    exit 1
-fi
-
-for tool in syft jq base64; do
-    if ! command -v "${tool}" >/dev/null 2>&1; then
-        print_colored "$COLOR_RED" "Error: ${tool} is not installed."
+    if [[ -z "$image_url" ]]; then
+        print_colored "$COLOR_RED" "Error: IMAGE_OR_TAR is required"
         exit 1
     fi
-done
+}
 
-sbom_file="$(mktemp "${TMPDIR:-/tmp}/sbom-XXXXXX.json")"
-image_archive=""
-trap 'rm -f "${sbom_file}" "${image_archive}"' EXIT
+require_tools() {
+    local tool
+    for tool in syft jq base64; do
+        if ! command -v "${tool}" >/dev/null 2>&1; then
+            print_colored "$COLOR_RED" "Error: ${tool} is not installed."
+            exit 1
+        fi
+    done
+}
 
-syft_source="registry:${image_url}"
-is_tar_input=false
-if [[ -f "${image_url}" ]]; then
-    case "${image_url}" in
-        *.tar|*.tar.gz|*.tgz)
-            is_tar_input=true
-            ;;
-    esac
-fi
+create_temp_path() {
+    local prefix="$1"
+    local tmp_path=""
 
-if [[ "${is_tar_input}" == "true" ]]; then
-    syft_source="docker-archive:${image_url}"
-    print_colored "$COLOR_YELLOW" "Using docker-archive tar source: ${image_url}"
-elif detect_local_runtime_for_image "${image_url}"; then
-    if [[ "${RUNTIME_BIN}" == "docker" ]]; then
-        syft_source="docker:${image_url}"
-        print_colored "$COLOR_YELLOW" "Using local image from docker daemon."
-    else
-        image_archive="$(mktemp "${TMPDIR:-/tmp}/get-main-package-XXXXXX.tar")"
+    if tmp_path="$(mktemp -t "${prefix}")"; then
+        printf '%s\n' "$tmp_path"
+        return 0
+    fi
+
+    print_colored "$COLOR_RED" "Error: Failed to create temporary file for ${prefix}"
+    exit 1
+}
+
+setup_temp_files() {
+    sbom_file="$(create_temp_path "sbom")"
+    syft_error_file="$(create_temp_path "syft-error")"
+    image_archive=""
+    trap 'rm -f "${sbom_file}" "${syft_error_file}" "${image_archive}"' EXIT
+}
+
+determine_syft_source() {
+    local is_tar_input=false
+    local syft_source="registry:${image_url}"
+
+    if [[ -f "${image_url}" ]]; then
+        case "${image_url}" in
+            *.tar|*.tar.gz|*.tgz)
+                is_tar_input=true
+                ;;
+        esac
+    fi
+
+    if [[ "${is_tar_input}" == "true" ]]; then
+        print_colored "$COLOR_YELLOW" "Using docker-archive tar source: ${image_url}" >&2
+        printf '%s\n' "docker-archive:${image_url}"
+        return 0
+    fi
+
+    if detect_local_runtime_for_image "${image_url}"; then
+        if [[ "${RUNTIME_BIN}" == "docker" ]]; then
+            print_colored "$COLOR_YELLOW" "Using local image from docker daemon." >&2
+            printf '%s\n' "docker:${image_url}"
+            return 0
+        fi
+
+        image_archive="$(create_temp_path "get-main-package")"
         if [[ "$debug_mode" == true ]]; then
-            print_colored "$COLOR_CYAN" "$ nerdctl --namespace ${RUNTIME_NERDCTL_NS} image save ${image_url} -o ${image_archive}"
+            print_colored "$COLOR_CYAN" "$ nerdctl --namespace ${RUNTIME_NERDCTL_NS} image save ${image_url} -o ${image_archive}" >&2
         fi
         if runtime_image_save "${image_url}" "${image_archive}" >/dev/null 2>&1; then
-            syft_source="docker-archive:${image_archive}"
-            print_colored "$COLOR_YELLOW" "Using local image from nerdctl namespace ${RUNTIME_NERDCTL_NS}."
-        else
-            print_colored "$COLOR_YELLOW" "Warning: failed to export local image; falling back to registry source."
-            rm -f "${image_archive}"
-            image_archive=""
+            print_colored "$COLOR_YELLOW" "Using local image from nerdctl namespace ${RUNTIME_NERDCTL_NS}." >&2
+            printf '%s\n' "docker-archive:${image_archive}"
+            return 0
         fi
+
+        print_colored "$COLOR_YELLOW" "Warning: failed to export local image; falling back to registry source." >&2
+        rm -f "${image_archive}"
+        image_archive=""
     fi
-fi
 
-# Generate SBOM
-print_colored "$COLOR_GREEN" "Generating SBOM for image: $image_url"
-if [[ "$debug_mode" == true ]]; then
-    print_colored "$COLOR_CYAN" "$ syft scan ${syft_source} -o syft-json > ${sbom_file}"
-fi
-syft scan "${syft_source}" -o syft-json > "$sbom_file" 2>/dev/null
-if [[ $? -ne 0 ]]; then
-    print_colored "$COLOR_RED" "Error: Failed to generate SBOM for image"
-    exit 1
-fi
+    printf '%s\n' "${syft_source}"
+}
 
-# Extract main package name
-if [[ "$debug_mode" == true ]]; then
-    print_colored "$COLOR_CYAN" "$ jq -r '.source.metadata.labels[\"dev.chainguard.package.main\"]' $sbom_file"
-fi
-main_pkg=$(jq -r '.source.metadata.labels["dev.chainguard.package.main"] // empty' "$sbom_file")
-if [[ -z "$main_pkg" ]]; then
-    print_colored "$COLOR_RED" "Error: Could not find main package label in image"
-    exit 1
-fi
+generate_sbom() {
+    local syft_source="$1"
 
-# Extract version
-if [[ "$debug_mode" == true ]]; then
-    print_colored "$COLOR_CYAN" "$ jq -r '.artifacts[] | select(.name==\"\${main_pkg}\" or (.name|startswith(\"\${main_pkg}-\")) or (.name|startswith(\"\${main_pkg}:\"))) | .version' $sbom_file | head -n1"
-fi
-version=$(jq -r --arg pkg "${main_pkg}" '
-  .artifacts[]
-  | select(.name==$pkg or (.name|startswith($pkg+"-")) or (.name|startswith($pkg+":")))
-  | .version
-' "$sbom_file" | head -n1)
-if [[ -z "$version" ]]; then
-    # last resort: show nearby package names to aid debugging
-    print_colored "$COLOR_RED" "Error: Could not find version for package '$main_pkg'"
-    nearby=$(jq -r --arg pkg "${main_pkg}" '.artifacts[].name | select(contains($pkg))' "$sbom_file" | head -n5)
+    print_colored "$COLOR_GREEN" "Generating SBOM for image: $image_url"
+    if [[ "$debug_mode" == true ]]; then
+        print_colored "$COLOR_CYAN" "$ SYFT_CHECK_FOR_APP_UPDATE=false syft scan ${syft_source} -o syft-json > ${sbom_file}"
+    fi
+
+    if ! SYFT_CHECK_FOR_APP_UPDATE=false syft scan "${syft_source}" -o syft-json > "$sbom_file" 2> "$syft_error_file"; then
+        print_colored "$COLOR_RED" "Error: Failed to generate SBOM for image"
+        if [[ -s "$syft_error_file" ]]; then
+            print_colored "$COLOR_YELLOW" "Syft output:"
+            cat "$syft_error_file"
+        fi
+        if [[ "${syft_source}" == registry:* ]]; then
+            if [[ -n "${DOCKER_CONFIG:-}" ]]; then
+                print_colored "$COLOR_YELLOW" "Registry auth config expected at: ${DOCKER_CONFIG}/config.json"
+            else
+                print_colored "$COLOR_YELLOW" "DOCKER_CONFIG is not set. Syft registry scans may need a Docker auth config."
+            fi
+        fi
+        exit 1
+    fi
+}
+
+extract_main_package() {
+    if [[ "$debug_mode" == true ]]; then
+        print_colored "$COLOR_CYAN" "$ jq -r '.source.metadata.labels[\"dev.chainguard.package.main\"]' ${sbom_file}"
+    fi
+
+    jq -r '.source.metadata.labels["dev.chainguard.package.main"] // empty' "$sbom_file"
+}
+
+extract_package_version() {
+    local main_pkg="$1"
+
+    if [[ "$debug_mode" == true ]]; then
+        print_colored "$COLOR_CYAN" "$ jq -r --arg pkg \"${main_pkg}\" '<filtered package query>' ${sbom_file}"
+    fi
+
+    jq -r --arg pkg "${main_pkg}" '
+      def normalized_version:
+        (.version // "")
+        | tostring
+        | gsub("^\\s+|\\s+$"; "");
+      def valid_version:
+        (normalized_version | length > 0)
+        and ((normalized_version | ascii_downcase) != "unknown")
+        and ((normalized_version | ascii_downcase) != "null")
+        and ((normalized_version | ascii_downcase) != "none")
+        and (normalized_version != "(none)");
+      [
+        .artifacts[]
+        | select(.name == $pkg and valid_version)
+        | normalized_version
+      ] as $exact
+      | if ($exact | length) > 0 then
+          $exact[0]
+        else
+          ([
+            .artifacts[]
+            | select((.name | startswith($pkg + "-") or startswith($pkg + ":")) and valid_version)
+            | normalized_version
+          ][0] // empty)
+        end
+    ' "$sbom_file"
+}
+
+show_nearby_packages() {
+    local main_pkg="$1"
+    local nearby
+
+    nearby=$(jq -r --arg pkg "${main_pkg}" '.artifacts[].name | select(type == "string" and contains($pkg))' "$sbom_file" | head -n5)
     if [[ -n "$nearby" ]]; then
-      print_colored "$COLOR_YELLOW" "Packages containing '${main_pkg}' seen in SBOM:"
-      print_colored "$COLOR_YELLOW" "$nearby"
+        print_colored "$COLOR_YELLOW" "Packages containing '${main_pkg}' seen in SBOM:"
+        print_colored "$COLOR_YELLOW" "$nearby"
     fi
-    exit 1
-fi
+}
 
-# Extract Chainguard base image build date
-if [[ "$debug_mode" == true ]]; then
-    print_colored "$COLOR_CYAN" "$ jq -r '.source.metadata.config' $sbom_file | base64 -d | jq -r '.history[0].created'"
-fi
-image_date=$(jq -r '.source.metadata.config' "$sbom_file" | base64 -d | jq -r '.history[0].created // empty')
-if [[ -z "$image_date" ]]; then
+extract_image_date() {
+    local image_date
+
+    if [[ "$debug_mode" == true ]]; then
+        print_colored "$COLOR_CYAN" "$ jq -r '.source.metadata.config' ${sbom_file} | base64 -d | jq -r '.history[0].created'"
+    fi
+
+    image_date=$(jq -r '.source.metadata.config // empty' "$sbom_file" | base64 -d 2>/dev/null | jq -r '.history[0].created // empty' 2>/dev/null)
+    if [[ -n "$image_date" ]]; then
+        printf '%s\n' "$image_date"
+        return 0
+    fi
+
     image_date=$(jq -r '.source.metadata.labels["golden.container.image.build.release"] // empty' "$sbom_file")
     if [[ -n "$image_date" ]]; then
-        image_date="${image_date} (golden image date)"
+        printf '%s\n' "${image_date} (golden image date)"
+        return 0
     fi
-fi
 
-# Print results
-printf "\n"
-print_colored "$COLOR_MAGENTA" "IMAGE: $image_url"
-print_colored "$COLOR_MAGENTA" "Image date: $image_date"
-print_colored "$COLOR_MAGENTA" "Main Package: $main_pkg"
-print_colored "$COLOR_MAGENTA" "Version: $version"
-printf "\n"
+    printf '\n'
+}
+
+print_results() {
+    local main_pkg="$1"
+    local version="$2"
+    local image_date="$3"
+
+    printf "\n"
+    print_colored "$COLOR_MAGENTA" "IMAGE: $image_url"
+    print_colored "$COLOR_MAGENTA" "Image date: $image_date"
+    print_colored "$COLOR_MAGENTA" "Main Package: $main_pkg"
+    print_colored "$COLOR_MAGENTA" "Version: $version"
+    printf "\n"
+}
+
+main() {
+    local syft_source
+    local main_pkg
+    local version
+    local image_date
+
+    parse_args "$@"
+    require_tools
+    setup_temp_files
+
+    syft_source="$(determine_syft_source)"
+    generate_sbom "$syft_source"
+
+    main_pkg="$(extract_main_package)"
+    if [[ -z "$main_pkg" ]]; then
+        print_colored "$COLOR_RED" "Error: Could not find main package label in image"
+        exit 1
+    fi
+
+    version="$(extract_package_version "$main_pkg")"
+    if [[ -z "$version" ]]; then
+        print_colored "$COLOR_RED" "Error: Could not find version for package '$main_pkg'"
+        show_nearby_packages "$main_pkg"
+        exit 1
+    fi
+
+    image_date="$(extract_image_date)"
+    print_results "$main_pkg" "$version" "$image_date"
+}
+
+main "$@"
