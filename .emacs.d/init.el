@@ -100,6 +100,11 @@
 
 (keymap-global-set "H-6" 'sort-region)
 
+;; Unmap Meta-delete (use Control-backspace for backward-kill-word)
+(keymap-global-unset "M-<delete>")
+(keymap-global-unset "M-DEL")
+
+
 ;; Comments - Not working the way it should
 ;;(keymap-global-set "H-." 'uncomment-region)
 ;;(keymap-global-set "H-/" 'comment-region)

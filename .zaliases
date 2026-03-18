@@ -5,7 +5,7 @@
 # imported from sample file
 # From http://hayne.net/MacDev/Bash/aliases.bash
 
-# printf "Sourcing ${$(basename "$0")}\n"
+ztrace "Loading ${(%):-%x}"
 
 #-----------------
 # Directory / list
@@ -238,3 +238,8 @@ if test -f ~/dev/codeql.sh; then alias codeql='~/dev/codeql.sh'; fi
 
 # gcitool
 if test -f ~/dev/optum/gcitool/scripts/gcictl.sh; then alias gci=~/dev/optum/gcitool/scripts/gcictl.sh; fi
+
+# Startup trace control
+alias zsh-trace-on='touch ~/.zsh_trace && echo "Startup trace: ON (takes effect on next shell)"'
+alias zsh-trace-off='rm -f ~/.zsh_trace && echo "Startup trace: OFF (takes effect on next shell)"'
+alias zsh-trace-status='[[ -f ~/.zsh_trace ]] && echo "Startup trace: ON" || echo "Startup trace: OFF"'

@@ -7,6 +7,6 @@
 
 # See also: .zlogout
 
-# printf "Sourcing $0...\n"
+ztrace "Loading ${(%):-%x}"
 
 #cd ~/dev

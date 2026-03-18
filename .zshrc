@@ -5,7 +5,7 @@
 # After .zshenv .zprofile
 # Before .zlogin
 
-# printf "Sourcing .zprofile\n"
+ztrace "Loading ${(%):-%x}"
 
 # History options
 # Good source of info: https://zsh.sourceforge.io/Guide/zshguide02.html#l17
@@ -87,8 +87,8 @@ fi
 # Load UHG specific settings (if file exists)
 #. ~/.zshrc-uhg 2> /dev/null
 
-#aliases
-source ~/.zaliases
+# aliases
+[[ -f ~/.zaliases ]] && source ~/.zaliases
 
 # Lines configured by zsh-newuser-install
 #HISTFILE=~/.histfile
@@ -103,18 +103,9 @@ source ~/.zaliases
 zstyle :compinstall filename '/Users/raltman2/.zshrc'
 
 autoload -Uz compinit
-compinit
+# -C skips security check and reuses the dump file; run 'compinit' manually to rebuild
+compinit -C
 # End of lines added by compinstall
-
-# This will disable MicroTemplate Husky hooks
-export HUSKY=0
-
-# Disable Microsoft cli telemetry
-export DOTNET_CLI_TELEMETRY_OPTOUT=1
 
 # Configure eza - see https://github.com/eza-community/eza-themes
 export EZA_CONFIG_DIR=~/.config/eza
-
-### MANAGED BY RANCHER DESKTOP START (DO NOT EDIT)
-export PATH="/Users/raltman2/.rd/bin:$PATH"
-### MANAGED BY RANCHER DESKTOP END (DO NOT EDIT)
