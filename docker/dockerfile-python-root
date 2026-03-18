@@ -1,6 +1,5 @@
 # This file needs LF line endings to work correctly on Windows.  If you are using Windows, please change the line endings to LF.
 
-ARG JF_EDGE_NODE=edgeinternal1uhg.uhg.com
 
 # User 65532 is a well-known and documented UserID created as part of the Chainguard base image.
 # Using this ID is preferred to creating a new one
@@ -8,13 +7,10 @@ ARG CHAINGUARD_USER_AND_GROUP=65532
 
 # Adding both FROM statements to the top of the file allows us to re-use the name/alias for the image.
 # This promotes better readability, maintainability, and consistency across the Dockerfile.
-FROM ${JF_EDGE_NODE}/glb-docker-uhg-loc/uhg-goldenimages/python:3.14-latest-dev AS final
-FROM ${JF_EDGE_NODE}/glb-docker-uhg-loc/uhg-goldenimages/python:3.14-latest-dev AS build
+FROM cgr.dev/optum.com/python:3.14 AS final
+FROM cgr.dev/optum.com/python:3.14-dev AS build
 
-# To make use of the JF_EDGE_NODE argument within a build stage, we need to re-declare it here.
-# See the docker documentation on scoping for more detail: https://docs.docker.com/build/building/variables/#scoping
 ARG CHAINGUARD_USER_AND_GROUP
-ARG JF_EDGE_NODE
 
 USER root
 
@@ -32,61 +28,25 @@ ENV PATH="/opt/venv/bin:$PATH"
 # Use Central timezone
 ENV TZ=America/Chicago
 
-# Copy requirements first for better layer caching
-COPY requirements.txt .
-
 # Install dependencies in the venv during build stage
-RUN --mount=type=secret,id=jf-http-auth,env=JF_HTTP_AUTH \
-    --mount=type=secret,id=jf-user,env=JF_USER \
-    --mount=type=secret,id=jf-token,env=JF_TOKEN <<ER_AUTHENTICATION_BLOCK
+RUN <<ER_AUTHENTICATION_BLOCK
 
-export PIP_INDEX_URL="https://${JF_HTTP_AUTH}@${JF_EDGE_NODE}/artifactory/api/pypi/epl-pypi-vir/simple"
-
-/opt/venv/bin/pip install --no-cache-dir --upgrade pip
-/opt/venv/bin/pip install --no-cache-dir -r requirements.txt
-
-# Clean up pip cache and temporary files
-rm -rf /root/.cache/pip
-find /opt/venv -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
-find /opt/venv -type f -name "*.pyc" -delete
-
-export HTTP_AUTH="basic:${JF_EDGE_NODE}:${JF_USER}:${JF_TOKEN}"
-# apk add --no-cache syft
-# apk add --no-cache --root /prod curl
+apk add --no-cache syft
+apk add --no-cache --initdb --root /prod curl
 
 ER_AUTHENTICATION_BLOCK
 
-# Copy all application code
-# COPY gcitool_lib/ /app/gcitool_lib/
-# COPY dashboard/ /app/dashboard/
-# COPY modules/cleanup /app/modules/cleanup
-# COPY docs/core-api-guide.md /app/docs/
-# COPY gcitool.py /app/
-# COPY wsgi.py /app/
-# COPY *.json /app/
-
-# # Explicitly set execute permissions to ensure reproducibility across different
-# # development environments (Windows, Unix) and deployment workflows
-# RUN <<permissions
-# chmod u+x ./gcitool.py ./modules/cleanup/cleanup-tool.py
-# permissions
-
+# # --------------------------------------------------------------------
 # # Final stage - keep the original base image as requested
 # FROM final
 
 # # IMPORTANT: Re-import ARGs in the final stage
-# ARG JF_EDGE_NODE
 # ARG CHAINGUARD_USER_AND_GROUP
 
 # # Import apk packages from build stage
 # COPY --from=build /prod /
 
 # WORKDIR /app
-
-# # Copy virtual environment and application code
-# COPY --from=build --chown=${CHAINGUARD_USER_AND_GROUP}:${CHAINGUARD_USER_AND_GROUP} /opt/venv /opt/venv
-# COPY --from=build --chown=${CHAINGUARD_USER_AND_GROUP}:${CHAINGUARD_USER_AND_GROUP} /app /app
-# COPY --from=build --chown=${CHAINGUARD_USER_AND_GROUP}:${CHAINGUARD_USER_AND_GROUP} /shared_data /app/data
 
 # # Set the system locale to UTF-8 encoding to prevent encoding errors when reading/writing files or string
 # ENV LANG=C.UTF-8
@@ -104,25 +64,5 @@ ER_AUTHENTICATION_BLOCK
 # # Use Central timezone
 # ENV TZ=America/Chicago
 
-# # Add persistent volume
-# VOLUME ["/app/data"]
-
 # # Expose port for web service
 # EXPOSE 8000
-
-# # Fail the image build immediately if gunicorn was not installed into the venv.
-# RUN ["/opt/venv/bin/python", "-c", "import os, sys; sys.exit(0 if os.path.exists('/opt/venv/bin/gunicorn') and os.access('/opt/venv/bin/gunicorn', os.X_OK) else 1)"]
-
-# ENTRYPOINT ["/opt/venv/bin/gunicorn", \
-#           "--bind", "0.0.0.0:8000", \
-#           "--workers", "4", \
-#           "--timeout", "300", \
-#           "--keep-alive", "5", \
-#           "--graceful-timeout", "120", \
-#           "--worker-class", "sync", \
-#           "--worker-connections", "1000", \
-#           "--backlog", "2048", \
-#           "--access-logfile", "-", \
-#           "--error-logfile", "-", \
-#           "--log-level", "info", \
-#           "wsgi:app"]
