@@ -59,10 +59,20 @@ anchore_resolve_image_name() {
 
     if command -v yq >/dev/null 2>&1; then
         image_name=$(yq '.services.service.image' "$build_dir/compose.yml")
-        if [ -z "$image_name" ]; then
+        if [ -z "$image_name" ] || [ "$image_name" = "null" ]; then
             image_name="anchore-search:latest"
         fi
+    else
+        print_colored "$COLOR_YELLOW" "Warning: yq not found, using default image name. Install yq for robust YAML parsing."
+        image_name="anchore-search:latest"
+    fi
 
+    printf "%s\n" "$image_name"
+}
+
+anchore_docker_available() {
+    if ! command -v docker >/dev/null 2>&1; then
+        print_colored "$COLOR_RED" "Error: Docker is not installed or not in PATH"
         return 1
     fi
 
@@ -87,18 +97,6 @@ anchore_validate_build_prereqs() {
             print_colored "$COLOR_RED" "Error: Dockerfile not found in: $build_dir (expected Dockerfile or dockerfile)"
             error_count=$((error_count + 1))
         fi
-    fi
-
-    if [ -z "${ER_AUTH_USER-}" ]; then
-        print_colored "$COLOR_RED" "Error: ER_AUTH_USER environment variable not set"
-        print_colored "$COLOR_YELLOW" "    Set with: export ER_AUTH_USER=<your-username>"
-        error_count=$((error_count + 1))
-    fi
-
-    if [ -z "${ER_AUTH_TOKEN-}" ]; then
-        print_colored "$COLOR_RED" "Error: ER_AUTH_TOKEN environment variable not set"
-        print_colored "$COLOR_YELLOW" "    Set with: export ER_AUTH_TOKEN=<your-token>"
-        error_count=$((error_count + 1))
     fi
 
     if ! anchore_docker_available; then
