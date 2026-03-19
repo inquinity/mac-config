@@ -1,0 +1,7 @@
+.git*
+vitals.yaml
+dockerfile
+Dockerfile
+README.md
+apk-functions.sh
+*.ps1

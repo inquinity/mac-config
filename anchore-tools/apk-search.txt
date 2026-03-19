@@ -1,0 +1,44 @@
+------------------------------------------------------
+List Installed Packages
+Lists all packages currently installed on the system.
+apk list -I
+
+------------------------------------------------------
+Search by Package Name
+Searches for packages whose names contain "PACKAGE".
+apk search PACKAGE
+
+------------------------------------------------------
+Search by Description
+Searches for packages that contain "TEXT" in their description field.
+apk search curl -d TEXT
+
+------------------------------------------------------
+Search for Binary/Command
+Searches for packages that provide a specific command or binary file named "FILE".
+apk search cmd:FILE
+
+------------------------------------------------------
+Search for Shared Object/Library
+Searches for packages that provide a specific shared object (library) file.
+apk search so:libproj.so
+
+------------------------------------------------------
+Find Package Providing a File
+Shows which package owns or provides the specified file.
+apk info -W libcrypto.so.3
+
+------------------------------------------------------
+Show Package Information
+Displays detailed information about a specific package.
+apk info PACKAGE
+
+------------------------------------------------------
+Show Package Dependencies (Requires)
+Shows what other packages the specified package depends on (requires).
+apk info -R libldap
+
+------------------------------------------------------
+Show Reverse Dependencies (Required By)
+Shows which packages depend on the specified package (reverse dependencies).
+apk info -r libldap

@@ -1,0 +1,162 @@
+# This file needs LF line endings to work correctly on Windows.  If you are using Windows, please change the line endings to LF.
+
+# Buiding:
+# docker build --tag anchore-search:latest .
+#
+# Running:
+# docker run --rm --interactive --tty anchore-search
+
+# WARNING: This image should ony be used for searching apks; the credentials are stored in a sourced file.
+# WARNING: Do not distribute images built from this dockerfile
+
+
+FROM cgr.dev/optum.com/chainguard-base:latest
+USER root
+WORKDIR /root
+
+# To make use of the JF_EDGE_NODE argument within a build stage, we need to re-declare it here.
+# See the docker documentation on scoping for more detail: https://docs.docker.com/build/building/variables/#scoping
+ARG JF_EDGE_NODE
+
+RUN <<ER_AUTHENTICATION_BLOCK
+
+# Append the optum.com APK registry
+echo 'https://apk.cgr.dev/optum.com/' >> /etc/apk/repositories
+
+# Add security tools
+apk add --no-cache syft grype
+
+mkdir $HOME/.docker
+
+# Create the environment variables for the Enterprise Registry authentication
+cat >> $HOME/.shrc <<SHRC_BLOCK
+alias ll='ls -alh'
+alias help='cat $HOME/apk-search.txt'
+
+scanapk() {
+    output_mode="summary"
+
+    while [ "\$#" -gt 0 ]; do
+        case "\$1" in
+            --summary)
+                output_mode="summary"
+                ;;
+            --table)
+                output_mode="table"
+                ;;
+            --full)
+                output_mode="full"
+                ;;
+            --help|-h)
+                echo "Usage: scanapk [--summary|--table|--full] <package> [package ...]"
+                echo "Default mode is --summary."
+                echo "  --summary  Keep apk add output, save Syft/Grype tables, print final Grype report"
+                echo "  --table    Print both Syft and Grype tables"
+                echo "  --full     Print both Syft and Grype tables with the end-of-run summary"
+                return 0
+                ;;
+            --)
+                shift
+                break
+                ;;
+            -*)
+                echo "Unknown option: \$1"
+                return 1
+                ;;
+            *)
+                break
+                ;;
+        esac
+        shift
+    done
+
+    if [ "\$#" -lt 1 ]; then
+        echo "Usage: scanapk [--summary|--table|--full] <package> [package ...]"
+        echo "Creates a throwaway rootfs, installs the requested apk packages, and runs Syft and Grype."
+        return 1
+    fi
+
+    if [ -n "\${SCANAPK_OUTPUT_DIR-}" ]; then
+        output_dir="\${SCANAPK_OUTPUT_DIR}"
+    else
+        timestamp=\$(date +%Y%m%d%H%M%S)
+        output_dir="\${PWD}/scanapk-\${timestamp}"
+    fi
+    rootfs_dir="\${output_dir}/rootfs"
+
+    mkdir -p "\${rootfs_dir}/etc/apk" || return 1
+
+    echo "Creating scan workspace: \${output_dir}"
+    cp /etc/apk/repositories "\${rootfs_dir}/etc/apk/" || return 1
+    cp -R /etc/apk/keys "\${rootfs_dir}/etc/apk/" || return 1
+    apk add --no-cache --initdb --no-commit-hooks --root "\${rootfs_dir}" "\$@" || return 1
+
+    if [ "\${output_mode}" = "summary" ]; then
+        SYFT_CHECK_FOR_APP_UPDATE=false syft "dir:\${rootfs_dir}" -o table > "\${output_dir}/syft-table.txt" 2> /dev/null
+    else
+        SYFT_CHECK_FOR_APP_UPDATE=false syft "dir:\${rootfs_dir}" -o table | tee "\${output_dir}/syft-table.txt"
+    fi
+
+    if [ "\${output_mode}" = "summary" ]; then
+        GRYPE_CHECK_FOR_APP_UPDATE=false grype "dir:\${rootfs_dir}" -o table > "\${output_dir}/grype-table.txt" 2> /dev/null
+    else
+        GRYPE_CHECK_FOR_APP_UPDATE=false grype "dir:\${rootfs_dir}" -o table | tee "\${output_dir}/grype-table.txt"
+    fi
+
+    severity_counts=\$(awk -F '  +' '
+        BEGIN { critical=0; high=0; moderate=0; low=0 }
+        NR > 1 && NF >= 6 {
+            severity=tolower(\$(NF-2))
+            if (severity == "critical") critical++
+            else if (severity == "high") high++
+            else if (severity == "medium" || severity == "moderate") moderate++
+            else if (severity == "low") low++
+        }
+        END { printf "%d %d %d %d\n", critical, high, moderate, low }
+    ' "\${output_dir}/grype-table.txt")
+    critical_count=\$(printf "%s\n" "\${severity_counts}" | awk '{print \$1}')
+    high_count=\$(printf "%s\n" "\${severity_counts}" | awk '{print \$2}')
+    moderate_count=\$(printf "%s\n" "\${severity_counts}" | awk '{print \$3}')
+    low_count=\$(printf "%s\n" "\${severity_counts}" | awk '{print \$4}')
+
+    echo ""
+    echo "Vulnerability overview:"
+    echo "  Critical: \${critical_count:-0}"
+    echo "  High:     \${high_count:-0}"
+    echo "  Moderate: \${moderate_count:-0}"
+    echo "  Low:      \${low_count:-0}"
+    echo ""
+    echo "Final vulnerability report:"
+    cat "\${output_dir}/grype-table.txt"
+
+    echo "scanapk \${output_mode} complete for: \$*"
+    echo "More detail:"
+    echo "  Syft table:   cat \${output_dir}/syft-table.txt"
+    echo "  Grype table:  cat \${output_dir}/grype-table.txt"
+
+    if [ -z "\${SCANAPK_SUPPRESS_REPORT_MESSAGE-}" ]; then
+        echo "Reports saved to \${output_dir}"
+    fi
+}
+
+if [ -z "\${SCANAPK_NONINTERACTIVE-}" ]; then
+    echo "This is an interactive tool: fetching apk indexes to speed up interactive queries."
+    echo ""
+    apk update
+    echo ""
+    echo "-------------------------------------------------"
+    echo "Run \"help\" to show this help file"
+    echo "Run \"scanapk syft\" for summary output or \"scanapk --full syft\" for verbose output"
+    echo ""
+    cat $HOME/apk-search.txt
+fi
+SHRC_BLOCK
+
+ER_AUTHENTICATION_BLOCK
+
+COPY apk-search.txt .
+
+# Have interactive /bin/sh sessions load this file automatically.
+ENV ENV=/root/.shrc
+
+ENTRYPOINT [ "sh", "-i" ]
