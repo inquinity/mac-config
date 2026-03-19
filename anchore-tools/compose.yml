@@ -4,12 +4,3 @@ services:
     build:
       context: .
       dockerfile: dockerfile
-      secrets:
-        - jf-user
-        - jf-token
-
-secrets:
-  jf-user:
-    environment: ER_AUTH_USER
-  jf-token:
-    environment: ER_AUTH_TOKEN

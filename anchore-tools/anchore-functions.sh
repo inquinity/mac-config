@@ -62,17 +62,7 @@ anchore_resolve_image_name() {
         if [ -z "$image_name" ]; then
             image_name="anchore-search:latest"
         fi
-    else
-        print_colored "$COLOR_YELLOW" "Warning: yq not found, using default image name. Install yq for robust YAML parsing."
-        image_name="anchore-search:latest"
-    fi
 
-    printf "%s\n" "$image_name"
-}
-
-anchore_docker_available() {
-    if ! command -v docker >/dev/null 2>&1; then
-        print_colored "$COLOR_RED" "Error: Docker is not installed or not in PATH"
         return 1
     fi
 
@@ -241,8 +231,8 @@ anchore() {
         printf "    Automatically builds/rebuilds the container image as needed.\n"
         printf "\n"
         print_colored "$COLOR_YELLOW" "Anchore Tools:"
-        printf "    syft pre-installed (with Artifactory SaaS authentication)\n"
-        printf "    grype pre-installed (with Artifactory SaaS authentication)\n"
+        printf "    syft pre-installed\n"
+        printf "    grype pre-installed\n"
         printf "\n"
         
         print_colored "$COLOR_YELLOW" "USAGE:"
@@ -259,14 +249,11 @@ anchore() {
         printf "    - Container runtime accessible via docker command\n"
         printf "    - Build directory exists: %s\n" "$build_dir"
         printf "    - Dockerfile present in build directory\n"
-        printf "    - ER_AUTH_USER environment variable set\n"
-        printf "    - ER_AUTH_TOKEN environment variable set\n\n"
-        
+        printf "\n"
         print_colored "$COLOR_YELLOW" "BEHAVIOR:"
         printf "    - Validates prerequisites before proceeding\n"
         printf "    - Checks if image exists, builds if missing\n"
         printf "    - Rebuilds image if older than %d days\n" "$max_age_days"
-        printf "    - Uses secrets for authentication during build\n"
         printf "    - Runs container in interactive mode with TTY\n\n"
         
         print_colored "$COLOR_YELLOW" "EXAMPLES:"
@@ -279,7 +266,7 @@ anchore() {
         return 0
     fi
 
-    print_colored "$COLOR_GREEN" "anchore -- Anchore Tools utility for working with Artifactory SaaS"
+    print_colored "$COLOR_GREEN" "anchore -- Anchore Tools APK search container"
 
     while [ "$#" -gt 0 ]; do
         case "$1" in
@@ -335,8 +322,6 @@ rebuild_image() {
     cd "$build_dir" || return 1
 
     if ! docker build \
-        --secret id=jf-user,env=ER_AUTH_USER \
-        --secret id=jf-token,env=ER_AUTH_TOKEN \
         --file "$dockerfile_path" \
         --tag "$image_name" \
         . ; then

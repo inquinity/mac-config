@@ -6,19 +6,13 @@
 # Running:
 # docker run --rm --interactive --tty anchore-search
 
-# WARNING: This image should ony be used for searching apks; the credentials are stored in a sourced file.
-# WARNING: Do not distribute images built from this dockerfile
-
 
 FROM cgr.dev/optum.com/chainguard-base:latest
 USER root
 WORKDIR /root
 
-# To make use of the JF_EDGE_NODE argument within a build stage, we need to re-declare it here.
-# See the docker documentation on scoping for more detail: https://docs.docker.com/build/building/variables/#scoping
-ARG JF_EDGE_NODE
-
 RUN <<ER_AUTHENTICATION_BLOCK
+RUN <<SETUP_BLOCK
 
 # Append the optum.com APK registry
 echo 'https://apk.cgr.dev/optum.com/' >> /etc/apk/repositories
@@ -26,9 +20,6 @@ echo 'https://apk.cgr.dev/optum.com/' >> /etc/apk/repositories
 # Add security tools
 apk add --no-cache syft grype
 
-mkdir $HOME/.docker
-
-# Create the environment variables for the Enterprise Registry authentication
 cat >> $HOME/.shrc <<SHRC_BLOCK
 alias ll='ls -alh'
 alias help='cat $HOME/apk-search.txt'
@@ -152,7 +143,7 @@ if [ -z "\${SCANAPK_NONINTERACTIVE-}" ]; then
 fi
 SHRC_BLOCK
 
-ER_AUTHENTICATION_BLOCK
+SETUP_BLOCK
 
 COPY apk-search.txt .
 
