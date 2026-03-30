@@ -21,7 +21,25 @@ apk add --no-cache syft grype
 
 cat >> $HOME/.shrc <<SHRC_BLOCK
 alias ll='ls -alh'
-alias help='cat $HOME/apk-search.txt'
+help() {
+    case "\${1-}" in
+        apk)
+            cat $HOME/apk-search.txt
+            ;;
+        scanapk)
+            scanapk --help
+            ;;
+        *)
+            printf "\\n-------------------------------------------------\\n"
+            printf "Wolfi APK Package Scanner\\n"
+            printf "  scanapk <pkg>              Scan package (summary mode)\\n"
+            printf "  scanapk --full <pkg>       All output with vulnerability summary\\n"
+            printf "  help apk                   APK search syntax reference\\n"
+            printf "  help scanapk               Show scanapk usage\\n"
+            printf -- "-------------------------------------------------\\n"
+            ;;
+    esac
+}
 
 scanapk() {
     output_mode="summary"
@@ -31,17 +49,13 @@ scanapk() {
             --summary)
                 output_mode="summary"
                 ;;
-            --table)
-                output_mode="table"
-                ;;
             --full)
                 output_mode="full"
                 ;;
             --help|-h)
-                echo "Usage: scanapk [--summary|--table|--full] <package> [package ...]"
+                echo "Usage: scanapk [--summary|--full] <package> [package ...]"
                 echo "Default mode is --summary."
                 echo "  --summary  Keep apk add output, save Syft/Grype tables, print final Grype report"
-                echo "  --table    Print both Syft and Grype tables"
                 echo "  --full     Print both Syft and Grype tables with the end-of-run summary"
                 return 0
                 ;;
@@ -61,7 +75,7 @@ scanapk() {
     done
 
     if [ "\$#" -lt 1 ]; then
-        echo "Usage: scanapk [--summary|--table|--full] <package> [package ...]"
+        echo "Usage: scanapk [--summary|--full] <package> [package ...]"
         echo "Creates a throwaway rootfs, installs the requested apk packages, and runs Syft and Grype."
         return 1
     fi
@@ -81,6 +95,9 @@ scanapk() {
     cp -R /etc/apk/keys "\${rootfs_dir}/etc/apk/" || return 1
     apk add --no-cache --initdb --no-commit-hooks --root "\${rootfs_dir}" "\$@" || return 1
 
+    echo ""
+    echo "Scanning package(s): \$*"
+    
     if [ "\${output_mode}" = "summary" ]; then
         SYFT_CHECK_FOR_APP_UPDATE=false syft "dir:\${rootfs_dir}" -o table > "\${output_dir}/syft-table.txt" 2> /dev/null
     else
@@ -135,10 +152,12 @@ if [ -z "\${SCANAPK_NONINTERACTIVE-}" ]; then
     apk update
     echo ""
     echo "-------------------------------------------------"
-    echo "Run \"help\" to show this help file"
-    echo "Run \"scanapk syft\" for summary output or \"scanapk --full syft\" for verbose output"
-    echo ""
-    cat $HOME/apk-search.txt
+    echo "Anchore Tools - APK Package Scanner"
+    echo "  scanapk <pkg>              Scan package (summary mode)"
+    echo "  scanapk --full <pkg>       All output with vulnerability summary"
+    echo "  help apk                   APK search syntax reference"
+    echo "  help scanapk               Show scanapk usage"
+    echo "-------------------------------------------------"
 fi
 SHRC_BLOCK
 

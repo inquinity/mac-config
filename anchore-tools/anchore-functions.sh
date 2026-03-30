@@ -234,7 +234,7 @@ anchore() {
         printf "\n"
         
         print_colored "$COLOR_YELLOW" "USAGE:"
-        printf "    anchore [OPTION] [scanapk [--summary|--table|--full] <package> [package ...]]\n\n"
+        printf "    anchore [OPTION] [scanapk [--summary|--full] <package> [package ...]]\n\n"
         
         print_colored "$COLOR_YELLOW" "OPTIONS:"
         print_colored "$COLOR_BRIGHTYELLOW" "    --help, -h      Show this help message"
@@ -258,7 +258,6 @@ anchore() {
         print_colored "$COLOR_CYAN" "    anchore              # Run Anchore Tools container"
         print_colored "$COLOR_CYAN" "    anchore --rebuild    # Force rebuild and run"
         print_colored "$COLOR_CYAN" "    anchore scanapk syft        # Summary output"
-        print_colored "$COLOR_CYAN" "    anchore scanapk --table syft # Print Syft and Grype tables"
         print_colored "$COLOR_CYAN" "    anchore scanapk --full syft  # Print apk report plus both tables"
         print_colored "$COLOR_CYAN" "    anchore --help       # Show this help"
         return 0
