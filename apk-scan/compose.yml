@@ -1,6 +1,6 @@
 services:
   service:
-    image: anchore-search:latest
+    image: apk-scan:latest
     build:
       context: .
       dockerfile: dockerfile

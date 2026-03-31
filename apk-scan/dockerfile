@@ -1,10 +1,10 @@
 # This file needs LF line endings to work correctly on Windows.  If you are using Windows, please change the line endings to LF.
 
 # Buiding:
-# docker build --tag anchore-search:latest .
+# docker build --tag apk-scan:latest .
 #
 # Running:
-# docker run --rm --interactive --tty anchore-search
+# docker run --rm --interactive --tty apk-scan
 
 
 FROM cgr.dev/optum.com/chainguard-base:latest
@@ -152,7 +152,7 @@ if [ -z "\${SCANAPK_NONINTERACTIVE-}" ]; then
     apk update
     echo ""
     echo "-------------------------------------------------"
-    echo "Anchore Tools - APK Package Scanner"
+    echo "APK Package Scanner"
     echo "  scanapk <pkg>              Scan package (summary mode)"
     echo "  scanapk --full <pkg>       All output with vulnerability summary"
     echo "  help apk                   APK search syntax reference"

@@ -1,8 +1,8 @@
 #!/bin/zsh
 
-# anchore-functions.sh - Shell library for Anchore Tools / APK search container management
+# apk-scan-functions.sh - Shell library for APK scan container management
 # This file should be sourced, not executed directly
-# Usage: source ./anchore-functions.sh
+# Usage: source ./apk-scan-functions.sh
 
 # Guard: this library must be sourced, not executed directly.
 _IS_SOURCED=0
@@ -53,24 +53,24 @@ print_colored() {
     printf "${color}${message}${COLOR_RESET}\n"
 }
 
-anchore_resolve_image_name() {
+apkscan_resolve_image_name() {
     local build_dir="$1"
     local image_name
 
     if command -v yq >/dev/null 2>&1; then
         image_name=$(yq '.services.service.image' "$build_dir/compose.yml")
         if [ -z "$image_name" ] || [ "$image_name" = "null" ]; then
-            image_name="anchore-search:latest"
+            image_name="apk-scan:latest"
         fi
     else
         print_colored "$COLOR_YELLOW" "Warning: yq not found, using default image name. Install yq for robust YAML parsing."
-        image_name="anchore-search:latest"
+        image_name="apk-scan:latest"
     fi
 
     printf "%s\n" "$image_name"
 }
 
-anchore_docker_available() {
+apkscan_docker_available() {
     if ! command -v docker >/dev/null 2>&1; then
         print_colored "$COLOR_RED" "Error: Docker is not installed or not in PATH"
         return 1
@@ -85,7 +85,7 @@ anchore_docker_available() {
     return 0
 }
 
-anchore_validate_build_prereqs() {
+apkscan_validate_build_prereqs() {
     local build_dir="$1"
     local error_count=0
 
@@ -99,38 +99,38 @@ anchore_validate_build_prereqs() {
         fi
     fi
 
-    if ! anchore_docker_available; then
+    if ! apkscan_docker_available; then
         error_count=$((error_count + 1))
     fi
 
     if [ $error_count -gt 0 ]; then
         printf "\n"
-        print_colored "$COLOR_YELLOW" "Run 'anchore --help' for more information."
+        print_colored "$COLOR_YELLOW" "Run 'apk-scan --help' for more information."
         return 1
     fi
 
     return 0
 }
 
-anchore_ensure_image() {
+apkscan_ensure_image() {
     local build_dir="$1"
     local image_name="$2"
     local force_rebuild="${3:-0}"
     local max_age_days="${4:-30}"
 
-    if ! anchore_docker_available; then
+    if ! apkscan_docker_available; then
         return 1
     fi
 
     if [ "$force_rebuild" -eq 1 ]; then
-        anchore_validate_build_prereqs "$build_dir" || return 1
+        apkscan_validate_build_prereqs "$build_dir" || return 1
         print_colored "$COLOR_BRIGHTYELLOW" "Force rebuilding image ${image_name}..."
         rebuild_image "$build_dir" "$image_name" || return 1
         return 0
     fi
 
     if ! docker image inspect "$image_name" >/dev/null 2>&1; then
-        anchore_validate_build_prereqs "$build_dir" || return 1
+        apkscan_validate_build_prereqs "$build_dir" || return 1
         print_colored "$COLOR_BRIGHTYELLOW" "Image ${image_name} not found. Building..."
         rebuild_image "$build_dir" "$image_name" || return 1
         return 0
@@ -169,7 +169,7 @@ anchore_ensure_image() {
         if [ -n "$release_epoch" ] && [ -n "$current_epoch" ]; then
             age_days=$(( (current_epoch - release_epoch) / 86400 ))
             if [ $age_days -gt $max_age_days ]; then
-                anchore_validate_build_prereqs "$build_dir" || return 1
+                apkscan_validate_build_prereqs "$build_dir" || return 1
                 print_colored "$COLOR_BRIGHTYELLOW" "Image ${image_name} is ${age_days} days old from ${timestamp_source} (older than ${max_age_days} days). Rebuilding..."
                 rebuild_image "$build_dir" "$image_name" || return 1
             else
@@ -185,13 +185,13 @@ anchore_ensure_image() {
     return 0
 }
 
-anchore_run_scanapk() {
+apkscan_run_scanapk() {
     local image_name="$1"
     shift
 
     if [ "$#" -eq 0 ]; then
-        print_colored "$COLOR_RED" "Error: anchore scanapk requires at least one apk package."
-        print_colored "$COLOR_YELLOW" "Usage: anchore scanapk <package> [package ...]"
+        print_colored "$COLOR_RED" "Error: apk-scan scanapk requires at least one apk package."
+        print_colored "$COLOR_YELLOW" "Usage: apk-scan scanapk <package> [package ...]"
         return 1
     fi
 
@@ -209,10 +209,10 @@ anchore_run_scanapk() {
         -ic 'scanapk "$@"; echo ""; echo "Scan complete. Staying in the container so you can inspect the saved files."; exec sh -i' sh "$@"
 }
 
-anchore() {
+apk-scan() {
     local build_dir="$_SCRIPT_DIR"
     local image_name
-    image_name=$(anchore_resolve_image_name "$build_dir")
+    image_name=$(apkscan_resolve_image_name "$build_dir")
     local max_age_days=30
     local force_rebuild=0
     local command_name="shell"
@@ -221,26 +221,26 @@ anchore() {
 
     # Handle help parameter
     if [ "${1-}" = "--help" ] || [ "${1-}" = "-h" ]; then
-        print_colored "$COLOR_GREEN" "Anchore Tools / APK Search Container Manager"
+        print_colored "$COLOR_GREEN" "APK Scan Container Manager"
         print_colored "$COLOR_GREEN" "==============================="
         printf "\n"
         print_colored "$COLOR_YELLOW" "DESCRIPTION:"
-        printf "    Manages and runs a Wolfi Linux container for Anchore Tools and Wolfi APK package searching.\n"
+        printf "    Manages and runs a Wolfi Linux container for Wolfi APK package scanning.\n"
         printf "    Automatically builds/rebuilds the container image as needed.\n"
         printf "\n"
-        print_colored "$COLOR_YELLOW" "Anchore Tools:"
+        print_colored "$COLOR_YELLOW" "Installed Tools:"
         printf "    syft pre-installed\n"
         printf "    grype pre-installed\n"
         printf "\n"
         
         print_colored "$COLOR_YELLOW" "USAGE:"
-        printf "    anchore [OPTION] [scanapk [--summary|--full] <package> [package ...]]\n\n"
+        printf "    apk-scan [OPTION] [scanapk [--summary|--full] <package> [package ...]]\n\n"
         
         print_colored "$COLOR_YELLOW" "OPTIONS:"
         print_colored "$COLOR_BRIGHTYELLOW" "    --help, -h      Show this help message"
         print_colored "$COLOR_BRIGHTYELLOW" "    --rebuild       Force rebuild of the container image"
         print_colored "$COLOR_BRIGHTYELLOW" "    scanapk         Run the in-image apk scanner (default mode: --summary)"
-        print_colored "$COLOR_BRIGHTYELLOW" "    (no args)       Run the Anchore Tools container interactively"
+        print_colored "$COLOR_BRIGHTYELLOW" "    (no args)       Run the apk-scan container interactively"
         printf "\n"
         
         print_colored "$COLOR_YELLOW" "PREREQUISITES:"
@@ -255,15 +255,15 @@ anchore() {
         printf "    - Runs container in interactive mode with TTY\n\n"
         
         print_colored "$COLOR_YELLOW" "EXAMPLES:"
-        print_colored "$COLOR_CYAN" "    anchore              # Run Anchore Tools container"
-        print_colored "$COLOR_CYAN" "    anchore --rebuild    # Force rebuild and run"
-        print_colored "$COLOR_CYAN" "    anchore scanapk syft        # Summary output"
-        print_colored "$COLOR_CYAN" "    anchore scanapk --full syft  # Print apk report plus both tables"
-        print_colored "$COLOR_CYAN" "    anchore --help       # Show this help"
+        print_colored "$COLOR_CYAN" "    apk-scan              # Run apk-scan container"
+        print_colored "$COLOR_CYAN" "    apk-scan --rebuild    # Force rebuild and run"
+        print_colored "$COLOR_CYAN" "    apk-scan scanapk syft        # Summary output"
+        print_colored "$COLOR_CYAN" "    apk-scan scanapk --full syft  # Print apk report plus both tables"
+        print_colored "$COLOR_CYAN" "    apk-scan --help       # Show this help"
         return 0
     fi
 
-    print_colored "$COLOR_GREEN" "anchore -- Anchore Tools APK search container"
+    print_colored "$COLOR_GREEN" "apk-scan -- APK scan container"
 
     while [ "$#" -gt 0 ]; do
         case "$1" in
@@ -278,17 +278,17 @@ anchore() {
                 ;;
             *)
                 print_colored "$COLOR_RED" "Error: Unknown option or command '$1'"
-                print_colored "$COLOR_YELLOW" "Run 'anchore --help' for usage."
+                print_colored "$COLOR_YELLOW" "Run 'apk-scan --help' for usage."
                 return 1
                 ;;
         esac
         shift
     done
 
-    anchore_ensure_image "$build_dir" "$image_name" "$force_rebuild" "$max_age_days" || return 1
+    apkscan_ensure_image "$build_dir" "$image_name" "$force_rebuild" "$max_age_days" || return 1
 
     if [ "$command_name" = "scanapk" ]; then
-        anchore_run_scanapk "$image_name" "${command_args[@]}"
+        apkscan_run_scanapk "$image_name" "${command_args[@]}"
         return $?
     fi
 

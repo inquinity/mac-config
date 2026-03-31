@@ -1,24 +1,24 @@
-# Anchore Tools
+# APK Scan
 
 A minimal Wolfi Linux container with [Syft](https://github.com/anchore/syft) and [Grype](https://github.com/anchore/grype) pre-installed, designed for interactively scanning APK packages for vulnerabilities and software bill of materials (SBOM) data.
 
 ## Prerequisites
 
 - Docker (or a compatible container runtime via the `docker` CLI)
-- `yq` (optional — used to read the image name from `compose.yml`; falls back to `anchore-search:latest`)
+- `yq` (optional — used to read the image name from `compose.yml`; falls back to `apk-scan:latest`)
 
 ## Setup
 
-Source the shell library to make the `anchore` command available in your shell:
+Source the shell library to make the `apk-scan` command available in your shell:
 
 ```sh
-source ./anchore-functions.sh
+source ./apk-scan-functions.sh
 ```
 
 Add this to your shell profile (e.g. `~/.zshrc`) to load it automatically:
 
 ```sh
-source /path/to/anchore-tools/anchore-functions.sh
+source /path/to/apk-scan/apk-scan-functions.sh
 ```
 
 ## Building
@@ -26,30 +26,30 @@ source /path/to/anchore-tools/anchore-functions.sh
 The image is built automatically on first use. To build manually:
 
 ```sh
-docker build --tag anchore-search:latest .
+docker build --tag apk-scan:latest .
 ```
 
 Or force a rebuild through the shell library:
 
 ```sh
-anchore --rebuild
+apk-scan --rebuild
 ```
 
 ## Usage
 
 ```
-anchore [OPTION] [scanapk [--summary|--full] <package> [package ...]]
+apk-scan [OPTION] [scanapk [--summary|--full] <package> [package ...]]
 ```
 
 ### Options
 
 | Command | Description |
 |---|---|
-| `anchore` | Launch an interactive shell inside the container |
-| `anchore --rebuild` | Force rebuild the image, then launch the shell |
-| `anchore scanapk <pkg>` | Scan a package (summary mode) |
-| `anchore scanapk --full <pkg>` | Full output with vulnerability summary |
-| `anchore --help` | Show help |
+| `apk-scan` | Launch an interactive shell inside the container |
+| `apk-scan --rebuild` | Force rebuild the image, then launch the shell |
+| `apk-scan scanapk <pkg>` | Scan a package (summary mode) |
+| `apk-scan scanapk --full <pkg>` | Full output with vulnerability summary |
+| `apk-scan --help` | Show help |
 
 ### Inside the container
 
@@ -65,13 +65,13 @@ anchore [OPTION] [scanapk [--summary|--full] <package> [package ...]]
 
 ```sh
 # Scan a single package (summary mode — prints vulnerability counts + final Grype table)
-anchore scanapk curl
+apk-scan scanapk curl
 
 # Scan multiple packages with full verbose output
-anchore scanapk --full curl jq openssl
+apk-scan scanapk --full curl jq openssl
 
 # Drop into an interactive shell to explore manually
-anchore
+apk-scan
 ```
 
 ## How `scanapk` works
@@ -94,7 +94,7 @@ anchore
 
 ## Image lifecycle
 
-The `anchore` function checks the image age at startup and automatically rebuilds if it is older than 30 days, ensuring tools stay current.
+The `apk-scan` function checks the image age at startup and automatically rebuilds if it is older than 30 days, ensuring tools stay current.
 
 ## Files
 
@@ -102,5 +102,5 @@ The `anchore` function checks the image age at startup and automatically rebuild
 |---|---|
 | `dockerfile` | Container image definition |
 | `compose.yml` | Docker Compose file (defines image name) |
-| `anchore-functions.sh` | Shell library — source this to use `anchore` and related functions |
+| `apk-scan-functions.sh` | Shell library — source this to use `apk-scan` and related functions |
 | `apk-search.txt` | APK command reference (shown with `help apk`) |
