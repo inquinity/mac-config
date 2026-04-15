@@ -20,6 +20,21 @@ print_colored() {
     printf "${color}${message}${COLOR_RESET}\n"
 }
 
+CHAINGUARD_MAIN_PACKAGE_LABEL="dev.chainguard.package.main"
+
+require_tool() {
+    local tool_name="$1"
+    local install_hint="$2"
+
+    if ! whence -p "$tool_name" >/dev/null 2>&1; then
+        print_colored "$COLOR_RED" "Error: Required tool '$tool_name' is not installed"
+        if [[ -n "$install_hint" ]]; then
+            print_colored "$COLOR_YELLOW" "Install hint: $install_hint"
+        fi
+        exit 1
+    fi
+}
+
 is_useless_version() {
     local raw_version="$1"
     local trimmed_version
@@ -73,30 +88,51 @@ if [[ -z "$image_url" ]]; then
     print_colored "$COLOR_RED" "Error: IMAGE_URL is required"
     exit 1
 fi
+
+# Tool preflight checks
+require_tool "jq" "brew install jq"
+require_tool "syft" "brew install syft"
+
 sbom_file="/tmp/sbom-$$.json"
 cleanup_temp_files() {
     rm -f "$sbom_file"
 }
 trap cleanup_temp_files EXIT INT TERM
 
+# Prefer local Docker image source first; fall back to registry if not local
+scan_source="registry:${image_url}"
+source_mode="registry"
+
+if whence -p docker >/dev/null 2>&1 && command docker image inspect "$image_url" >/dev/null 2>&1; then
+    scan_source="docker:${image_url}"
+    source_mode="local"
+    if [[ "$debug_mode" == true ]]; then
+        print_colored "$COLOR_CYAN" "$ docker image inspect ${image_url} | jq -r --arg label \"${CHAINGUARD_MAIN_PACKAGE_LABEL}\" '.[0].Config.Labels[\$label] // empty'"
+    fi
+    main_pkg=$(command docker image inspect "$image_url" | jq -r --arg label "$CHAINGUARD_MAIN_PACKAGE_LABEL" '.[0].Config.Labels[$label] // empty')
+else
+    require_tool "crane" "brew install crane"
+    if [[ "$debug_mode" == true ]]; then
+        print_colored "$COLOR_CYAN" "$ crane config ${image_url} | jq -r --arg label \"${CHAINGUARD_MAIN_PACKAGE_LABEL}\" '.config.Labels[\$label] // empty'"
+    fi
+    main_pkg=$(crane config "$image_url" 2>/dev/null | jq -r --arg label "$CHAINGUARD_MAIN_PACKAGE_LABEL" '.config.Labels[$label] // empty')
+fi
+
+if [[ -z "$main_pkg" ]]; then
+    print_colored "$COLOR_RED" "Error: Could not find main package label in image"
+    exit 1
+fi
+print_colored "$COLOR_GREEN" "Image source mode: $source_mode"
+print_colored "$COLOR_MAGENTA" "Chainguard main label: $main_pkg"
+
 # Generate SBOM
 print_colored "$COLOR_GREEN" "Generating SBOM for image: $image_url"
 if [[ "$debug_mode" == true ]]; then
-    print_colored "$COLOR_CYAN" "$ syft scan registry:${image_url} -o syft-json > $sbom_file"
+    print_colored "$COLOR_CYAN" "$ syft scan ${scan_source} -o syft-json > $sbom_file"
 fi
-syft scan "registry:${image_url}" -o syft-json > "$sbom_file" 2>/dev/null
+syft scan "$scan_source" -o syft-json > "$sbom_file" 2>/dev/null
 if [[ $? -ne 0 ]]; then
     print_colored "$COLOR_RED" "Error: Failed to generate SBOM for image"
-    exit 1
-fi
-
-# Extract main package name
-if [[ "$debug_mode" == true ]]; then
-    print_colored "$COLOR_CYAN" "$ jq -r '.source.metadata.labels[\"dev.chainguard.package.main\"]' $sbom_file"
-fi
-main_pkg=$(jq -r '.source.metadata.labels["dev.chainguard.package.main"] // empty' "$sbom_file")
-if [[ -z "$main_pkg" ]]; then
-    print_colored "$COLOR_RED" "Error: Could not find main package label in image"
     exit 1
 fi
 
