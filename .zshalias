@@ -95,9 +95,7 @@ ffe () { find . -name '*'"$@" ; }
 # AI Tools for shell CLI
 # ----------------------
 
-if test -f ~/mac-config/scripts/codex-exec.sh; then source ~/mac-config/scripts/codex-exec.sh; fi
-
-alias ghcp='gh copilot suggest'
+[[ -f ~/mac-config/scripts/x-command.sh ]] && source ~/mac-config/scripts/x-command.sh
 
 # -----------
 # Development
@@ -173,31 +171,29 @@ convert-video() {
 # ----------
 
 # Source Encryption functions from external library
-if test -f ~/mac-config/scripts/encryption.sh; then 
-    source ~/mac-config/scripts/encryption.sh
-fi
+[[ -f ~/mac-config/scripts/encryption.sh ]] && source ~/mac-config/scripts/encryption.sh
 
 # -----------------
 # Container Runtime
 # -----------------
 
 # Source nerdctl (Rancher Desktop) functions from external library
-#if test -f ~/mac-config/scripts/nerdctl.sh; then source ~/mac-config/scripts/nerdctl.sh; fi
+# [[ -f ~/mac-config/scripts/nerdctl.sh ]] && source ~/mac-config/scripts/nerdctl.sh
 
 # Source docker daemon-specific functions from external library
-#if test -f ~/mac-config/scripts/dockerdaemon.sh; then source ~/mac-config/scripts/dockerdaemon.sh; fi
+# [[ -f ~/mac-config/scripts/dockerdaemon.sh ]] && source ~/mac-config/scripts/dockerdaemon.sh
 
 # Source docker functions from external library
-if test -f ~/mac-config/scripts/docker.sh; then source ~/mac-config/scripts/docker.sh; fi
+[[ -f ~/mac-config/scripts/docker.sh ]] && source ~/mac-config/scripts/docker.sh
 
 # If you want switched-docker methods/aliases then source the following file
-# if test -f ~/mac-config/scripts/docker-utils-switched.sh; then source ~/mac-config/scripts/docker-utils-switched.sh.sh; fi
+# [[ --f ~/mac-config/scripts/docker-utils-switched.sh ]] && source ~/mac-config/scripts/docker-utils-switched.sh.sh
 
-if test -f ~/mac-config/scripts/grype.sh; then alias grype='~/mac-config/scripts/grype.sh'; fi
-if test -f ~/mac-config/scripts/get-main-package.sh; then alias get-main-package='~/mac-config/scripts/get-main-package.sh'; fi
+[[ -f ~/mac-config/scripts/grype.sh ]] && alias grype='~/mac-config/scripts/grype.sh'
+[[ -f ~/mac-config/scripts/get-main-package.sh ]] && alias get-main-package='~/mac-config/scripts/get-main-package.sh'
 
 # compatibility work-around for dive and contaierd
-if test -f ~/mac-config/scripts/dive.sh; then alias dive='~/mac-config/scripts/dive.sh'; fi
+# [[ -f ~/mac-config/scripts/dive.sh ]] && alias dive='~/mac-config/scripts/dive.sh'
 
 if test -f ~/dev/team/docker/scripts/container-extract.sh; then alias container-extract='~/dev/team/docker/scripts/container-extract.sh';
   elif test -f ~/mac-config/scripts/container-extract.sh; then alias container-extract='~/mac-config/scripts/container-extract.sh';
@@ -211,6 +207,7 @@ fi
 if test -f ~/dev/team/docker/sbom-compare/sbom-diff.sh; then alias sbom-diff='~/dev/team/docker/sbom-compare/sbom-diff.sh';
   elif test -f ~/mac-config/sbom-compare/sbom-diff.sh; then alias sbom-diff='~/mac-config/sbom-compare/sbom-diff.sh';
 fi
+
 if test -f ~/dev/team/docker/sbom-compare/sbom-analyze.sh; then alias sbom-analyze='~/dev/team/docker/sbom-compare/sbom-analyze.sh';
   elif test -f ~/mac-config/sbom-compare/sbom-analyze.sh; then alias sbom-analyze='~/mac-config/sbom-compare/sbom-analyze.sh';
 fi
@@ -227,17 +224,16 @@ if test -f ~/dev/team/docker/scripts/prisma.sh; then alias prisma='~/dev/team/do
 if test -f ~/dev/team/docker/scripts/xray.sh; then alias xray='~/dev/team/docker/scripts/xray.sh'; fi
 
 # Source APK functions from external library
-if test -f ~/dev/GoldenImageCoP/cookbook/apk-search/apk-functions.sh; then 
-    source ~/dev/GoldenImageCoP/cookbook/apk-search/apk-functions.sh
-fi
+[[ -f ~/dev/GoldenImageCoP/cookbook/apk-search/apk-functions.sh ]] &&     source ~/dev/GoldenImageCoP/cookbook/apk-search/apk-function.sh
 
-if test -f ~/dev/team/scripts/hcc-auth.sh; then alias hcc-auth='~/dev/team/scripts/hcc-auth.sh'; fi
+# Source hcc-auth
+[[ -f ~/dev/team/scripts/hcc-auth.sh ]] && alias hcc-auth='~/dev/team/scripts/hcc-auth.sh'
 
 # codeql
-if test -f ~/dev/codeql.sh; then alias codeql='~/dev/codeql.sh'; fi
+[[ -f ~/dev/codeql.sh ]] && alias codeql='~/dev/codeql.sh'
 
 # gcitool
-if test -f ~/dev/optum/gcitool/scripts/gcictl.sh; then alias gci=~/dev/optum/gcitool/scripts/gcictl.sh; fi
+[[ -f ~/dev/optum/gcitool/scripts/gcictl.sh ]] && alias gci=~/dev/optum/gcitool/scripts/gcictl.sh
 
 # Startup trace control
 alias zsh-trace-on='touch ~/.zsh_trace && echo "Startup trace: ON (takes effect on next shell)"'
