@@ -88,7 +88,7 @@ fi
 #. ~/.zshrc-uhg 2> /dev/null
 
 # aliases
-[[ -f ~/.zaliases ]] && source ~/.zaliases
+[[ -f ~/.zshalias ]] && source ~/.zshalias
 
 # Lines configured by zsh-newuser-install
 #HISTFILE=~/.histfile
