@@ -50,7 +50,7 @@ alias showpath='echo "$PATH" | tr ":" "\n" | nl'
 alias showa='whence -f'
 
 # sourcea: to source this file (to make changes active after editing)
-alias sourcea='source ~/.zaliases'
+alias sourcea='source ~/.zshalias'
 
 alias emacs='~/.emacs.d/open-with-emacs.sh'
 # but what is /Applications/Emacs.app/Contents/MacOS/Emacs.sh
@@ -69,9 +69,9 @@ alias timer='command time -h'
 #----------------
 
 if command -v atuin &>/dev/null; then
-    alias h='atuin history list --session'
-    alias hh='atuin history list'
-    alias hgrep='atuin search'
+    alias h='atuin history list --cmd-only --session'
+    alias hh='atuin history list  --cmd-only'
+    alias hgrep='atuin search --cmd-only'
 else
     alias h='history 1'
     alias hh='history 1 | less' # history (paged)
@@ -90,6 +90,14 @@ ffs () { find . -name "$@"'*' ; }
 
 # ffe: to find a file whose name ends with a given string
 ffe () { find . -name '*'"$@" ; }
+
+# ----------------------
+# AI Tools for shell CLI
+# ----------------------
+
+if test -f ~/mac-config/scripts/codex-exec.sh; then source ~/mac-config/scripts/codex-exec.sh; fi
+
+alias ghcp='gh copilot suggest'
 
 # -----------
 # Development
@@ -112,8 +120,6 @@ alias py=python3
 # fi; eval 'python3 --version' ; }
 
 # python-312() { alias python3 >/dev/null 2>&1 && unalias python3 ; unset npm_config_python ; eval 'python3 --version' ; }
-
-alias ghcp='gh copilot suggest'
 
 # ------------------------
 # Mac OS & iOS Development
@@ -208,12 +214,6 @@ fi
 if test -f ~/dev/team/docker/sbom-compare/sbom-analyze.sh; then alias sbom-analyze='~/dev/team/docker/sbom-compare/sbom-analyze.sh';
   elif test -f ~/mac-config/sbom-compare/sbom-analyze.sh; then alias sbom-analyze='~/mac-config/sbom-compare/sbom-analyze.sh';
 fi
-
-# -----
-# Codex
-# -----
-
-if test -f ~/mac-config/scripts/codex-exec.sh; then source ~/mac-config/scripts/codex-exec.sh; fi
 
 # ---------
 # Optum/UHG
