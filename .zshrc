@@ -84,6 +84,32 @@ else
     #export ATUIN_NOBIND="true"
 fi
 
+# Create a helper function to source the first readable file from a list of files
+source_first() {
+	local f
+	for f in "$@"; do
+    	[[ -r "$f" ]] || continue
+    	source "$f"
+    	return 0
+  	done
+  	return 1
+}
+
+# Create a helper function to alias a command to the first existing file from a list of files
+alias_first() {
+	local cmd="$1"
+	shift || return 1
+
+	local f candidate
+	for f in "$@"; do
+		candidate=${~:-$f}
+		[[ -f "$candidate" ]] || continue
+		alias "$cmd=${(q)candidate}"
+		return 0
+	done
+	return 1 # return quiety
+}
+
 # Load UHG specific settings (if file exists)
 #. ~/.zshrc-uhg 2> /dev/null
 

@@ -171,46 +171,44 @@ convert-video() {
 # ----------
 
 # Source Encryption functions from external library
-[[ -f ~/mac-config/scripts/encryption.sh ]] && source ~/mac-config/scripts/encryption.sh
+source_first ~/mac-config/scripts/encryption.sh
 
 # -----------------
 # Container Runtime
 # -----------------
 
+# Source docker functions from external library
+source_first ~/mac-config/scripts/docker.sh
+
+# -----------------------------------------------------------------
+# --- use switchable container runtimes (docker, nerdctl, etc.) ---
 # Source nerdctl (Rancher Desktop) functions from external library
-# [[ -f ~/mac-config/scripts/nerdctl.sh ]] && source ~/mac-config/scripts/nerdctl.sh
+# source_first ~/mac-config/scripts/nerdctl.sh
 
 # Source docker daemon-specific functions from external library
-# [[ -f ~/mac-config/scripts/dockerdaemon.sh ]] && source ~/mac-config/scripts/dockerdaemon.sh
-
-# Source docker functions from external library
-[[ -f ~/mac-config/scripts/docker.sh ]] && source ~/mac-config/scripts/docker.sh
+# source_first ~/mac-config/scripts/dockerdaemon.sh
 
 # If you want switched-docker methods/aliases then source the following file
-# [[ --f ~/mac-config/scripts/docker-utils-switched.sh ]] && source ~/mac-config/scripts/docker-utils-switched.sh.sh
+# source_first ~/mac-config/scripts/docker-utils-switched.sh
+# --- use switchable container runtimes (docker, nerdctl, etc.) ---
+# -----------------------------------------------------------------
 
+# alias_first grype ~/mac-config/scripts/grype.sh
 [[ -f ~/mac-config/scripts/grype.sh ]] && alias grype='~/mac-config/scripts/grype.sh'
+# alias_first get-main-package ~/mac-config/scripts/get-main-package.sh
 [[ -f ~/mac-config/scripts/get-main-package.sh ]] && alias get-main-package='~/mac-config/scripts/get-main-package.sh'
 
-# compatibility work-around for dive and contaierd
-# [[ -f ~/mac-config/scripts/dive.sh ]] && alias dive='~/mac-config/scripts/dive.sh'
+# compatibility work-around for dive and containerd
+# alias_first dive ~/mac-config/scripts/dive.sh
 
-if test -f ~/dev/team/docker/scripts/container-extract.sh; then alias container-extract='~/dev/team/docker/scripts/container-extract.sh';
-  elif test -f ~/mac-config/scripts/container-extract.sh; then alias container-extract='~/mac-config/scripts/container-extract.sh';
-fi
+alias_first container-extract ~/dev/team/docker/scripts/container-extract.sh ~/mac-config/scripts/container-extract.sh
 
-if test -f ~/dev/team/docker/scripts/image-extract.sh; then alias image-extract='~/dev/team/docker/scripts/image-extract.sh';
-  elif test -f ~/mac-config/scripts/image-extract.sh; then alias image-extract='~/mac-config/scripts/image-extract.sh';
-fi
+alias_first grype ~/mac-config/scripts/grype.sh
+alias_first image-extract ~/dev/team/docker/scripts/image-extract.sh ~/mac-config/scripts/image-extract.sh
 
 # SBOM comparison
-if test -f ~/dev/team/docker/sbom-compare/sbom-diff.sh; then alias sbom-diff='~/dev/team/docker/sbom-compare/sbom-diff.sh';
-  elif test -f ~/mac-config/sbom-compare/sbom-diff.sh; then alias sbom-diff='~/mac-config/sbom-compare/sbom-diff.sh';
-fi
-
-if test -f ~/dev/team/docker/sbom-compare/sbom-analyze.sh; then alias sbom-analyze='~/dev/team/docker/sbom-compare/sbom-analyze.sh';
-  elif test -f ~/mac-config/sbom-compare/sbom-analyze.sh; then alias sbom-analyze='~/mac-config/sbom-compare/sbom-analyze.sh';
-fi
+alias_first sbom-diff ~/dev/team/docker/sbom-compare/sbom-diff.sh ~/mac-config/sbom-compare/sbom-diff.sh
+alias_first sbom-analyze ~/dev/team/docker/sbom-compare/sbom-analyze.sh ~/mac-config/sbom-compare/sbom-analyze.sh
 
 # ---------
 # Optum/UHG
@@ -220,20 +218,20 @@ fi
 alias mpt='npx @optum-rx-platform/cli@latest'
 
 # docker scripts
-if test -f ~/dev/team/docker/scripts/prisma.sh; then alias prisma='~/dev/team/docker/scripts/prisma.sh'; fi
-if test -f ~/dev/team/docker/scripts/xray.sh; then alias xray='~/dev/team/docker/scripts/xray.sh'; fi
+alias_first prisma ~/dev/team/docker/prismsa/prisma.sh
+alias_first xray ~/dev/team/docker/scripts/xray.sh
 
 # Source APK functions from external library
-[[ -f ~/dev/GoldenImageCoP/cookbook/apk-search/apk-functions.sh ]] &&     source ~/dev/GoldenImageCoP/cookbook/apk-search/apk-function.sh
+source_first ~/dev/GoldenImageCoP/cookbook/apk-search/apk-functions.sh
 
 # Source hcc-auth
-[[ -f ~/dev/team/scripts/hcc-auth.sh ]] && alias hcc-auth='~/dev/team/scripts/hcc-auth.sh'
+alias_first hcc-auth ~/dev/team/scripts/hcc-auth.sh
 
 # codeql
-[[ -f ~/dev/codeql.sh ]] && alias codeql='~/dev/codeql.sh'
+alias_first codeql ~/dev/codeql.sh
 
 # gcitool
-[[ -f ~/dev/optum/gcitool/scripts/gcictl.sh ]] && alias gci=~/dev/optum/gcitool/scripts/gcictl.sh
+alias_first gci ~/dev/optum/gcitool/scripts/gcictl.sh
 
 # Startup trace control
 alias zsh-trace-on='touch ~/.zsh_trace && echo "Startup trace: ON (takes effect on next shell)"'
