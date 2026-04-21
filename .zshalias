@@ -166,6 +166,9 @@ convert-video() {
    ffmpeg -i "${source_file}" -vcodec h264 -acodec aac "${destination_file}"
 }
 
+# brew quarantine fix (removes quarantine attributes)
+alias_first fix-brew-quarantine ~/mac-config/brew-quarantine/fix-brew-quarantine.sh
+
 # ----------
 # Encryption
 # ----------
