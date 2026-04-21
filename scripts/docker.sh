@@ -11,7 +11,7 @@
     exit 1
 }
 
-# printf "Sourcing $0...\n"
+# printf "Loading ${(%):-%x}\n"
 
 # Define color codes for terminal output
 COLOR_GREEN="\e[32m"         # Used for success messages and instructions

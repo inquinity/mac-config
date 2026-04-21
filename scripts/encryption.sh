@@ -13,14 +13,14 @@ COLOR_BLUE="\e[34m"          # Available for general use; does not show on scree
 COLOR_BRIGHTYELLOW="\e[93m"  # Used for highlighting important actions and status
 COLOR_RESET="\e[0m"          # Used to reset color formatting
 
+# printf "Loading ${(%):-%x}\n"
+
 # Function to print colored output
 print_colored() {
     local color=$1
     local message=$2
     printf "${color}${message}${COLOR_RESET}\n"
 }
-
-# printf "Sourcing encryption.shlib...\n"
 
 encryption_extension="encrypted"
 
