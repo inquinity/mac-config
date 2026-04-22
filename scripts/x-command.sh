@@ -275,10 +275,12 @@ function x() {
         # Call the appropriate tool
         case "$tool" in
             claude)
+                print_colored "$COLOR_CYAN" "Claude is thinking..."
                 cmd=$(_call_claude "$request")
                 cmd_status=$?
                 ;;
             codex)
+                print_colored "$COLOR_CYAN" "Codex is thinking..."
                 cmd=$(_call_codex "$request")
                 cmd_status=$?
                 ;;
