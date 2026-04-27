@@ -22,6 +22,7 @@ print_colored() {
 PROGRAM_NAME="${0:t}"
 ASSUME_YES=false
 DRY_RUN=false
+INCLUDE_APPROVED=false
 
 typeset -a MATCH_PATTERNS
 typeset -a EXTRA_SCAN_ROOTS
@@ -34,6 +35,8 @@ typeset -a FINDING_VERSIONS
 typeset -a FINDING_COUNTS
 typeset -a FINDING_PATHS
 typeset -a FINDING_FIX_TARGETS
+typeset -a FINDING_FLAGS    # quarantine flag integer per finding
+typeset -a FINDING_CLASSES  # "blocking", "approved", or "hard_approved" per finding
 typeset -A SEEN_ROOTS
 
 usage() {
@@ -43,9 +46,16 @@ Usage: ${PROGRAM_NAME} [options]
 Scan Homebrew artifacts for com.apple.quarantine, show what is affected,
 and optionally remove the attribute from only the affected artifact roots.
 
+On macOS 26+, Gatekeeper sets QTN_FLAG_HARD (0x0040) on quarantine after
+approving an app. These apps work normally; their quarantine is a protected
+historical record that cannot be removed via xattr. The script skips them
+by default and reports them as informational.
+
 Options:
   -y, --yes              Fix findings without prompting
   -n, --dry-run          Show findings but do not change anything
+  -a, --include-approved Show Gatekeeper-approved quarantine (informational);
+                         attempt removal for non-HARD approved quarantine
   -m, --match PATTERN    Only include artifact names or paths matching PATTERN
   -p, --path PATH        Scan an extra artifact root outside Cellar/Caskroom
   -h, --help             Show this help text
@@ -53,8 +63,8 @@ Options:
 Examples:
   ${PROGRAM_NAME}
   ${PROGRAM_NAME} --dry-run
+  ${PROGRAM_NAME} --include-approved
   ${PROGRAM_NAME} --match 'codex|codeql|openjdk'
-  sudo ${PROGRAM_NAME} --yes
 EOF
 }
 
@@ -88,6 +98,9 @@ parse_args() {
                 ;;
             -n|--dry-run)
                 DRY_RUN=true
+                ;;
+            -a|--include-approved)
+                INCLUDE_APPROVED=true
                 ;;
             -m|--match)
                 [[ $# -ge 2 ]] || die "--match requires a value"
@@ -210,6 +223,51 @@ resolve_fix_target() {
     fi
 }
 
+# Parse the integer flag value from a quarantine attribute string like "01c1;timestamp;app;uuid".
+parse_quarantine_flags() {
+    local qtn_value=$1
+    local flag_hex="${qtn_value%%';'*}"
+    if [[ -n "$flag_hex" && "$flag_hex" =~ ^[0-9a-fA-F]+$ ]]; then
+        printf '%d\n' "$(( 16#${flag_hex} ))"
+    else
+        printf '0\n'
+    fi
+}
+
+# Classify a quarantine finding based on its flag integer.
+#   blocking:      QTN_FLAG_DOWNLOAD set, no approval flags — app may be blocked by Gatekeeper
+#   approved:      Approval flags set, no HARD flag — app works; soft quarantine removable as owner
+#   hard_approved: HARD flag (0x0040) + approval flags — app works; quarantine is a protected
+#                  macOS record that cannot be removed via xattr
+classify_quarantine() {
+    local flags=$1
+    local has_hard=$(( flags & 0x40 ))
+    local has_approved=$(( (flags & 0x80) | (flags & 0x100) ))
+
+    if [[ $has_hard -ne 0 && $has_approved -ne 0 ]]; then
+        printf 'hard_approved'
+    elif [[ $has_approved -ne 0 ]]; then
+        printf 'approved'
+    else
+        printf 'blocking'
+    fi
+}
+
+# Remove com.apple.quarantine from a path, running as the file owner when the
+# current process is root. On macOS 26+, quarantine removal via removexattr(2)
+# requires the caller to be the file owner; root alone is not sufficient.
+xattr_remove_as_owner() {
+    local path=$1
+    local owner
+    owner="$(/usr/bin/stat -f '%Su' "$path" 2>/dev/null)"
+
+    if [[ "$EUID" -eq 0 && -n "${SUDO_USER:-}" && "$owner" == "$SUDO_USER" ]]; then
+        sudo -u "$SUDO_USER" /usr/bin/xattr -d com.apple.quarantine "$path" 2>/dev/null
+    else
+        /usr/bin/xattr -d com.apple.quarantine "$path" 2>/dev/null
+    fi
+}
+
 scan_artifact_root() {
     local artifact_root=$1
     local artifact_type=$2
@@ -224,6 +282,9 @@ scan_artifact_root() {
     local fix_targets
     local affected_path
     local resolved_path
+    local qtn_value
+    local qtn_flags
+    local qtn_class
 
     identity="$(parse_artifact_identity "$artifact_root" "$artifact_type")"
     artifact_name="${identity%%$'\t'*}"
@@ -248,6 +309,11 @@ scan_artifact_root() {
         return 0
     fi
 
+    # Extract the quarantine value from the first matching raw line to classify this finding.
+    qtn_value="$(/usr/bin/awk -F': com.apple.quarantine: ' 'NF>1 {print $NF; exit}' "$raw_file")"
+    qtn_flags="$(parse_quarantine_flags "$qtn_value")"
+    qtn_class="$(classify_quarantine "$qtn_flags")"
+
     affected_paths="$(cat "$paths_file")"
     while IFS= read -r affected_path; do
         [[ -n "$affected_path" ]] || continue
@@ -263,6 +329,8 @@ scan_artifact_root() {
     FINDING_COUNTS+=("$hit_count")
     FINDING_PATHS+=("$affected_paths")
     FINDING_FIX_TARGETS+=("$fix_targets")
+    FINDING_FLAGS+=("$qtn_flags")
+    FINDING_CLASSES+=("$qtn_class")
 
     rm -f "$raw_file" "$paths_file" "$targets_file"
 }
@@ -281,44 +349,117 @@ scan_for_findings() {
 
 print_findings() {
     local finding_total=${#FINDING_ROOTS[@]}
-    local index=1
+    local index
+    local blocking_count=0
+    local approved_count=0
     local artifact_label
     local affected_path
     local resolved_path
+    local class
+    local flags
+    local class_label
+    local display_index
 
-    if [[ "$finding_total" -eq 0 ]]; then
+    # Count findings by class
+    for (( index=1; index<=finding_total; index++ )); do
+        case "${FINDING_CLASSES[$index]}" in
+            blocking)              blocking_count=$(( blocking_count + 1 )) ;;
+            approved|hard_approved) approved_count=$(( approved_count + 1 )) ;;
+        esac
+    done
+
+    if [[ "$blocking_count" -eq 0 && "$approved_count" -eq 0 ]]; then
         success "No Homebrew quarantine findings detected."
         return 0
     fi
 
-    highlight "Found ${finding_total} Homebrew artifacts with com.apple.quarantine."
+    # Show blocking findings (actionable)
+    if [[ "$blocking_count" -gt 0 ]]; then
+        highlight "Found ${blocking_count} actionable Homebrew quarantine finding(s)."
+        display_index=1
+        for (( index=1; index<=finding_total; index++ )); do
+            [[ "${FINDING_CLASSES[$index]}" == "blocking" ]] || continue
+            artifact_label="${FINDING_TYPES[$index]} ${FINDING_NAMES[$index]}"
+            [[ "${FINDING_VERSIONS[$index]}" != "-" ]] && artifact_label="${artifact_label} ${FINDING_VERSIONS[$index]}"
+            printf '%s\n' ""
+            print_colored "$COLOR_CYAN" "[${display_index}] ${artifact_label}"
+            printf '  root: %s\n' "${FINDING_ROOTS[$index]}"
+            printf '  quarantine hits: %s\n' "${FINDING_COUNTS[$index]}"
+            while IFS= read -r affected_path; do
+                [[ -n "$affected_path" ]] || continue
+                resolved_path="$(resolve_fix_target "$affected_path")"
+                if [[ "$resolved_path" == "$affected_path" ]]; then
+                    printf '  affected: %s\n' "$affected_path"
+                else
+                    printf '  affected: %s -> %s\n' "$affected_path" "$resolved_path"
+                fi
+            done <<< "${FINDING_PATHS[$index]}"
+            display_index=$(( display_index + 1 ))
+        done
+    else
+        success "No actionable quarantine findings."
+    fi
 
-    while [[ "$index" -le "$finding_total" ]]; do
-        artifact_label="${FINDING_TYPES[$index]} ${FINDING_NAMES[$index]}"
-        if [[ "${FINDING_VERSIONS[$index]}" != "-" ]]; then
-            artifact_label="${artifact_label} ${FINDING_VERSIONS[$index]}"
+    # Show approved / hard_approved findings
+    if [[ "$approved_count" -gt 0 ]]; then
+        if [[ "$INCLUDE_APPROVED" == "true" ]]; then
+            printf '\n'
+            info "${approved_count} Gatekeeper-approved quarantine record(s) — apps work normally:"
+            display_index=1
+            for (( index=1; index<=finding_total; index++ )); do
+                class="${FINDING_CLASSES[$index]}"
+                [[ "$class" == "approved" || "$class" == "hard_approved" ]] || continue
+                flags="${FINDING_FLAGS[$index]}"
+                artifact_label="${FINDING_TYPES[$index]} ${FINDING_NAMES[$index]}"
+                [[ "${FINDING_VERSIONS[$index]}" != "-" ]] && artifact_label="${artifact_label} ${FINDING_VERSIONS[$index]}"
+                if [[ "$class" == "hard_approved" ]]; then
+                    class_label="HARD — Gatekeeper-protected, cannot remove via xattr"
+                else
+                    class_label="approved — removable as file owner"
+                fi
+                printf '%s\n' ""
+                print_colored "$COLOR_YELLOW" "[${display_index}] ${artifact_label}"
+                printf '  root: %s\n' "${FINDING_ROOTS[$index]}"
+                printf '  quarantine flags: 0x%04X (%s)\n' "$flags" "$class_label"
+                while IFS= read -r affected_path; do
+                    [[ -n "$affected_path" ]] || continue
+                    resolved_path="$(resolve_fix_target "$affected_path")"
+                    if [[ "$resolved_path" == "$affected_path" ]]; then
+                        printf '  affected: %s\n' "$affected_path"
+                    else
+                        printf '  affected: %s -> %s\n' "$affected_path" "$resolved_path"
+                    fi
+                done <<< "${FINDING_PATHS[$index]}"
+                display_index=$(( display_index + 1 ))
+            done
+        else
+            printf '\n'
+            info "${approved_count} app(s) have Gatekeeper-approved quarantine and work normally."
+            info "Run with --include-approved to view details."
         fi
+    fi
+}
 
-        printf '%s\n' ""
-        print_colored "$COLOR_CYAN" "[$index] ${artifact_label}"
-        printf '  root: %s\n' "${FINDING_ROOTS[$index]}"
-        printf '  quarantine hits: %s\n' "${FINDING_COUNTS[$index]}"
-
-        while IFS= read -r affected_path; do
-            [[ -n "$affected_path" ]] || continue
-            resolved_path="$(resolve_fix_target "$affected_path")"
-            if [[ "$resolved_path" == "$affected_path" ]]; then
-                printf '  affected: %s\n' "$affected_path"
-            else
-                printf '  affected: %s -> %s\n' "$affected_path" "$resolved_path"
-            fi
-        done <<< "${FINDING_PATHS[$index]}"
-
-        index=$((index + 1))
+# Count findings that will be acted on: blocking always; approved if --include-approved;
+# hard_approved never (removal not possible via xattr).
+count_actionable() {
+    local count=0
+    local i
+    for (( i=1; i<=${#FINDING_CLASSES[@]}; i++ )); do
+        case "${FINDING_CLASSES[$i]}" in
+            blocking)
+                count=$(( count + 1 ))
+                ;;
+            approved)
+                [[ "$INCLUDE_APPROVED" == "true" ]] && count=$(( count + 1 ))
+                ;;
+        esac
     done
+    printf '%d\n' "$count"
 }
 
 confirm_fix() {
+    local actionable=$1
     local response
 
     if [[ "$DRY_RUN" == "true" ]]; then
@@ -330,7 +471,7 @@ confirm_fix() {
         return 0
     fi
 
-    printf '\nRemove com.apple.quarantine from all %s listed findings and their resolved targets? [Y/n]: ' "${#FINDING_ROOTS[@]}"
+    printf '\nRemove com.apple.quarantine from %s actionable finding(s)? [Y/n]: ' "$actionable"
     IFS= read -r response
     case "$response" in
         ""|y|Y|yes|YES)
@@ -348,20 +489,42 @@ fix_findings() {
     local artifact_label
     local success_count=0
     local failure_count=0
+    local skipped_hard=0
     local target_failures
     local fix_target
+    local class
 
     while [[ "$index" -le "${#FINDING_ROOTS[@]}" ]]; do
+        class="${FINDING_CLASSES[$index]}"
+
+        # Skip approved findings unless --include-approved is set
+        if [[ "$class" != "blocking" && "$INCLUDE_APPROVED" == "false" ]]; then
+            index=$(( index + 1 ))
+            continue
+        fi
+
         artifact_label="${FINDING_TYPES[$index]} ${FINDING_NAMES[$index]}"
-        if [[ "${FINDING_VERSIONS[$index]}" != "-" ]]; then
-            artifact_label="${artifact_label} ${FINDING_VERSIONS[$index]}"
+        [[ "${FINDING_VERSIONS[$index]}" != "-" ]] && artifact_label="${artifact_label} ${FINDING_VERSIONS[$index]}"
+
+        # Hard approved: Gatekeeper-protected; inform and skip (not a failure)
+        if [[ "$class" == "hard_approved" ]]; then
+            info "Skipping ${artifact_label}"
+            info "  QTN_FLAG_HARD is set: this app is approved and works normally."
+            info "  Quarantine cannot be removed via xattr on macOS 26+."
+            info "  If a warning appears, open it in Finder → right-click → Open Anyway."
+            skipped_hard=$(( skipped_hard + 1 ))
+            index=$(( index + 1 ))
+            continue
         fi
 
         highlight "Fixing ${artifact_label}"
         target_failures=0
+
         while IFS= read -r fix_target; do
             [[ -n "$fix_target" ]] || continue
-            if ! /usr/bin/xattr -r -d com.apple.quarantine "$fix_target" 2>/dev/null; then
+            # On macOS 26+, quarantine removal requires the file owner's UID,
+            # not root. xattr_remove_as_owner switches to SUDO_USER when needed.
+            if ! xattr_remove_as_owner "$fix_target"; then
                 print_colored "$COLOR_RED" "Failed to remove quarantine from ${fix_target}"
                 target_failures=1
             fi
@@ -369,21 +532,25 @@ fix_findings() {
 
         if [[ "$target_failures" -eq 0 ]]; then
             success "Removed quarantine from all targets for ${artifact_label}"
-            success_count=$((success_count + 1))
+            success_count=$(( success_count + 1 ))
         else
-            failure_count=$((failure_count + 1))
+            failure_count=$(( failure_count + 1 ))
         fi
 
-        index=$((index + 1))
+        index=$(( index + 1 ))
     done
 
     printf '\n'
     if [[ "$failure_count" -eq 0 ]]; then
-        success "Completed successfully. Fixed ${success_count} findings."
+        success "Completed successfully. Fixed ${success_count} finding(s)."
+        if [[ "$skipped_hard" -gt 0 ]]; then
+            info "${skipped_hard} finding(s) skipped: HARD quarantine (Gatekeeper-protected, apps work normally)."
+        fi
     else
-        print_colored "$COLOR_RED" "Completed with failures. Fixed ${success_count}, failed ${failure_count} findings."
-        if [[ "$EUID" -ne 0 ]]; then
-            info "If failures were permission-related, rerun with sudo."
+        print_colored "$COLOR_RED" "Completed with failures. Fixed ${success_count}, failed ${failure_count} finding(s)."
+        if [[ "$EUID" -eq 0 ]]; then
+            info "Running as root may cause failures on macOS 26+."
+            info "Try rerunning without sudo — quarantine removal requires the file owner's UID."
         fi
         return 1
     fi
@@ -400,13 +567,24 @@ main() {
     require_command grep
     require_command sort
 
+    # On macOS 26+, quarantine removal via removexattr(2) requires the file owner's
+    # UID, not root. xattr_remove_as_owner() switches to SUDO_USER for owner-matched
+    # targets, but running without sudo is simpler and avoids the issue entirely.
+    if [[ "$EUID" -eq 0 && -n "${SUDO_USER:-}" ]]; then
+        info "Running as sudo. Quarantine removal will be attempted as the file owner"
+        info "where possible. Consider rerunning without sudo on macOS 26+."
+        printf '\n'
+    fi
+
     discover_artifact_roots
     scan_for_findings
     print_findings
 
-    [[ ${#FINDING_ROOTS[@]} -gt 0 ]] || exit 0
+    local actionable
+    actionable="$(count_actionable)"
+    [[ "$actionable" -gt 0 ]] || exit 0
 
-    if confirm_fix; then
+    if confirm_fix "$actionable"; then
         fix_findings
     fi
 }
