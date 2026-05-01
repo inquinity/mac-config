@@ -16,13 +16,20 @@ COLOR_RESET="\e[0m"          # Used to reset color formatting
 print_colored() {
     local color=$1
     local message=$2
-    printf "${color}${message}${COLOR_RESET}\n"
+    printf '%b%s%b\n' "$color" "$message" "$COLOR_RESET"
 }
 
 PROGRAM_NAME="${0:t}"
 ASSUME_YES=false
 DRY_RUN=false
 INCLUDE_APPROVED=false
+VERBOSE=false
+
+QTN_FLAG_DOWNLOAD=0x0001
+QTN_FLAG_SANDBOX=0x0002
+QTN_FLAG_HARD=0x0004
+QTN_FLAG_USER_APPROVED=0x0040
+QTN_FLAG_NO_TRANSLOCATION=0x0100
 
 typeset -a MATCH_PATTERNS
 typeset -a EXTRA_SCAN_ROOTS
@@ -33,37 +40,37 @@ typeset -a FINDING_TYPES
 typeset -a FINDING_NAMES
 typeset -a FINDING_VERSIONS
 typeset -a FINDING_COUNTS
-typeset -a FINDING_PATHS
+typeset -a FINDING_ACTIONABLE_COUNTS
+typeset -a FINDING_INFORMATIONAL_COUNTS
+typeset -a FINDING_DETAILS
 typeset -a FINDING_FIX_TARGETS
-typeset -a FINDING_FLAGS    # quarantine flag integer per finding
-typeset -a FINDING_CLASSES  # "blocking", "approved", or "hard_approved" per finding
+typeset -a FINDING_CLASSES  # "actionable" or "informational" per finding
+typeset -a FINDING_REASONS
 typeset -A SEEN_ROOTS
 
 usage() {
     cat <<EOF
 Usage: ${PROGRAM_NAME} [options]
 
-Scan Homebrew artifacts for com.apple.quarantine, show what is affected,
-and optionally remove the attribute from only the affected artifact roots.
-
-On macOS 26+, Gatekeeper sets QTN_FLAG_HARD (0x0040) on quarantine after
-approving an app. These apps work normally; their quarantine is a protected
-historical record that cannot be removed via xattr. The script skips them
-by default and reports them as informational.
+Scan Homebrew artifacts for com.apple.quarantine, show affected formulas and
+casks, and optionally remove quarantine only from actionable affected paths.
 
 Options:
   -y, --yes              Fix findings without prompting
   -n, --dry-run          Show findings but do not change anything
-  -a, --include-approved Show Gatekeeper-approved quarantine (informational);
-                         attempt removal for non-HARD approved quarantine
+  -v, --verbose          Show affected paths, quarantine values, and checks
+  -a, --include-approved Show user-approved quarantine records skipped by
+                         default; these are informational and are not fixed
   -m, --match PATTERN    Only include artifact names or paths matching PATTERN
   -p, --path PATH        Scan an extra artifact root outside Cellar/Caskroom
   -h, --help             Show this help text
 
 Examples:
   ${PROGRAM_NAME}
+  ${PROGRAM_NAME} --yes
   ${PROGRAM_NAME} --dry-run
-  ${PROGRAM_NAME} --include-approved
+  ${PROGRAM_NAME} --verbose
+  ${PROGRAM_NAME} --verbose --yes
   ${PROGRAM_NAME} --match 'codex|codeql|openjdk'
 EOF
 }
@@ -101,6 +108,9 @@ parse_args() {
                 ;;
             -a|--include-approved)
                 INCLUDE_APPROVED=true
+                ;;
+            -v|--verbose)
+                VERBOSE=true
                 ;;
             -m|--match)
                 [[ $# -ge 2 ]] || die "--match requires a value"
@@ -234,22 +244,133 @@ parse_quarantine_flags() {
     fi
 }
 
-# Classify a quarantine finding based on its flag integer.
-#   blocking:      QTN_FLAG_DOWNLOAD set, no approval flags — app may be blocked by Gatekeeper
-#   approved:      Approval flags set, no HARD flag — app works; soft quarantine removable as owner
-#   hard_approved: HARD flag (0x0040) + approval flags — app works; quarantine is a protected
-#                  macOS record that cannot be removed via xattr
-classify_quarantine() {
+has_user_approved() {
     local flags=$1
-    local has_hard=$(( flags & 0x40 ))
-    local has_approved=$(( (flags & 0x80) | (flags & 0x100) ))
+    (( flags & QTN_FLAG_USER_APPROVED ))
+}
 
-    if [[ $has_hard -ne 0 && $has_approved -ne 0 ]]; then
-        printf 'hard_approved'
-    elif [[ $has_approved -ne 0 ]]; then
-        printf 'approved'
+describe_quarantine_flags() {
+    local flags=$1
+    local known_flags=0
+    local unknown_flags
+    local -a labels
+
+    if (( flags & QTN_FLAG_DOWNLOAD )); then
+        labels+=("downloaded")
+        known_flags=$(( known_flags | QTN_FLAG_DOWNLOAD ))
+    fi
+    if (( flags & QTN_FLAG_SANDBOX )); then
+        labels+=("sandboxed")
+        known_flags=$(( known_flags | QTN_FLAG_SANDBOX ))
+    fi
+    if (( flags & QTN_FLAG_HARD )); then
+        labels+=("hard")
+        known_flags=$(( known_flags | QTN_FLAG_HARD ))
+    fi
+    if (( flags & QTN_FLAG_USER_APPROVED )); then
+        labels+=("user-approved")
+        known_flags=$(( known_flags | QTN_FLAG_USER_APPROVED ))
+    fi
+    if (( flags & QTN_FLAG_NO_TRANSLOCATION )); then
+        labels+=("no-translocation")
+        known_flags=$(( known_flags | QTN_FLAG_NO_TRANSLOCATION ))
+    fi
+
+    unknown_flags=$(( flags & ~known_flags ))
+    if (( unknown_flags != 0 )); then
+        labels+=("other $(printf '0x%04X' "$unknown_flags")")
+    fi
+
+    if (( ${#labels[@]} == 0 )); then
+        printf 'none\n'
     else
-        printf 'blocking'
+        printf '%s\n' "${(j:, :)labels}"
+    fi
+}
+
+is_gatekeeper_candidate() {
+    local path=$1
+
+    [[ -d "$path" && "$path" == *.app ]] && return 0
+    [[ -f "$path" && -x "$path" ]] && return 0
+    [[ -e "$path" && "$path" == *.pkg ]] && return 0
+
+    return 1
+}
+
+assess_code_signing() {
+    local path=$1
+    local output
+    local first_line
+
+    if [[ ! -e "$path" ]]; then
+        printf 'missing\tpath no longer exists\n'
+        return 0
+    fi
+
+    if ! is_gatekeeper_candidate "$path"; then
+        printf 'not_checked\tnot an executable, app bundle, or package\n'
+        return 0
+    fi
+
+    if [[ ! -x /usr/bin/codesign ]]; then
+        printf 'not_checked\tcodesign is not available\n'
+        return 0
+    fi
+
+    if output="$(/usr/bin/codesign --verify --deep --strict "$path" 2>&1)"; then
+        printf 'valid\tcodesign verification passed\n'
+        return 0
+    fi
+
+    first_line="${output%%$'\n'*}"
+    first_line="${first_line//$'\t'/ }"
+    [[ -n "$first_line" ]] || first_line="codesign verification failed"
+
+    case "$first_line" in
+        *"invalid signature"*|*"code or signature have been modified"*)
+            printf 'invalid_signature\t%s\n' "$first_line"
+            ;;
+        *"code object is not signed at all"*|*"is not signed at all"*)
+            printf 'unsigned\t%s\n' "$first_line"
+            ;;
+        *)
+            printf 'not_verifiable\t%s\n' "$first_line"
+            ;;
+    esac
+}
+
+classify_quarantine_path() {
+    local flags=$1
+    local codesign_status=$2
+
+    if [[ "$codesign_status" == "invalid_signature" ]]; then
+        printf 'actionable\n'
+        return 0
+    fi
+
+    if ! has_user_approved "$flags"; then
+        printf 'actionable\n'
+        return 0
+    fi
+
+    printf 'informational\n'
+}
+
+reason_for_quarantine_path() {
+    local flags=$1
+    local codesign_status=$2
+
+    if [[ "$codesign_status" == "invalid_signature" ]]; then
+        printf 'invalid code signature\n'
+    elif ! has_user_approved "$flags"; then
+        if (( flags & QTN_FLAG_HARD )); then
+            printf 'hard quarantine without user approval\n'
+        else
+            printf 'quarantine without user approval\n'
+        fi
+    else
+        printf 'user-approved quarantine record\n'
     fi
 }
 
@@ -274,17 +395,27 @@ scan_artifact_root() {
     local identity
     local artifact_name
     local artifact_version
-    local raw_file
-    local paths_file
+    local pairs_file
+    local details_file
     local targets_file
+    local reasons_file
     local hit_count
-    local affected_paths
     local fix_targets
+    local details
+    local reasons
     local affected_path
     local resolved_path
     local qtn_value
     local qtn_flags
-    local qtn_class
+    local flag_description
+    local codesign_result
+    local codesign_status
+    local codesign_detail
+    local path_class
+    local reason
+    local artifact_class
+    local actionable_count=0
+    local informational_count=0
 
     identity="$(parse_artifact_identity "$artifact_root" "$artifact_type")"
     artifact_name="${identity%%$'\t'*}"
@@ -292,47 +423,79 @@ scan_artifact_root() {
 
     matches_filters "$artifact_name" "$artifact_root" || return 0
 
-    raw_file="$(mktemp /tmp/brew-quarantine-raw.XXXXXX)"
-    paths_file="$(mktemp /tmp/brew-quarantine-paths.XXXXXX)"
+    pairs_file="$(mktemp /tmp/brew-quarantine-pairs.XXXXXX)"
+    details_file="$(mktemp /tmp/brew-quarantine-details.XXXXXX)"
     targets_file="$(mktemp /tmp/brew-quarantine-targets.XXXXXX)"
+    reasons_file="$(mktemp /tmp/brew-quarantine-reasons.XXXXXX)"
 
-    if ! /usr/bin/xattr -r -l "$artifact_root" 2>/dev/null | /usr/bin/grep 'com.apple.quarantine:' > "$raw_file"; then
-        rm -f "$raw_file" "$paths_file" "$targets_file"
-        return 0
-    fi
+    /usr/bin/xattr -r -l "$artifact_root" 2>/dev/null \
+        | /usr/bin/awk -F': com.apple.quarantine: ' 'NF > 1 && !seen[$1]++ { print $1 "\t" $NF }' \
+        > "$pairs_file" || true
 
-    /usr/bin/sed 's/: com.apple.quarantine:.*$//' "$raw_file" | /usr/bin/awk '!seen[$0]++' > "$paths_file"
-    hit_count="$(/usr/bin/wc -l < "$paths_file" | /usr/bin/tr -d ' ')"
+    hit_count="$(/usr/bin/wc -l < "$pairs_file" | /usr/bin/tr -d ' ')"
 
     if [[ "$hit_count" == "0" ]]; then
-        rm -f "$raw_file" "$paths_file" "$targets_file"
+        rm -f "$pairs_file" "$details_file" "$targets_file" "$reasons_file"
         return 0
     fi
 
-    # Extract the quarantine value from the first matching raw line to classify this finding.
-    qtn_value="$(/usr/bin/awk -F': com.apple.quarantine: ' 'NF>1 {print $NF; exit}' "$raw_file")"
-    qtn_flags="$(parse_quarantine_flags "$qtn_value")"
-    qtn_class="$(classify_quarantine "$qtn_flags")"
-
-    affected_paths="$(cat "$paths_file")"
-    while IFS= read -r affected_path; do
+    while IFS=$'\t' read -r affected_path qtn_value; do
         [[ -n "$affected_path" ]] || continue
+        [[ -n "$qtn_value" ]] || qtn_value="-"
+
         resolved_path="$(resolve_fix_target "$affected_path")"
-        printf '%s\n' "$resolved_path" >> "$targets_file"
-    done < "$paths_file"
+        qtn_flags="$(parse_quarantine_flags "$qtn_value")"
+        flag_description="$(describe_quarantine_flags "$qtn_flags")"
+        codesign_result="$(assess_code_signing "$resolved_path")"
+        codesign_status="${codesign_result%%$'\t'*}"
+        codesign_detail="${codesign_result#*$'\t'}"
+        [[ "$codesign_detail" != "$codesign_result" ]] || codesign_detail="-"
+        path_class="$(classify_quarantine_path "$qtn_flags" "$codesign_status")"
+        reason="$(reason_for_quarantine_path "$qtn_flags" "$codesign_status")"
+
+        if [[ "$path_class" == "actionable" ]]; then
+            actionable_count=$(( actionable_count + 1 ))
+            printf '%s\n' "$resolved_path" >> "$targets_file"
+        else
+            informational_count=$(( informational_count + 1 ))
+        fi
+
+        printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+            "$path_class" \
+            "$affected_path" \
+            "$resolved_path" \
+            "$qtn_value" \
+            "$qtn_flags" \
+            "$flag_description" \
+            "$codesign_status" \
+            "$codesign_detail" \
+            "$reason" >> "$details_file"
+        printf '%s\n' "$reason" >> "$reasons_file"
+    done < "$pairs_file"
+
     fix_targets="$(/usr/bin/awk '!seen[$0]++' "$targets_file")"
+    details="$(< "$details_file")"
+    reasons="$(/usr/bin/awk 'BEGIN { separator="" } NF > 0 && !seen[$0]++ { printf "%s%s", separator, $0; separator=", " } END { if (separator != "") printf "\n" }' "$reasons_file")"
+
+    if [[ "$actionable_count" -gt 0 ]]; then
+        artifact_class="actionable"
+    else
+        artifact_class="informational"
+    fi
 
     FINDING_ROOTS+=("$artifact_root")
     FINDING_TYPES+=("$artifact_type")
     FINDING_NAMES+=("$artifact_name")
     FINDING_VERSIONS+=("$artifact_version")
     FINDING_COUNTS+=("$hit_count")
-    FINDING_PATHS+=("$affected_paths")
+    FINDING_ACTIONABLE_COUNTS+=("$actionable_count")
+    FINDING_INFORMATIONAL_COUNTS+=("$informational_count")
+    FINDING_DETAILS+=("$details")
     FINDING_FIX_TARGETS+=("$fix_targets")
-    FINDING_FLAGS+=("$qtn_flags")
-    FINDING_CLASSES+=("$qtn_class")
+    FINDING_CLASSES+=("$artifact_class")
+    FINDING_REASONS+=("$reasons")
 
-    rm -f "$raw_file" "$paths_file" "$targets_file"
+    rm -f "$pairs_file" "$details_file" "$targets_file" "$reasons_file"
 }
 
 scan_for_findings() {
@@ -347,114 +510,131 @@ scan_for_findings() {
     done
 }
 
+artifact_label_at() {
+    local index=$1
+    local artifact_label
+
+    artifact_label="${FINDING_TYPES[$index]} ${FINDING_NAMES[$index]}"
+    [[ "${FINDING_VERSIONS[$index]}" != "-" ]] && artifact_label="${artifact_label} ${FINDING_VERSIONS[$index]}"
+    printf '%s\n' "$artifact_label"
+}
+
+print_detail_lines() {
+    local details=$1
+    local detail_filter=$2
+    local path_class
+    local affected_path
+    local resolved_path
+    local qtn_value
+    local qtn_flags
+    local flag_description
+    local codesign_status
+    local codesign_detail
+    local reason
+
+    while IFS=$'\t' read -r path_class affected_path resolved_path qtn_value qtn_flags flag_description codesign_status codesign_detail reason; do
+        [[ -n "$affected_path" ]] || continue
+        [[ "$detail_filter" == "all" || "$path_class" == "$detail_filter" ]] || continue
+
+        if [[ "$path_class" == "actionable" ]]; then
+            print_colored "$COLOR_CYAN" "  - actionable: ${affected_path}"
+        else
+            print_colored "$COLOR_YELLOW" "  - informational: ${affected_path}"
+        fi
+        [[ "$resolved_path" == "$affected_path" ]] || printf '    resolved: %s\n' "$resolved_path"
+        printf '    reason: %s\n' "$reason"
+        printf '    quarantine: %s\n' "$qtn_value"
+        printf '    flags: 0x%04X (%s)\n' "$qtn_flags" "$flag_description"
+        printf '    codesign: %s - %s\n' "$codesign_status" "$codesign_detail"
+    done <<< "$details"
+}
+
 print_findings() {
     local finding_total=${#FINDING_ROOTS[@]}
     local index
-    local blocking_count=0
-    local approved_count=0
+    local actionable_artifact_count=0
+    local informational_path_count=0
     local artifact_label
-    local affected_path
-    local resolved_path
-    local class
-    local flags
-    local class_label
     local display_index
+    local detail_filter
 
-    # Count findings by class
     for (( index=1; index<=finding_total; index++ )); do
-        case "${FINDING_CLASSES[$index]}" in
-            blocking)              blocking_count=$(( blocking_count + 1 )) ;;
-            approved|hard_approved) approved_count=$(( approved_count + 1 )) ;;
-        esac
+        if [[ "${FINDING_CLASSES[$index]}" == "actionable" ]]; then
+            actionable_artifact_count=$(( actionable_artifact_count + 1 ))
+        fi
+        informational_path_count=$(( informational_path_count + FINDING_INFORMATIONAL_COUNTS[$index] ))
     done
 
-    if [[ "$blocking_count" -eq 0 && "$approved_count" -eq 0 ]]; then
+    if [[ "$finding_total" -eq 0 ]]; then
         success "No Homebrew quarantine findings detected."
         return 0
     fi
 
-    # Show blocking findings (actionable)
-    if [[ "$blocking_count" -gt 0 ]]; then
-        highlight "Found ${blocking_count} actionable Homebrew quarantine finding(s)."
+    if [[ "$actionable_artifact_count" -gt 0 ]]; then
+        highlight "Found ${actionable_artifact_count} actionable Homebrew quarantine finding(s)."
         display_index=1
         for (( index=1; index<=finding_total; index++ )); do
-            [[ "${FINDING_CLASSES[$index]}" == "blocking" ]] || continue
-            artifact_label="${FINDING_TYPES[$index]} ${FINDING_NAMES[$index]}"
-            [[ "${FINDING_VERSIONS[$index]}" != "-" ]] && artifact_label="${artifact_label} ${FINDING_VERSIONS[$index]}"
+            [[ "${FINDING_CLASSES[$index]}" == "actionable" ]] || continue
+            artifact_label="$(artifact_label_at "$index")"
+
             printf '%s\n' ""
-            print_colored "$COLOR_CYAN" "[${display_index}] ${artifact_label}"
-            printf '  root: %s\n' "${FINDING_ROOTS[$index]}"
-            printf '  quarantine hits: %s\n' "${FINDING_COUNTS[$index]}"
-            while IFS= read -r affected_path; do
-                [[ -n "$affected_path" ]] || continue
-                resolved_path="$(resolve_fix_target "$affected_path")"
-                if [[ "$resolved_path" == "$affected_path" ]]; then
-                    printf '  affected: %s\n' "$affected_path"
+            print_colored "$COLOR_CYAN" "[${display_index}] ${artifact_label} (${FINDING_ACTIONABLE_COUNTS[$index]} affected path(s))"
+            if [[ "$INCLUDE_APPROVED" == "true" && "${FINDING_INFORMATIONAL_COUNTS[$index]}" -gt 0 ]]; then
+                printf '  informational paths also present: %s\n' "${FINDING_INFORMATIONAL_COUNTS[$index]}"
+            fi
+
+            if [[ "$VERBOSE" == "true" ]]; then
+                printf '  root: %s\n' "${FINDING_ROOTS[$index]}"
+                [[ -z "${FINDING_REASONS[$index]}" ]] || printf '  reasons: %s\n' "${FINDING_REASONS[$index]}"
+                if [[ "$INCLUDE_APPROVED" == "true" ]]; then
+                    detail_filter="all"
                 else
-                    printf '  affected: %s -> %s\n' "$affected_path" "$resolved_path"
+                    detail_filter="actionable"
                 fi
-            done <<< "${FINDING_PATHS[$index]}"
+                print_detail_lines "${FINDING_DETAILS[$index]}" "$detail_filter"
+            fi
+
             display_index=$(( display_index + 1 ))
         done
     else
-        success "No actionable quarantine findings."
+        success "No actionable Homebrew quarantine findings."
     fi
 
-    # Show approved / hard_approved findings
-    if [[ "$approved_count" -gt 0 ]]; then
+    if [[ "$informational_path_count" -gt 0 ]]; then
         if [[ "$INCLUDE_APPROVED" == "true" ]]; then
             printf '\n'
-            info "${approved_count} Gatekeeper-approved quarantine record(s) — apps work normally:"
+            info "Informational user-approved quarantine record(s), not fixed:"
             display_index=1
             for (( index=1; index<=finding_total; index++ )); do
-                class="${FINDING_CLASSES[$index]}"
-                [[ "$class" == "approved" || "$class" == "hard_approved" ]] || continue
-                flags="${FINDING_FLAGS[$index]}"
-                artifact_label="${FINDING_TYPES[$index]} ${FINDING_NAMES[$index]}"
-                [[ "${FINDING_VERSIONS[$index]}" != "-" ]] && artifact_label="${artifact_label} ${FINDING_VERSIONS[$index]}"
-                if [[ "$class" == "hard_approved" ]]; then
-                    class_label="HARD — Gatekeeper-protected, cannot remove via xattr"
-                else
-                    class_label="approved — removable as file owner"
-                fi
+                [[ "${FINDING_CLASSES[$index]}" == "informational" ]] || continue
+                artifact_label="$(artifact_label_at "$index")"
                 printf '%s\n' ""
-                print_colored "$COLOR_YELLOW" "[${display_index}] ${artifact_label}"
-                printf '  root: %s\n' "${FINDING_ROOTS[$index]}"
-                printf '  quarantine flags: 0x%04X (%s)\n' "$flags" "$class_label"
-                while IFS= read -r affected_path; do
-                    [[ -n "$affected_path" ]] || continue
-                    resolved_path="$(resolve_fix_target "$affected_path")"
-                    if [[ "$resolved_path" == "$affected_path" ]]; then
-                        printf '  affected: %s\n' "$affected_path"
-                    else
-                        printf '  affected: %s -> %s\n' "$affected_path" "$resolved_path"
-                    fi
-                done <<< "${FINDING_PATHS[$index]}"
+                print_colored "$COLOR_YELLOW" "[${display_index}] ${artifact_label} (${FINDING_INFORMATIONAL_COUNTS[$index]} informational path(s))"
+                if [[ "$VERBOSE" == "true" ]]; then
+                    printf '  root: %s\n' "${FINDING_ROOTS[$index]}"
+                    [[ -z "${FINDING_REASONS[$index]}" ]] || printf '  reasons: %s\n' "${FINDING_REASONS[$index]}"
+                    print_detail_lines "${FINDING_DETAILS[$index]}" "informational"
+                fi
                 display_index=$(( display_index + 1 ))
             done
         else
             printf '\n'
-            info "${approved_count} app(s) have Gatekeeper-approved quarantine and work normally."
-            info "Run with --include-approved to view details."
+            info "${informational_path_count} user-approved quarantine path(s) skipped as informational."
+            info "Run with --include-approved --verbose to view them."
         fi
     fi
 }
 
-# Count findings that will be acted on: blocking always; approved if --include-approved;
-# hard_approved never (removal not possible via xattr).
+# Count artifacts that will be acted on. Informational user-approved records are
+# shown only when requested and are never removed by --yes.
 count_actionable() {
     local count=0
-    local i
-    for (( i=1; i<=${#FINDING_CLASSES[@]}; i++ )); do
-        case "${FINDING_CLASSES[$i]}" in
-            blocking)
-                count=$(( count + 1 ))
-                ;;
-            approved)
-                [[ "$INCLUDE_APPROVED" == "true" ]] && count=$(( count + 1 ))
-                ;;
-        esac
+    local index
+
+    for (( index=1; index<=${#FINDING_CLASSES[@]}; index++ )); do
+        [[ "${FINDING_CLASSES[$index]}" == "actionable" ]] && count=$(( count + 1 ))
     done
+
     printf '%d\n' "$count"
 }
 
@@ -463,7 +643,7 @@ confirm_fix() {
     local response
 
     if [[ "$DRY_RUN" == "true" ]]; then
-        info "Dry run mode enabled. No changes will be made."
+        info "Dry run mode enabled; exiting..."
         return 1
     fi
 
@@ -489,34 +669,16 @@ fix_findings() {
     local artifact_label
     local success_count=0
     local failure_count=0
-    local skipped_hard=0
     local target_failures
     local fix_target
-    local class
 
     while [[ "$index" -le "${#FINDING_ROOTS[@]}" ]]; do
-        class="${FINDING_CLASSES[$index]}"
-
-        # Skip approved findings unless --include-approved is set
-        if [[ "$class" != "blocking" && "$INCLUDE_APPROVED" == "false" ]]; then
+        if [[ "${FINDING_CLASSES[$index]}" != "actionable" ]]; then
             index=$(( index + 1 ))
             continue
         fi
 
-        artifact_label="${FINDING_TYPES[$index]} ${FINDING_NAMES[$index]}"
-        [[ "${FINDING_VERSIONS[$index]}" != "-" ]] && artifact_label="${artifact_label} ${FINDING_VERSIONS[$index]}"
-
-        # Hard approved: Gatekeeper-protected; inform and skip (not a failure)
-        if [[ "$class" == "hard_approved" ]]; then
-            info "Skipping ${artifact_label}"
-            info "  QTN_FLAG_HARD is set: this app is approved and works normally."
-            info "  Quarantine cannot be removed via xattr on macOS 26+."
-            info "  If a warning appears, open it in Finder → right-click → Open Anyway."
-            skipped_hard=$(( skipped_hard + 1 ))
-            index=$(( index + 1 ))
-            continue
-        fi
-
+        artifact_label="$(artifact_label_at "$index")"
         highlight "Fixing ${artifact_label}"
         target_failures=0
 
@@ -543,9 +705,6 @@ fix_findings() {
     printf '\n'
     if [[ "$failure_count" -eq 0 ]]; then
         success "Completed successfully. Fixed ${success_count} finding(s)."
-        if [[ "$skipped_hard" -gt 0 ]]; then
-            info "${skipped_hard} finding(s) skipped: HARD quarantine (Gatekeeper-protected, apps work normally)."
-        fi
     else
         print_colored "$COLOR_RED" "Completed with failures. Fixed ${success_count}, failed ${failure_count} finding(s)."
         if [[ "$EUID" -eq 0 ]]; then
@@ -563,9 +722,10 @@ main() {
     require_command xattr
     require_command find
     require_command awk
-    require_command sed
-    require_command grep
+    require_command mktemp
     require_command sort
+    require_command tr
+    require_command wc
 
     # On macOS 26+, quarantine removal via removexattr(2) requires the file owner's
     # UID, not root. xattr_remove_as_owner() switches to SUDO_USER for owner-matched
@@ -574,6 +734,10 @@ main() {
         info "Running as sudo. Quarantine removal will be attempted as the file owner"
         info "where possible. Consider rerunning without sudo on macOS 26+."
         printf '\n'
+    fi
+
+    if [[ "$DRY_RUN" == "true" ]]; then
+        info "Dry run mode enabled. No changes will be made."
     fi
 
     discover_artifact_roots

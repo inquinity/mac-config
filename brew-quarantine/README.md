@@ -1,46 +1,75 @@
 # Brew Quarantine Audit
 
-This repository started with a single-purpose `claude` dequarantine helper. The more general tool is now `fix-brew-quarantine.sh`, which scans Homebrew-managed artifacts and only removes `com.apple.quarantine` from the specific artifact roots that actually need it.
+`fix-brew-quarantine.sh` scans Homebrew-managed formula and cask artifacts for
+`com.apple.quarantine`, groups the results by artifact, and removes quarantine
+only from paths that are likely to trigger Gatekeeper problems.
+
+This started as a safer replacement for:
+
+```sh
+sudo find /opt/homebrew -xdev -xattrname com.apple.quarantine -print 2>/dev/null
+sudo xattr -r -d com.apple.quarantine /opt/homebrew 2>/dev/null
+```
+
+The broad command still works as a blunt instrument, but it is too large for
+company-wide use: it scans all of `/opt/homebrew`, removes every quarantine
+record it can find, and does not explain which formula or cask caused the
+problem. This script keeps the default workflow narrow and reviewable.
 
 ## What It Does
 
 - discovers installed Homebrew formula version roots under `$(brew --cellar)`
 - discovers installed Homebrew cask version roots under `$(brew --caskroom)`
-- scans those roots for `com.apple.quarantine`
-- groups findings by artifact root, such as `codex/0.115.0` or `openjdk/25.0.2`
-- shows a report with every affected path before making changes
-- prompts for confirmation unless `--yes` is passed
+- scans those artifact roots for `com.apple.quarantine`
+- groups findings by formula or cask name and version
+- classifies each quarantined path as actionable or informational
+- prompts before removing quarantine unless `--yes` is passed
 
-If a cask payload is a symlink into another location such as `/Applications`, the report shows the resolved real target and the fix operates on that real path.
+Actionable paths include files that do not have Gatekeeper's user-approved
+quarantine bit, plus quarantined executables, app bundles, or packages whose
+code signature verifies as invalid. Informational records are user-approved
+quarantine records and are not removed by default or by `--yes`.
 
-This is intentionally narrower than `sudo xattr -r -d com.apple.quarantine /opt/homebrew`. It fixes only the specific formula or cask versions that currently have quarantine attributes.
-
-## Common Cases Covered
-
-- `claude` if installed as a Homebrew formula or cask
-- `codex` cask updates
-- `openjdk` or other Java formula updates
-- `codeql` cask contents, including embedded Java runtimes
-
-Because the scan works at the Homebrew artifact-root level, it naturally covers Java homes inside formula/cask directories without needing a separate special case.
+If a cask payload is a symlink into another location such as `/Applications`,
+the report shows the resolved real target and the fix operates on that real
+path.
 
 ## Usage
 
+Make sure the script is executable:
+
 ```sh
 chmod +x ./fix-brew-quarantine.sh
+```
+
+List affected formulas and casks, then prompt to fix:
+
+```sh
 ./fix-brew-quarantine.sh
+```
+
+List and fix without prompting:
+
+```sh
+./fix-brew-quarantine.sh --yes
+```
+
+Show detailed path-level output:
+
+```sh
+./fix-brew-quarantine.sh --verbose
+```
+
+Show detailed output and fix without prompting:
+
+```sh
+./fix-brew-quarantine.sh --verbose --yes
 ```
 
 Dry-run only:
 
 ```sh
 ./fix-brew-quarantine.sh --dry-run
-```
-
-Fix without prompting:
-
-```sh
-sudo ./fix-brew-quarantine.sh --yes
 ```
 
 Limit the scan to likely problem packages:
@@ -55,8 +84,28 @@ Add an extra root outside standard Homebrew locations:
 ./fix-brew-quarantine.sh --path /custom/path/to/artifact
 ```
 
+Show user-approved informational records:
+
+```sh
+./fix-brew-quarantine.sh --include-approved --verbose
+```
+
+## Why It Usually Runs Without Sudo
+
+On current macOS releases, removing `com.apple.quarantine` is tied to the file
+owner, not just root privileges. Most Homebrew artifacts under `/opt/homebrew`
+are owned by the installing user, so running the script as that user is often
+both sufficient and more reliable than `sudo`.
+
+If the script is run with `sudo`, it attempts quarantine removal as
+`$SUDO_USER` for files owned by that user. The simpler recommended path is to
+run without `sudo` first.
+
 ## Notes
 
-- The script looks only for `com.apple.quarantine`. It does not touch `com.apple.provenance`.
-- Some artifacts may require `sudo` to remove attributes, depending on ownership and permissions.
-- This is designed as a manual or scheduled audit tool. It is a better fit than a permanent background watcher when the goal is "find and fix current Homebrew quarantine issues safely."
+- The script looks only for `com.apple.quarantine`.
+- It does not modify `com.apple.provenance`.
+- It does not launch quarantined executables or run Gatekeeper assessment
+  commands that can hang or display dialogs.
+- It uses `codesign --verify` only as a static check for quarantined executable
+  candidates.
