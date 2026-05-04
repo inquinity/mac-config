@@ -60,6 +60,18 @@ else
 fi
 printf "\n"
 
+# Update skills repositories
+if [[ -d ~/dev/skills ]]; then
+  print_colored "${COLOR_BRIGHTYELLOW}" "Updating skills repositories"
+  pushd ~/dev
+  ~/dev/pull-all.sh skills
+  popd
+  print_colored "${COLOR_GREEN}" "Completed"
+else
+  print_colored "${COLOR_YELLOW}" "Skills directory not found at ~/dev/skills. Skipping skills update."
+fi
+printf "\n"
+
 # Clean container images and volumes (Docker + Rancher Desktop)
 cleanup_docker() {
   if ! whence -w dockerdaemon_ready >/dev/null 2>&1; then
