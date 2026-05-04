@@ -166,7 +166,7 @@ convert-video() {
 }
 
 # brew quarantine fix (removes quarantine attributes)
-alias_first fix-brew-quarantine ~/mac-config/brew-quarantine/fix-brew-quarantine.sh
+alias_first fix-brew-quarantine ~/mac-config/brew-tools/fix-brew-quarantine.sh
 
 # ----------
 # Encryption

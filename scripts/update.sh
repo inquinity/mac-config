@@ -31,7 +31,7 @@ if command -v brew &> /dev/null; then
   print_colored "${COLOR_BRIGHTYELLOW}" "Starting brew upgrade"
   brew update
   brew upgrade
-  ~/mac-config/brew-quarantine/fix-brew-quarantine.sh
+  ~/mac-config/brew-tools/fix-brew-quarantine.sh
   print_colored "${COLOR_GREEN}" "Completed"
 else
   print_colored "${COLOR_YELLOW}" "Brew is not installed. Skipping brew upgrade."
