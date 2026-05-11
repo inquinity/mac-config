@@ -103,10 +103,9 @@ ffe () { find . -name '*'"$@" ; }
 
 alias killdoc='killall -KILL Dock'
 
-#node-22() { brew unlink node ; brew unlink node@24 ; brew link --overwrite node@22 ; node --version ; }
+node-22() { brew ls --versions node@22 >/dev/null && { brew unlink node 2>/dev/null; brew unlink node@24 2>/dev/null; brew link --overwrite node@22; node --version; } || printf "node@22 is not installed\n"; }
 node-24() { brew unlink node ; brew unlink node@22 2>/dev/null; brew link --overwrite node@24 ; node --version ; }
 node-26() { brew unlink node@22 2>/dev/null; brew unlink node@24; brew link --overwrite node ; node --version ; }
-#node-latest() { brew unlink node@22 ; brew unlink node@24; brew reinstall node ; node --version ; }
 
 alias python=python3
 alias py=python3
