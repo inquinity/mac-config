@@ -30,6 +30,7 @@ print_colored() {
 
 # Associative array to track repository results
 typeset -A repo_status
+typeset -A repo_summary_branch
 
 # Update a single repository
 update_repository() {
@@ -53,6 +54,7 @@ update_repository() {
     local current_branch
     current_branch="$(git symbolic-ref --short HEAD 2>/dev/null)"
     print_colored "${COLOR_CYAN}" "  Current branch: ${current_branch:-<detached HEAD>}"
+    repo_summary_branch["$repo_path"]="$current_branch"
     
     # Track if there were any errors
     typeset error_occurred="false"
@@ -162,8 +164,13 @@ print_colored "${COLOR_BRIGHTYELLOW}" "-----------"
 
 for repo_path in "${(@ok)repo_status[@]}"; do
     result="${repo_status[$repo_path]}"
+    branch_name="${repo_summary_branch[$repo_path]}"
     if [[ "$result" == "success" ]]; then
-        print_colored "${COLOR_GREEN}" "$repo_path: success"
+        if [[ -n "$branch_name" ]]; then
+            print_colored "${COLOR_GREEN}" "$repo_path: success; on branch $branch_name"
+        else
+            print_colored "${COLOR_GREEN}" "$repo_path: success; on branch <detached HEAD>"
+        fi
     else
         print_colored "${COLOR_RED}" "$repo_path: $result"
     fi
