@@ -217,7 +217,7 @@ function _call_codex() {
 
     # Call Codex with the request
     local full_prompt="Return ONLY a shell command (no prose) for: ${prompt}"
-    cmd_output="$("$codex_bin" exec --color never --skip-git-repo-check -o "$output_file" "$full_prompt" 2>&1)"
+    cmd_output="$("$codex_bin" exec --color never --skip-git-repo-check --ignore-user-config -c 'model_reasoning_effort="low"' --ephemeral -o "$output_file" "$full_prompt" 2>&1)"
     codex_status=$?
 
     if (( codex_status != 0 )); then
