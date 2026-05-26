@@ -1,0 +1,4 @@
+interface:
+  display_name: "Security OSS App Reviewer"
+  short_description: "Review OSS apps for security exposure"
+  default_prompt: "Use $security-oss-app-reviewer to assess this OSS application for data exfiltration, credential exposure, and sandbox risks."

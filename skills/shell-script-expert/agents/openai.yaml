@@ -1,0 +1,4 @@
+interface:
+  display_name: "Shell Script Expert"
+  short_description: "Expert shell scripting for Bash, Zsh, and POSIX sh."
+  default_prompt: "Use $shell-script-expert to write, review, or harden a shell script with safe defaults, clear structure, and practical Bash/Zsh compatibility."
