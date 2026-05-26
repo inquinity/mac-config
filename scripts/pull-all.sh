@@ -1,7 +1,7 @@
 #!/bin/zsh
 
 # pull-all.sh
-# Version: 1.2
+# Version: 1.3
 # Author: robert.altman@optum.com
 # Description: Intelligently updates all git repositories by fetching from all remotes
 #              and fast-forwarding local branches that track origin/*. For the current
@@ -151,9 +151,11 @@ else
     exit 1
 fi
 
-# Find all git repositories, pruning when we find one (don't search inside repos)
-find "$search_path" -name ".git" -type d -prune -print0 | while IFS= read -r -d '' git_dir; do
-    repo_path="$(dirname "$git_dir")"
+# Find independently checked-out git repositories. Once a repository root is
+# found, prune that whole tree so nested repositories are left to their owner:
+# submodules, vendored repos, and package-manager checkouts such as SwiftPM's
+# .build/checkouts should not be updated as peer repositories.
+find "$search_path" -type d -exec test -d "{}/.git" \; -print0 -prune | while IFS= read -r -d '' repo_path; do
     update_repository "$repo_path"
 done
 
