@@ -78,9 +78,9 @@ else
     alias hgrep='history 1 | grep -i'  # grep through command history
 fi
 
-#-----------
-# Searching:
-#-----------
+#----------
+# Searching
+#----------
 
 # ff:  to find a file under the current directory
 ff () { find . -name "$@" ; }
@@ -195,10 +195,8 @@ source_first ~/mac-config/scripts/docker.sh
 # --- use switchable container runtimes (docker, nerdctl, etc.) ---
 # -----------------------------------------------------------------
 
-# alias_first grype ~/mac-config/scripts/grype.sh
-[[ -f ~/mac-config/scripts/grype.sh ]] && alias grype='~/mac-config/scripts/grype.sh'
-# alias_first get-main-package ~/mac-config/scripts/get-main-package.sh
-[[ -f ~/mac-config/scripts/get-main-package.sh ]] && alias get-main-package='~/mac-config/scripts/get-main-package.sh'
+alias_first grype ~/mac-config/scripts/grype.sh
+alias_first get-main-package ~/mac-config/scripts/get-main-package.sh
 
 # compatibility work-around for dive and containerd
 # alias_first dive ~/mac-config/scripts/dive.sh
