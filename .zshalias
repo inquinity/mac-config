@@ -132,6 +132,12 @@ gri() { grep --line-number --recursive --ignore-case --include=*.{m,h,xib} "$1";
 xcode ()  { open /Applications/Xcode.app "$@" ; }
 sim () { open /Applications/Xcode.app/Contents/Developer/Applications/Simulator.app ; }
 
+# -----------------
+# Network / Hotspot
+# -----------------
+
+alias_first hotspot ~/mac-config/scripts/hotspot.sh
+
 # --------------------
 # KDiff diff and merge
 # --------------------
