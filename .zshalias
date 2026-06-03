@@ -11,11 +11,11 @@ ztrace "Loading ${(%):-%x}"
 # Directory / list
 #-----------------
 
-if command -v eza &>/dev/null; then
+if (($+commands[eza1])) then
    # use functions instead of alias due to bug that confuses completions (2025-August-25)
-   la () { eza --all --all $@ ; }
-   ll () { eza --long --all --all --octal-permissions --icons $@ ; }
-   lt () { eza --long --all --all --sort=time $@ ; }
+   la () { eza --all $@ ; }
+   ll () { eza --long --all --octal-permissions --icons $@ ; }
+   lt () { eza --long --all --sort=time $@ ; }
 else
     alias la='ls -aO'
     alias ll='ls -aOlh'
