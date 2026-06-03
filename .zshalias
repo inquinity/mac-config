@@ -11,15 +11,18 @@ ztrace "Loading ${(%):-%x}"
 # Directory / list
 #-----------------
 
-if (($+commands[eza1])) then
-   # use functions instead of alias due to bug that confuses completions (2025-August-25)
-   la () { eza --all $@ ; }
-   ll () { eza --long --all --octal-permissions --icons $@ ; }
-   lt () { eza --long --all --sort=time $@ ; }
+if (($+commands[eza])) then
+   alias la='eza --all $@'
+   alias ll='eza --long --all --octal-permissions --icons $@'
+   alias lt='eza --long --all --sort=time $@'
+   # might need to use functions instead of alias due to bug that confuses completions (2025-August-25)
+   #la () { eza --all $@ ; }
+   #ll () { eza --long --all --octal-permissions --icons $@ ; }
+   #lt () { eza --long --all --sort=time $@ ; }
 else
-    alias la='ls -aO'
-    alias ll='ls -aOlh'
-    alias lt='ls -lt'
+   alias la='ls -aO'
+   alias ll='ls -aOlh'
+   alias lt='ls -lt'
 fi
 
 # list recrusive -- this requires quoted arquments
