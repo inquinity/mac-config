@@ -106,6 +106,14 @@ add_homebrew_paths() {
 
 add_homebrew_paths
 
+# Add Java paths (if Java exists)
+# Note - homebrew java_home requires that you symlink the java folder to /Library/Java/JavaVirtualMachines:
+# e.g: sudo ln -sfn /opt/homebrew/opt/openjdk/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk.jdk
+if [[ -z "${JAVA_HOME:-}" ]]; then
+    export JAVA_HOME=$(/usr/libexec/java_home -v 21)
+fi
+addpath $JAVA_HOME/bin
+
 # Docker Desktop paths
 if [ -d /Applications/Docker.app ]; then
     addpath ${HOME}/.docker/bin
