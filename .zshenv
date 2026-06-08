@@ -121,4 +121,4 @@ export DOTNET_CLI_TELEMETRY_OPTOUT=1
 SHELL_SESSIONS_DISABLE=1
 
 # Load UHG specific settings (if file exists)
-source ~/.zshenv-uhg 2> /dev/null
+[[ -f ~/.zshenv-uhg ]] && source ~/.zshenv-uhg
