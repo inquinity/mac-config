@@ -1,0 +1,14 @@
+// ~/Library/Application Support/Code/User/keybindings.json
+// // Place your key bindings in this file to override the defaults
+[
+    {
+    "key": "ctrl+end",
+    "command": "cursorBottom",
+    "when": "editorTextFocus"
+    },
+    {
+    "key": "ctrl+home",
+    "command": "cursorTop",
+    "when": "editorTextFocus"
+    }
+]
