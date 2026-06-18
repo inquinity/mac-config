@@ -72,6 +72,20 @@ else
 fi
 printf "\n"
 
+# Update OTC Awesome LLM Codex marketplace if already configured
+if command -v codex &> /dev/null; then
+  if codex plugin marketplace list 2>/dev/null | grep -q '^otc-awesome-llm[[:space:]]'; then
+    print_colored "${COLOR_BRIGHTYELLOW}" "Updating otc-awesome-llm Codex marketplace"
+    codex plugin marketplace upgrade otc-awesome-llm
+    print_colored "${COLOR_GREEN}" "Completed"
+  else
+    print_colored "${COLOR_YELLOW}" "otc-awesome-llm Codex marketplace is not installed. Skipping Codex plugin update."
+  fi
+else
+  print_colored "${COLOR_YELLOW}" "Codex CLI is not installed. Skipping Codex plugin update."
+fi
+printf "\n"
+
 # Clean container images and volumes (Docker + Rancher Desktop)
 cleanup_docker() {
   if ! whence -w dockerdaemon_ready >/dev/null 2>&1; then
