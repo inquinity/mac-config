@@ -126,7 +126,11 @@ if [ -d ${HOME}/.rd ]; then addpath ${HOME}/.rd/bin ; fi
 # Disable Microsoft CLI telemetry
 export DOTNET_CLI_TELEMETRY_OPTOUT=1
 
-SHELL_SESSIONS_DISABLE=1
+# Disable Save/Restore shell sessions
+#export SHELL_SESSIONS_DISABLE=1
+
+# Disable brew upgrade confirmation
+export HOMEBREW_NO_ASK=1
 
 # Load UHG specific settings (if file exists)
 [[ -f ~/.zshenv-uhg ]] && source ~/.zshenv-uhg
