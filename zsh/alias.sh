@@ -49,7 +49,7 @@ alias showa='whence -f'
 # sourcea: to source this file (to make changes active after editing)
 alias sourcea='source ~/.zshalias'
 
-alias_first emacs='~/.emacs.d/open-with-emacs.sh'
+alias_first emacs '~/.emacs.d/open-with-emacs.sh'
 # but what is /Applications/Emacs.app/Contents/MacOS/Emacs.sh
 
 # GitHub Copilot REALLY likes timeout. This function does the same thing without needing to install GNU Coreutils 
