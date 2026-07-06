@@ -84,60 +84,14 @@ else
     #export ATUIN_NOBIND="true"
 fi
 
-# Create a helper function to source the first readable file from a list of files
-source_first() {
-	local f
-	for f in "$@"; do
-    	    [[ -r "$f" ]] || continue
-    	    source "$f"
-    	    return 0
-  	done
-	return 1 # return quietly
-}
-
-# Alias $cmd to the first usable candidate. Each candidate is either a file
-# path (aliased if it exists) or a command line whose first word resolves on $PATH.
-alias_first() {
-	local cmd="$1"
-	shift || return 1
-
-	local f candidate first
-	for f in "$@"; do
-		# Try as a file path (with tilde expansion).
-		candidate=${~:-$f}
-		if [[ -f "$candidate" ]]; then
-			alias "$cmd=${(q)candidate}"
-			return 0
-		fi
-		# Try as a command line: first word must be in $PATH.
-		first=${f%% *}
-		if (( $+commands[$first] )); then
-			alias "$cmd=${(q)f}"
-			return 0
-		fi
-	done
-	return 1
-}
-# Create a helper function to alias a command to the first existing file from a list of files
-#alias_first() {
-#	local cmd="$1"
-#	shift || return 1
-#
-#	local f candidate
-#	for f in "$@"; do
-#		candidate=${~:-$f}
-#		[[ -f "$candidate" ]] || continue
-#		alias "$cmd=${(q)candidate}"
-#		return 0
-#	done
-#	return 1 # return quiety
-#}
+source ~/mac-config/zsh/source_first.sh
+source ~/mac-config/zsh/alias_first.sh
 
 # Load UHG specific settings (if file exists)
 #. ~/.zshrc-uhg 2> /dev/null
 
 # aliases
-[[ -f ~/.zshalias ]] && source ~/.zshalias
+[[ -f ~/mac-config/zsh/alias.sh ]] && source ~/mac-config/zsh/alias.sh
 
 # Lines configured by zsh-newuser-install
 #HISTFILE=~/.histfile
