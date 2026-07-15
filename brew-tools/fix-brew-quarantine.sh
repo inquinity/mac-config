@@ -350,6 +350,13 @@ classify_quarantine_path() {
     fi
 
     if ! has_user_approved "$flags"; then
+        # no-translocation + valid codesign means macOS has assessed the app and
+        # approved execution from its current location. The quarantine record is
+        # an OS audit entry (common on macOS 26+) rather than a user action item.
+        if (( flags & QTN_FLAG_NO_TRANSLOCATION )) && [[ "$codesign_status" == "valid" ]]; then
+            printf 'informational\n'
+            return 0
+        fi
         printf 'actionable\n'
         return 0
     fi
@@ -364,7 +371,9 @@ reason_for_quarantine_path() {
     if [[ "$codesign_status" == "invalid_signature" ]]; then
         printf 'invalid code signature\n'
     elif ! has_user_approved "$flags"; then
-        if (( flags & QTN_FLAG_HARD )); then
+        if (( flags & QTN_FLAG_NO_TRANSLOCATION )) && [[ "$codesign_status" == "valid" ]]; then
+            printf 'no-translocation set; macOS approved execution (no user action needed)\n'
+        elif (( flags & QTN_FLAG_HARD )); then
             printf 'hard quarantine without user approval\n'
         else
             printf 'quarantine without user approval\n'
@@ -374,9 +383,11 @@ reason_for_quarantine_path() {
     fi
 }
 
-# Remove com.apple.quarantine from a path, running as the file owner when the
-# current process is root. On macOS 26+, quarantine removal via removexattr(2)
-# requires the caller to be the file owner; root alone is not sufficient.
+# Remove com.apple.quarantine from a path. When running as root, switches to
+# the file owner's UID first (required on macOS 26+ where root alone is not
+# sufficient). When running as a normal user, falls back to sudo if the direct
+# removal fails — this handles paths installed to /Applications with admin
+# ownership (e.g. Homebrew casks that resolve symlinks to system directories).
 xattr_remove_as_owner() {
     local path=$1
     local owner
@@ -384,8 +395,10 @@ xattr_remove_as_owner() {
 
     if [[ "$EUID" -eq 0 && -n "${SUDO_USER:-}" && "$owner" == "$SUDO_USER" ]]; then
         sudo -u "$SUDO_USER" /usr/bin/xattr -d com.apple.quarantine "$path" 2>/dev/null
+    elif /usr/bin/xattr -d com.apple.quarantine "$path" 2>/dev/null; then
+        return 0
     else
-        /usr/bin/xattr -d com.apple.quarantine "$path" 2>/dev/null
+        sudo /usr/bin/xattr -d com.apple.quarantine "$path" 2>/dev/null
     fi
 }
 
@@ -617,10 +630,6 @@ print_findings() {
                 fi
                 display_index=$(( display_index + 1 ))
             done
-        else
-            printf '\n'
-            info "${informational_path_count} user-approved quarantine path(s) skipped as informational."
-            info "Run with --include-approved --verbose to view them."
         fi
     fi
 }
@@ -671,6 +680,9 @@ fix_findings() {
     local failure_count=0
     local target_failures
     local fix_target
+    local fix_owner
+    local current_user
+    current_user="$(/usr/bin/id -un)"
 
     while [[ "$index" -le "${#FINDING_ROOTS[@]}" ]]; do
         if [[ "${FINDING_CLASSES[$index]}" != "actionable" ]]; then
@@ -684,10 +696,19 @@ fix_findings() {
 
         while IFS= read -r fix_target; do
             [[ -n "$fix_target" ]] || continue
-            # On macOS 26+, quarantine removal requires the file owner's UID,
-            # not root. xattr_remove_as_owner switches to SUDO_USER when needed.
             if ! xattr_remove_as_owner "$fix_target"; then
+                fix_owner="$(/usr/bin/stat -f '%Su' "$fix_target" 2>/dev/null)"
                 print_colored "$COLOR_RED" "Failed to remove quarantine from ${fix_target}"
+                # On macOS 26+ (or MDM-managed Macs), the bundle directory may be
+                # protected from xattr modification even by root. Ownership and
+                # xattr changes require going through macOS or Homebrew mechanisms.
+                if [[ "$fix_owner" == "root" ]]; then
+                    info "  Path is owned by root; quarantine removal is blocked by macOS 26+ protections."
+                    info "  Approve in System Settings > Privacy & Security (scroll to bottom) — or:"
+                    if [[ "${FINDING_TYPES[$index]}" == "cask" ]]; then
+                        info "  Reinstall with: brew reinstall --cask ${FINDING_NAMES[$index]}"
+                    fi
+                fi
                 target_failures=1
             fi
         done <<< "${FINDING_FIX_TARGETS[$index]}"
