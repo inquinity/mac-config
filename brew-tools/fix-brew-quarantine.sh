@@ -340,46 +340,83 @@ assess_code_signing() {
     esac
 }
 
+# Ask Gatekeeper for its actual execute-time verdict on a path. This is the
+# authoritative check for whether macOS will block the item (e.g. the
+# "Not Opened" dialog): codesign validity alone only proves the signature is
+# intact, not that the item is notarized/approved to run.
+assess_gatekeeper() {
+    local path=$1
+    local output
+    local source_line
+
+    if [[ ! -e "$path" ]]; then
+        printf 'missing\tpath no longer exists\n'
+        return 0
+    fi
+
+    if ! is_gatekeeper_candidate "$path"; then
+        printf 'not_checked\tnot an executable, app bundle, or package\n'
+        return 0
+    fi
+
+    if [[ ! -x /usr/sbin/spctl ]]; then
+        printf 'not_checked\tspctl is not available\n'
+        return 0
+    fi
+
+    if output="$(/usr/sbin/spctl -a -vv -t execute "$path" 2>&1)"; then
+        source_line="$(printf '%s\n' "$output" | /usr/bin/grep '^source=' || true)"
+        printf 'accepted\t%s\n' "${source_line:-spctl accepted execution}"
+        return 0
+    fi
+
+    source_line="$(printf '%s\n' "$output" | /usr/bin/grep '^source=' || true)"
+    printf 'rejected\t%s\n' "${source_line:-spctl rejected execution}"
+}
+
 classify_quarantine_path() {
     local flags=$1
     local codesign_status=$2
+    local gatekeeper_status=$3
 
     if [[ "$codesign_status" == "invalid_signature" ]]; then
         printf 'actionable\n'
         return 0
     fi
 
-    if ! has_user_approved "$flags"; then
-        # no-translocation + valid codesign means macOS has assessed the app and
-        # approved execution from its current location. The quarantine record is
-        # an OS audit entry (common on macOS 26+) rather than a user action item.
-        if (( flags & QTN_FLAG_NO_TRANSLOCATION )) && [[ "$codesign_status" == "valid" ]]; then
-            printf 'informational\n'
-            return 0
-        fi
-        printf 'actionable\n'
+    if has_user_approved "$flags"; then
+        printf 'informational\n'
         return 0
     fi
 
-    printf 'informational\n'
+    # spctl reflects the actual Gatekeeper verdict (notarization/approval), unlike
+    # the no-translocation flag, which is set on plain executables regardless of
+    # notarization status and does not indicate the OS has approved execution.
+    if [[ "$gatekeeper_status" == "accepted" ]]; then
+        printf 'informational\n'
+        return 0
+    fi
+
+    printf 'actionable\n'
 }
 
 reason_for_quarantine_path() {
     local flags=$1
     local codesign_status=$2
+    local gatekeeper_status=$3
 
     if [[ "$codesign_status" == "invalid_signature" ]]; then
         printf 'invalid code signature\n'
-    elif ! has_user_approved "$flags"; then
-        if (( flags & QTN_FLAG_NO_TRANSLOCATION )) && [[ "$codesign_status" == "valid" ]]; then
-            printf 'no-translocation set; macOS approved execution (no user action needed)\n'
-        elif (( flags & QTN_FLAG_HARD )); then
-            printf 'hard quarantine without user approval\n'
-        else
-            printf 'quarantine without user approval\n'
-        fi
-    else
+    elif has_user_approved "$flags"; then
         printf 'user-approved quarantine record\n'
+    elif [[ "$gatekeeper_status" == "accepted" ]]; then
+        printf 'Gatekeeper accepts this item (notarized/approved; no user action needed)\n'
+    elif [[ "$gatekeeper_status" == "rejected" ]]; then
+        printf 'Gatekeeper rejects this item (e.g. unnotarized); quarantine removal required\n'
+    elif (( flags & QTN_FLAG_HARD )); then
+        printf 'hard quarantine without user approval\n'
+    else
+        printf 'quarantine without user approval\n'
     fi
 }
 
@@ -424,6 +461,9 @@ scan_artifact_root() {
     local codesign_result
     local codesign_status
     local codesign_detail
+    local gatekeeper_result
+    local gatekeeper_status
+    local gatekeeper_detail
     local path_class
     local reason
     local artifact_class
@@ -463,8 +503,12 @@ scan_artifact_root() {
         codesign_status="${codesign_result%%$'\t'*}"
         codesign_detail="${codesign_result#*$'\t'}"
         [[ "$codesign_detail" != "$codesign_result" ]] || codesign_detail="-"
-        path_class="$(classify_quarantine_path "$qtn_flags" "$codesign_status")"
-        reason="$(reason_for_quarantine_path "$qtn_flags" "$codesign_status")"
+        gatekeeper_result="$(assess_gatekeeper "$resolved_path")"
+        gatekeeper_status="${gatekeeper_result%%$'\t'*}"
+        gatekeeper_detail="${gatekeeper_result#*$'\t'}"
+        [[ "$gatekeeper_detail" != "$gatekeeper_result" ]] || gatekeeper_detail="-"
+        path_class="$(classify_quarantine_path "$qtn_flags" "$codesign_status" "$gatekeeper_status")"
+        reason="$(reason_for_quarantine_path "$qtn_flags" "$codesign_status" "$gatekeeper_status")"
 
         if [[ "$path_class" == "actionable" ]]; then
             actionable_count=$(( actionable_count + 1 ))
@@ -473,7 +517,7 @@ scan_artifact_root() {
             informational_count=$(( informational_count + 1 ))
         fi
 
-        printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+        printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
             "$path_class" \
             "$affected_path" \
             "$resolved_path" \
@@ -482,6 +526,8 @@ scan_artifact_root() {
             "$flag_description" \
             "$codesign_status" \
             "$codesign_detail" \
+            "$gatekeeper_status" \
+            "$gatekeeper_detail" \
             "$reason" >> "$details_file"
         printf '%s\n' "$reason" >> "$reasons_file"
     done < "$pairs_file"
@@ -543,9 +589,11 @@ print_detail_lines() {
     local flag_description
     local codesign_status
     local codesign_detail
+    local gatekeeper_status
+    local gatekeeper_detail
     local reason
 
-    while IFS=$'\t' read -r path_class affected_path resolved_path qtn_value qtn_flags flag_description codesign_status codesign_detail reason; do
+    while IFS=$'\t' read -r path_class affected_path resolved_path qtn_value qtn_flags flag_description codesign_status codesign_detail gatekeeper_status gatekeeper_detail reason; do
         [[ -n "$affected_path" ]] || continue
         [[ "$detail_filter" == "all" || "$path_class" == "$detail_filter" ]] || continue
 
@@ -559,6 +607,7 @@ print_detail_lines() {
         printf '    quarantine: %s\n' "$qtn_value"
         printf '    flags: 0x%04X (%s)\n' "$qtn_flags" "$flag_description"
         printf '    codesign: %s - %s\n' "$codesign_status" "$codesign_detail"
+        printf '    gatekeeper: %s - %s\n' "$gatekeeper_status" "$gatekeeper_detail"
     done <<< "$details"
 }
 
