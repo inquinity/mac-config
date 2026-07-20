@@ -33,6 +33,9 @@ setopt HIST_IGNORE_SPACE     # do not save command beginning with a space
 setopt HIST_NO_STORE         # tells the shell not to store history or fc commands
 setopt HIST_NO_FUNCTIONS     # tells it not to store function definitions
 
+# Allow interactive comments so that copy/paste with comments will work (same as bash)
+setopt interactivecomments
+
 # Load colors
 #autoload -U colors && colors
 
