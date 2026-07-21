@@ -13,7 +13,7 @@ ztrace "Loading ${(%):-%x}"
 
 if (($+commands[eza])) then
    alias la='eza --all $@'
-   alias ll='eza --long --all --octal-permissions --icons $@'
+   alias ll='eza --long --all --octal-permissions --icons=never $@'
    alias lt='eza --long --all --sort=time $@'
    # might need to use functions instead of alias due to bug that confuses completions (2025-August-25)
    #la () { eza --all $@ ; }
@@ -47,7 +47,7 @@ alias showpath='echo "$PATH" | tr ":" "\n" | nl'
 alias showa='whence -f'
 
 # sourcea: to source this file (to make changes active after editing)
-alias sourcea='source ~/.zshalias'
+alias sourcea='source ~/mac-config/zsh/alias.sh'
 
 alias_first emacs '~/.emacs.d/open-with-emacs.sh'
 # but what is /Applications/Emacs.app/Contents/MacOS/Emacs.sh
