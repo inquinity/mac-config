@@ -1,0 +1,5 @@
+brew_prefix="$(brew --prefix)"
+mkdir -p "$brew_prefix/etc/bash_completion.d" "$brew_prefix/share/zsh/site-functions" "$brew_prefix/share/fish/vendor_completions.d"
+codex completion bash > "$brew_prefix/etc/bash_completion.d/codex"
+codex completion zsh > "$brew_prefix/share/zsh/site-functions/_codex"
+codex completion fish > "$brew_prefix/share/fish/vendor_completions.d/codex.fish"
