@@ -1,0 +1,4 @@
+interface:
+  display_name: "Daily News"
+  short_description: "Curate important technology news from the last week"
+  default_prompt: "Use $daily-news to produce a concise technology news briefing covering the last week."
