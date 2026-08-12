@@ -15,3 +15,8 @@ add_homebrew_paths
 #autoload -Uz compinit
 #compinit
 #source <(kubectl completion zsh)
+
+# legion homebrew info
+export HOMEBREW_API_DOMAIN="https://mesh.s3api-core.optum.com/legion/homebrew"
+export HOMEBREW_NO_AUTO_UPDATE="1"
+export HOMEBREW_NO_VERIFY_ATTESTATIONS="1"
