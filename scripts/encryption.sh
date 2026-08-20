@@ -1,7 +1,7 @@
 #!/bin/bash
-# encryption.shlib - Shell library for file encryption/decryption functions
+# encryption.sh - Shell library for file encryption/decryption functions
 # This file should be sourced, not executed directly
-# Usage: source ~/mac-config/encryption.shlib
+# Usage: source ~/mac-config/encryption.sh
 
 # Define color codes for terminal output
 COLOR_GREEN="\e[32m"         # Used for success messages and instructions
