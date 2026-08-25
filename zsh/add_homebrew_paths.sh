@@ -1,4 +1,8 @@
 # brew shellenv output is cached in $_BREW_SHELLENV_CACHE so child shells skip the brew call.
+#
+# Safe to call more than once: the addpath calls use --move, so a second invocation
+# re-asserts precedence rather than silently no-opping. .zprofile relies on this
+# because /etc/zprofile runs path_helper between .zshenv and .zprofile.
 add_homebrew_paths() {
     if [[ $CPUTYPE == arm64 ]]; then
         # Apple chips
@@ -6,12 +10,11 @@ add_homebrew_paths() {
             export _BREW_SHELLENV_CACHE="$(/opt/homebrew/bin/brew shellenv)"
         fi
         eval "$_BREW_SHELLENV_CACHE"
-        addpath "/opt/bin"
         if [[ -d /opt/homebrew/opt/mysql-client/bin ]]; then
-            addpath "/opt/homebrew/opt/mysql-client/bin"
+            addpath --move "/opt/homebrew/opt/mysql-client/bin"
         fi
     else
         # Intel chips
-        addpath "/usr/local/sbin"
+        addpath --move "/usr/local/sbin"
     fi
 }
