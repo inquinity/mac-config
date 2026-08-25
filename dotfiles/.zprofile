@@ -8,8 +8,14 @@
 
 ztrace "Loading ${(%):-%x}"
 
-# This is the easiest way to "fix" the path ordering issue and make sure that homebrew is searched before /usr/*/bin
+# /etc/zprofile ran /usr/libexec/path_helper immediately before this file, which
+# rebuilds $PATH with /etc/paths + /etc/paths.d first and demotes everything
+# .zshenv added to below /usr/bin. Re-assert the entries whose precedence
+# actually matters, lowest priority first, since each --move lands at the front.
 add_homebrew_paths
+addpath --move /opt/homebrew/sbin
+addpath --move /opt/homebrew/bin
+addpath --move ~/mac-config/bin
 
 #kubectl autocompletion
 #autoload -Uz compinit

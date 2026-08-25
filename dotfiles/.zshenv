@@ -57,3 +57,10 @@ export HOMEBREW_NO_ASK=1
 
 # Load UHG specific settings (if file exists)
 [[ -f ~/.zshenv-uhg ]] && source ~/.zshenv-uhg
+
+# Deliberate command overrides win over everything else. This must come last so it
+# outranks anything sourced above, including .zshenv-uhg. Registered here because
+# .zshenv is the only startup file that runs for non-login shells (scripts, and any
+# #!/bin/zsh); .zprofile re-asserts it for login shells, where /etc/zprofile's
+# path_helper reshuffles $PATH after this file has run.
+addpath --move ~/mac-config/bin
