@@ -7,6 +7,15 @@
 
 ztrace "Loading ${(%):-%x}"
 
+
+#----------------------
+# Startup trace control
+#----------------------
+
+alias zsh-trace-on='touch ~/.zsh_trace && echo "Startup trace: ON (takes effect on next shell)"'
+alias zsh-trace-off='rm -f ~/.zsh_trace && echo "Startup trace: OFF (takes effect on next shell)"'
+alias zsh-trace-status='[[ -f ~/.zsh_trace ]] && echo "Startup trace: ON" || echo "Startup trace: OFF"'
+
 #-----------------
 # Directory / list
 #-----------------
@@ -236,7 +245,3 @@ alias_first codeql ~/dev/codeql.sh
 # gcitool
 alias_first gci ~/dev/optum/gcitool/scripts/gcictl.sh
 
-# Startup trace control
-alias zsh-trace-on='touch ~/.zsh_trace && echo "Startup trace: ON (takes effect on next shell)"'
-alias zsh-trace-off='rm -f ~/.zsh_trace && echo "Startup trace: OFF (takes effect on next shell)"'
-alias zsh-trace-status='[[ -f ~/.zsh_trace ]] && echo "Startup trace: ON" || echo "Startup trace: OFF"'
