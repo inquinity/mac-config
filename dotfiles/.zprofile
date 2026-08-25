@@ -15,6 +15,7 @@ ztrace "Loading ${(%):-%x}"
 add_homebrew_paths
 addpath --move /opt/homebrew/sbin
 addpath --move /opt/homebrew/bin
+addpath --move /opt/bin
 addpath --move ~/mac-config/bin
 
 #kubectl autocompletion
