@@ -10,3 +10,5 @@
 # CodeQL
 .codeqlDB
 *.sarif
+
+**/.claude/settings.local.json
