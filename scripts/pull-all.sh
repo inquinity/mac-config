@@ -35,8 +35,12 @@ typeset -A repo_summary_branch
 # Update a single repository
 update_repository() {
     local repo_path="$1"
-    
-    pushd "$repo_path" > /dev/null || return 1
+
+    if ! pushd "$repo_path" > /dev/null 2>&1; then
+        print_colored "${COLOR_RED}" "  ERROR: Cannot access directory"
+        repo_status["$repo_path"]="ERROR: Cannot access directory"
+        return 0
+    fi
     
     print_colored "${COLOR_GREEN}" "$(pwd)"
     
@@ -53,22 +57,28 @@ update_repository() {
     if ! git remote | grep -q "^origin$"; then
         print_colored "${COLOR_RED}" "  ERROR: origin remote not found"
         popd > /dev/null
-        return 1
+        repo_status["$repo_path"]="ERROR: origin remote not found"
+        return 0
     fi
-    
+
     # Fetch all remotes
-    git fetch --all
+    if ! git fetch --all; then
+        print_colored "${COLOR_RED}" "  ERROR: git fetch failed"
+        popd > /dev/null
+        repo_status["$repo_path"]="ERROR: git fetch failed"
+        return 0
+    fi
     
     # Get current branch (empty if detached HEAD)
     local current_branch
     current_branch="$(git symbolic-ref --short HEAD 2>/dev/null)"
     print_colored "${COLOR_CYAN}" "  Current branch: ${current_branch:-<detached HEAD>}"
     repo_summary_branch["$repo_path"]="$current_branch"
-    
+
     # Track if there were any errors
     typeset error_occurred="false"
     typeset error_message=""
-    
+
     # Enumerate local branches that track origin/* using process substitution
     while read -r local_branch upstream_branch; do
         # Skip if no upstream or upstream is not origin/*
