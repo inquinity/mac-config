@@ -58,9 +58,15 @@ export HOMEBREW_NO_ASK=1
 # Load UHG specific settings (if file exists)
 [[ -f ~/.zshenv-uhg ]] && source ~/.zshenv-uhg
 
-# Deliberate command overrides win over everything else. This must come last so it
-# outranks anything sourced above, including .zshenv-uhg. Registered here because
-# .zshenv is the only startup file that runs for non-login shells (scripts, and any
-# #!/bin/zsh); .zprofile re-asserts it for login shells, where /etc/zprofile's
-# path_helper reshuffles $PATH after this file has run.
+# Final precedence, asserted last so it outranks everything sourced above --
+# including .zshenv-uhg, which adds the gcloud SDK, and the Docker/Rancher blocks.
+# Without this, non-login shells resolved kubectl to the gcloud SDK copy and helm
+# to Rancher Desktop's, while login shells got Homebrew's, so the same command
+# meant different binaries in a script than at a prompt.
+#
+# Lowest priority first, since each --move lands at the front of $PATH.
+# .zprofile repeats this for login shells, where /etc/zprofile's path_helper
+# reshuffles $PATH after this file has already run.
+addpath --move /opt/homebrew/sbin
+addpath --move /opt/homebrew/bin
 addpath --move ~/mac-config/bin
