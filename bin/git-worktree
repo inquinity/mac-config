@@ -1,0 +1,35 @@
+#!/bin/bash
+set -e
+
+if [[ "$1" == "add" ]]; then
+  local worktree_path="$2"
+  local branch="$3"
+
+  # Call the real git worktree add
+  /opt/homebrew/bin/git worktree add "$worktree_path" "$branch"
+
+  # Add to .git/info/exclude
+  local worktree_name=$(basename "$worktree_path")
+  local exclude_file=".git/info/exclude"
+  mkdir -p .git/info
+  if ! grep -q "^${worktree_name}/$" "$exclude_file" 2>/dev/null; then
+    echo "${worktree_name}/" >> "$exclude_file"
+  fi
+
+elif [[ "$1" == "remove" ]]; then
+  local worktree_path="$2"
+
+  # Call the real git worktree remove
+  /opt/homebrew/bin/git worktree remove "$worktree_path"
+
+  # Remove from .git/info/exclude
+  local worktree_name=$(basename "$worktree_path")
+  local exclude_file=".git/info/exclude"
+  if [ -f "$exclude_file" ]; then
+    sed -i '' "/^${worktree_name}\/$/d" "$exclude_file"
+  fi
+
+else
+  # Pass through for other subcommands (list, lock, unlock, etc.)
+  /opt/homebrew/bin/git worktree "$@"
+fi
