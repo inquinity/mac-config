@@ -40,6 +40,15 @@ update_repository() {
     
     print_colored "${COLOR_GREEN}" "$(pwd)"
     
+    # Check if this is a secondary git worktree (skip if so)
+    # Secondary worktrees have .git as a FILE containing "gitdir:" pointer
+    if [ -f .git ] && grep -q "gitdir:" .git 2>/dev/null; then
+        print_colored "${COLOR_CYAN}" "  (Skipped: secondary git worktree — managed by parent repository)"
+        popd > /dev/null
+        repo_status["$repo_path"]="skipped_worktree"
+        return 0
+    fi
+    
     # Check if origin remote exists
     if ! git remote | grep -q "^origin$"; then
         print_colored "${COLOR_RED}" "  ERROR: origin remote not found"
@@ -173,6 +182,8 @@ for repo_path in "${(@ok)repo_status[@]}"; do
         else
             print_colored "${COLOR_GREEN}" "$repo_path: success; on branch <detached HEAD>"
         fi
+    elif [[ "$result" == "skipped_worktree" ]]; then
+        print_colored "${COLOR_CYAN}" "$repo_path: skipped (secondary worktree)"
     else
         print_colored "${COLOR_RED}" "$repo_path: $result"
     fi
