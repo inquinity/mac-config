@@ -9,10 +9,12 @@ add_homebrew_paths() {
         if [[ -z "${_BREW_SHELLENV_CACHE:-}" ]]; then
             export _BREW_SHELLENV_CACHE="$(/opt/homebrew/bin/brew shellenv)"
         fi
-        eval "$_BREW_SHELLENV_CACHE"
+        # Keg-only formulae go on first so that the brew shellenv eval below, which
+        # prepends unconditionally, still leaves /opt/homebrew/bin ahead of them.
         if [[ -d /opt/homebrew/opt/mysql-client/bin ]]; then
             addpath --move "/opt/homebrew/opt/mysql-client/bin"
         fi
+        eval "$_BREW_SHELLENV_CACHE"
     else
         # Intel chips
         addpath --move "/usr/local/sbin"
