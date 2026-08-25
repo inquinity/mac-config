@@ -33,7 +33,7 @@ add_homebrew_paths
 if [[ -z "${JAVA_HOME:-}" ]]; then
     if JAVA_HOME=$(/usr/libexec/java_home -v 21 2>/dev/null); then
 	export JAVA_HOME
-	addpath $JAVA_HOME/bin
+	addpath "$JAVA_HOME/bin"
     fi
 fi
 
