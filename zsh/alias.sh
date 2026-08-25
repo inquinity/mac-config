@@ -245,3 +245,5 @@ alias_first codeql ~/dev/codeql.sh
 # gcitool
 alias_first gci ~/dev/optum/gcitool/scripts/gcictl.sh
 
+# backup
+alias_first backup ~/Local/mac-backup/backup.command
