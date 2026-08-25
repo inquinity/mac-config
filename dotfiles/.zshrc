@@ -115,3 +115,6 @@ compinit -C
 
 # Configure eza - see https://github.com/eza-community/eza-themes
 export EZA_CONFIG_DIR=~/.config/eza
+
+# set the key folder for age encryption utility
+export AGE_KEY_DIR=~/.config/age
