@@ -12,7 +12,10 @@
 #
 # Some settings must differ between the two copies, or must be normalized on
 # the way through. Those are enforced by the policy filter rather than copied
-# verbatim -- see GIT_EMAIL_HOME / GIT_EMAIL_CONFIG and the excludesfile rule.
+# verbatim -- see the git email policy below and the excludesfile rule.
+#
+# The git email policy is also machine-dependent: the work address is written
+# only on a corporate computer, one whose short name starts with LAMU.
 
 set -euo pipefail
 
@@ -58,16 +61,30 @@ MANAGED_DOTFILES=(
 # ---------------------------------------------------------------------------
 # Policy: values that are intentionally different per side, or normalized.
 #
-#   .gitconfig [user] email       work address in $HOME, personal in the repo
-#                                 (the inactive address is kept as a comment)
+#   .gitconfig [user] email        depends on this computer -- see below
+#   .gitconfig [user] #email       the commented address is removed outright
 #   .gitconfig [core] excludesfile rewritten to ~/... so no username is baked in
 #
-# Because the email differs by design, comparison is done on a canonical form
-# in which both addresses are replaced by MANAGED_PLACEHOLDER. That way the two
-# copies still register as "same" when only the managed lines differ.
+# Which address goes where is decided by the computer, not by the side alone.
+# A corporate machine is one whose short name starts with CORPORATE_NAME_PREFIX;
+# only there does the work address ever get written.
+#
+#                          $HOME copy            dotfiles/ copy
+#   corporate machine      GIT_EMAIL_CORPORATE   GIT_EMAIL_PERSONAL
+#   any other machine      GIT_EMAIL_PERSONAL    GIT_EMAIL_PERSONAL
+#
+# The repo copy is shared between machines, so it is always the personal
+# address. The commented "#email =" line is deleted on both sides either way:
+# the active line is rewritten on every run, so a second address kept in a
+# comment is only one more thing to fall out of date.
+#
+# Because the email can differ by design, comparison is done on a canonical
+# form in which the address is replaced by MANAGED_PLACEHOLDER. That way the
+# two copies still register as "same" when only the managed lines differ.
 # ---------------------------------------------------------------------------
-GIT_EMAIL_HOME="robert.altman@optum.com"
-GIT_EMAIL_CONFIG="robert@AltmanSoftwareDesign.com"
+GIT_EMAIL_CORPORATE="robert.altman@optum.com"
+GIT_EMAIL_PERSONAL="robert@AltmanSoftwareDesign.com"
+CORPORATE_NAME_PREFIX="LAMU"
 MANAGED_PLACEHOLDER="@@managed-by-zupdate@@"
 
 # Globals
@@ -79,12 +96,54 @@ dry_run=false
 show_diffs=false
 temp_file=""
 
+# Resolved once by resolve_git_emails() before anything reads them.
+computer_name_value=""   # short name of this machine
+machine_kind=""          # corporate | personal, for display
+git_email_home=""        # active [user] email for the $HOME copy
+git_email_config=""      # active [user] email for the dotfiles/ copy
+
 # Remove any half-written temp file if we exit early.
 cleanup() {
     [[ -n "$temp_file" && -e "$temp_file" ]] && rm -f "$temp_file"
     return 0
 }
 trap cleanup EXIT INT TERM
+
+# ---------------------------------------------------------------------------
+# Which computer is this, and therefore which email policy applies?
+# ---------------------------------------------------------------------------
+
+# Short machine name, with any domain suffix stripped.
+computer_name() {
+    local raw_name
+    raw_name=$(hostname -s 2>/dev/null || uname -n)
+    printf '%s' "${raw_name%%.*}"
+}
+
+# True on a corporate machine, i.e. one whose name begins with
+# CORPORATE_NAME_PREFIX. Compared in lower case so LAMU12345 and lamu12345
+# both match; macOS ships bash 3.2, which has no ${var,,}.
+is_corporate_computer() {
+    local machine_name=$1
+    local lowered_name lowered_prefix
+    lowered_name=$(printf '%s' "$machine_name" | tr '[:upper:]' '[:lower:]')
+    lowered_prefix=$(printf '%s' "$CORPORATE_NAME_PREFIX" | tr '[:upper:]' '[:lower:]')
+    [[ $lowered_name == "$lowered_prefix"* ]]
+}
+
+# Decide, once, which address each side gets on this computer.
+resolve_git_emails() {
+    computer_name_value=$(computer_name)
+    if is_corporate_computer "$computer_name_value"; then
+        machine_kind="corporate"
+        git_email_home=$GIT_EMAIL_CORPORATE
+    else
+        machine_kind="personal"
+        git_email_home=$GIT_EMAIL_PERSONAL
+    fi
+    # The repo copy is shared across machines, so it is always the personal one.
+    git_email_config=$GIT_EMAIL_PERSONAL
+}
 
 usage() {
     cat <<'USAGE'
@@ -112,13 +171,19 @@ Status meanings:
   repo missing    present in $HOME but absent from dotfiles/
 
 Managed settings (enforced on write, ignored when comparing):
-  .gitconfig  [user] email         robert.altman@optum.com in $HOME
-                                   robert@AltmanSoftwareDesign.com in the repo
+  .gitconfig  [user] email         depends on this computer (see below); the
+                                   work address is written only on a machine
+                                   whose name starts with LAMU
+  .gitconfig  [user] #email        the commented address is removed
   .gitconfig  [core] excludesfile  rewritten to ~/... so no username is baked in
 
 Only the files in the hard-coded control list are touched; .*-uhg files and
 .emacs.d are never read or written by this script.
 USAGE
+
+    printf '\nThis computer: %s (%s)\n' "$computer_name_value" "$machine_kind"
+    printf '  %-22s email = %s\n' '$HOME/.gitconfig' "$git_email_home"
+    printf '  %-22s email = %s\n' 'dotfiles/.gitconfig' "$git_email_config"
 }
 
 # Modification time in epoch seconds; BSD stat first, GNU stat as fallback.
@@ -151,17 +216,15 @@ print_row() {
 
 # Apply the .gitconfig policy to stdin, writing the result to stdout.
 #
-#   $1  address for the active   "email =" line
-#   $2  address for the commented "#email =" line
+#   $1  address for the active "email =" line
 #
-# Both the active and commented email lines in [user] are rewritten so the two
-# copies stay structurally identical and only the addresses swap.
+# The active email line in [user] is rewritten and any commented one is
+# dropped, so the two copies stay structurally identical and carry exactly one
+# address each.
 gitconfig_policy_filter() {
     local active_email=$1
-    local inactive_email=$2
 
     awk -v active_email="$active_email" \
-        -v inactive_email="$inactive_email" \
         -v home_dir="$home_dir" '
         # Track the section so email/excludesfile rules only fire where meant.
         /^[[:space:]]*\[/ {
@@ -178,10 +241,10 @@ gitconfig_policy_filter() {
             return prefix
         }
 
-        # Commented-out address is checked first so it is not caught by the
-        # active-address rule below.
+        # Checked first so it is not caught by the active-address rule below.
+        # The active line is rewritten on every run, so a second address kept
+        # in a comment has nothing left to say -- drop it.
         section ~ /^\[user\]/ && /^[[:space:]]*#[[:space:]]*email[[:space:]]*=/ {
-            print indent_of($0) "#email = " inactive_email
             next
         }
 
@@ -210,6 +273,21 @@ gitconfig_policy_filter() {
     '
 }
 
+# The single place that maps a side to the address it should carry.
+#
+#   $1  side: home | config | canonical
+#
+# Prints nothing for an unrecognized side, which callers treat as "no policy".
+git_email_for_side() {
+    local side=$1
+
+    case $side in
+        home)      printf '%s' "$git_email_home" ;;
+        config)    printf '%s' "$git_email_config" ;;
+        canonical) printf '%s' "$MANAGED_PLACEHOLDER" ;;
+    esac
+}
+
 # Apply the policy for a given file and side to stdin -> stdout.
 # Files with no policy pass through untouched.
 #
@@ -218,15 +296,16 @@ gitconfig_policy_filter() {
 apply_policy() {
     local filename=$1
     local side=$2
+    local active_email
 
     case $filename in
         .gitconfig)
-            case $side in
-                home)      gitconfig_policy_filter "$GIT_EMAIL_HOME" "$GIT_EMAIL_CONFIG" ;;
-                config)    gitconfig_policy_filter "$GIT_EMAIL_CONFIG" "$GIT_EMAIL_HOME" ;;
-                canonical) gitconfig_policy_filter "$MANAGED_PLACEHOLDER" "$MANAGED_PLACEHOLDER" ;;
-                *)         cat ;;
-            esac
+            active_email=$(git_email_for_side "$side")
+            if [[ -n $active_email ]]; then
+                gitconfig_policy_filter "$active_email"
+            else
+                cat
+            fi
             ;;
         *)
             cat
@@ -276,6 +355,10 @@ write_with_policy() {
     mv -f "$temp_file" "$dest_path"
     temp_file=""
 }
+
+# Settle the per-computer email policy before anything reads it -- including
+# usage(), which reports the resolved addresses.
+resolve_git_emails
 
 # Argument parsing
 while [[ $# -gt 0 ]]; do
@@ -331,8 +414,9 @@ may_write_config() { [[ $update_target == config || $update_target == all ]]; }
 # Pass 1: compare and report
 # ---------------------------------------------------------------------------
 print_colored "$COLOR_CYAN" "Comparing dotfiles"
-printf '%b  home: %s\n  repo: %s%b\n\n' \
-    "$COLOR_DIM" "$home_dir" "$repo_dotfiles_dir" "$COLOR_RESET"
+printf '%b      home: %s\n      repo: %s\n  computer: %s (%s) -- $HOME .gitconfig email: %s%b\n\n' \
+    "$COLOR_DIM" "$home_dir" "$repo_dotfiles_dir" \
+    "$computer_name_value" "$machine_kind" "$git_email_home" "$COLOR_RESET"
 
 count_same=0
 count_home_newer=0

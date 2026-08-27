@@ -9,7 +9,6 @@
 [user]
 	name = Robert Altman
 	email = robert@AltmanSoftwareDesign.com
-	#email = robert.altman@optum.com
 [core]
 	excludesfile = ~/.gitignore_global
 [diff]
