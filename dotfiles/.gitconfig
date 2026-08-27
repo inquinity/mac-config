@@ -8,8 +8,8 @@
 	username = inquinity
 [user]
 	name = Robert Altman
-	email = robert.altman@optum.com
-	#email = robert@AltmanSoftwareDesign.com
+	email = robert@AltmanSoftwareDesign.com
+	#email = robert.altman@optum.com
 [core]
 	excludesfile = ~/.gitignore_global
 [diff]
@@ -17,10 +17,10 @@
 [merge]
 	tool = bc
 [difftool "sourcetree"]
-	cmd = /usr/local/bin/bcomp \"$LOCAL\" \"$REMOTE\"
-	path = -ro
+	cmd = opendiff \"$LOCAL\" \"$REMOTE\"
+	path = 
 [mergetool "sourcetree"]
-	cmd = /usr/local/bin/bcomp \"$LOCAL\" \"$REMOTE\" \"$BASE\" \"$MERGED\"
+	cmd = /Applications/Sourcetree.app/Contents/Resources/opendiff-w.sh \"$LOCAL\" \"$REMOTE\" -ancestor \"$BASE\" -merge \"$MERGED\"
 	trustExitCode = true
 [mergetool "bc"]
 	trustExitCode = true
