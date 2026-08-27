@@ -144,9 +144,11 @@ sim () { open /Applications/Xcode.app/Contents/Developer/Applications/Simulator.
 
 alias_first hotspot ~/mac-config/scripts/hotspot.sh
 
-# --------------------
-# KDiff diff and merge
-# --------------------
+# --------------
+# diff and merge
+# --------------
+
+alias_first vdiff /Applications/VisualDiffer.app/Contents/Helpers/visdiff
 
 if command -v "/Applications/kdiff3.app" &>/dev/null; then
    kdiff3() { open "/Applications/kdiff3.app" "$@" ; }
