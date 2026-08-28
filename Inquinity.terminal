@@ -32,7 +32,7 @@
 	<key>FontWidthSpacing</key>
 	<real>0.99596774193548387</real>
 	<key>ProfileCurrentVersion</key>
-	<real>2.0699999999999998</real>
+	<real>2.0899999999999999</real>
 	<key>SelectionColor</key>
 	<data>
 	YnBsaXN0MDDUAQIDBAUGBwpYJHZlcnNpb25ZJGFyY2hpdmVyVCR0b3BYJG9iamVjdHMS
@@ -70,7 +70,7 @@
 	<key>name</key>
 	<string>Inquinity</string>
 	<key>rowCount</key>
-	<integer>60</integer>
+	<integer>50</integer>
 	<key>shellExitAction</key>
 	<integer>2</integer>
 	<key>type</key>
