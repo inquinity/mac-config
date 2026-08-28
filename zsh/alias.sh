@@ -148,7 +148,8 @@ alias_first hotspot ~/mac-config/scripts/hotspot.sh
 # diff and merge
 # --------------
 
-alias_first vdiff /Applications/VisualDiffer.app/Contents/Helpers/visdiff
+alias_first visdiff /Applications/VisualDiffer.app/Contents/Helpers/visdiff
+alias_first vdiff opendiff
 
 if command -v "/Applications/kdiff3.app" &>/dev/null; then
    kdiff3() { open "/Applications/kdiff3.app" "$@" ; }
