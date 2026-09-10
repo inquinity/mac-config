@@ -50,11 +50,11 @@
 
 ## Commit messages
 
-- Commit messages should be short and concise, typically 1-3 lines; provide extra detail when warranted.
-- Write what you would want to see in 6 or 12 months, when reviewing logs for a particular change.
-- Focus on the reason for the change, not just a literal translation of the diff lines.
-- Use the 'Conventional Commits' standard (e.g., feat:, fix:, chore:, docs:, refactor:).
-- Write the subject line in the imperative mood ("Fix bug", NOT "Fixed bug").
+- Use the 'Conventional Commits' standard (e.g., feat:, fix:, chore:, docs:, refactor:)
+- Write in the imperative mood ("Fix bug", NOT "Fixed bug").
+- Subject line should be an overview of the commit (to enable reviewing one-line per commit)
 - Limit the subject line to 50 characters or less.
 - Separate the subject from the body with a blank line.
-- In the body, use bullet points to detail the internal structural changes, wrapping text at 72 characters.
+- Focus on the reason for the change, not just a literal translation of the diff lines.
+- Use bullet points in the body to detail the internal structural changes
+- Wrap body text at 72 characters.
