@@ -49,11 +49,11 @@
 - Do not commit caches, build outputs, logs, temp files, local credentials, sensitive data, or broad ignore patterns that could hide required files. Add worktrees to the project `.gitignore` if it is needed.
 
 ## Commit messages
-
-- Use the 'Conventional Commits' standard (e.g., feat:, fix:, chore:, docs:, refactor:)
+- Use the 'Conventional Commits' standard (e.g., feat:, fix:, chore:, docs:, refactor:, release:, revert:)
+- Merge commits describe what lands, using the type of the change; git's default subject is fine for routine syncs
 - Write in the imperative mood ("Fix bug", NOT "Fixed bug").
 - Subject line should be an overview of the commit (to enable reviewing one-line per commit)
-- Limit the subject line to 50 characters or less.
+- Limit the subject line to 72 characters or less.
 - Separate the subject from the body with a blank line.
 - Focus on the reason for the change, not just a literal translation of the diff lines.
 - Use bullet points in the body to detail the internal structural changes
