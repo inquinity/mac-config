@@ -20,12 +20,26 @@ print_colored() {
 }
 
 usage() {
-    printf "${COLOR_YELLOW}Reset Homebrew (macOS)${COLOR_RESET}\n"
+    printf "${COLOR_YELLOW}Reset Homebrew (macOS, Apple Silicon + Intel)${COLOR_RESET}\n"
     printf "Usage: %s [--dry-run|-n] [--help|-h]\n" "$(basename "$0")"
     printf "\n"
     printf "Options:\n"
     printf "  --dry-run, -n   Show actions without performing them\n"
     printf "  --help, -h      Show this help message\n"
+    printf "\n"
+    printf "Handles both Homebrew layouts:\n"
+    printf "  Apple Silicon: everything lives under /opt/homebrew, so removing\n"
+    printf "                 that one directory is a complete, clean removal.\n"
+    printf "  Intel:         Homebrew installs INTO /usr/local, a directory\n"
+    printf "                 shared with the rest of the system. This script\n"
+    printf "                 only removes paths Homebrew itself owns there\n"
+    printf "                 (Cellar, Caskroom, opt, var/homebrew, Frameworks,\n"
+    printf "                 the brew repo) plus dangling symlinks left behind\n"
+    printf "                 in /usr/local/bin, lib, include, share, sbin, etc\n"
+    printf "                 once the Cellar they pointed into is gone. It\n"
+    printf "                 never deletes a symlink that still resolves, and\n"
+    printf "                 never touches non-symlink files in those shared\n"
+    printf "                 directories.\n"
 }
 
 DRY_RUN=0
@@ -53,6 +67,14 @@ if [[ "$(uname)" != "Darwin" ]]; then
     exit 1
 fi
 
+ARCH="$(uname -m)"
+if [[ "$ARCH" == "arm64" ]]; then
+    print_colored "$COLOR_CYAN" "Detected Apple Silicon (arm64) — primary prefix: /opt/homebrew"
+else
+    print_colored "$COLOR_CYAN" "Detected Intel ($ARCH) — primary prefix: /usr/local"
+fi
+print_colored "$COLOR_CYAN" "Both prefixes are checked regardless, in case of a mismatched or migrated install."
+
 run_cmd() {
     if [[ "$DRY_RUN" -eq 1 ]]; then
         printf "[dry-run] %s\n" "$*"
@@ -78,21 +100,66 @@ remove_path() {
     fi
 }
 
+# Remove dangling symlinks under a shared directory (Intel only — Apple
+# Silicon's /opt/homebrew is wholly owned by Homebrew, so a plain rm -rf of
+# the prefix already handles everything, no sweep needed).
+#
+# Only removes symlinks whose target no longer exists. Never touches a
+# regular file, a directory, or a symlink that still resolves — so
+# non-Homebrew content living alongside Homebrew's in these shared
+# directories is left alone.
+clean_dangling_symlinks() {
+    local dir=$1
+    if [[ ! -d "$dir" ]]; then
+        printf "Skipping missing directory: %s\n" "$dir"
+        return 0
+    fi
+    local broken_links
+    broken_links=$(find "$dir" -maxdepth 1 -type l | while read -r link; do
+        [[ -e "$link" ]] || printf "%s\n" "$link"
+    done)
+    if [[ -z "$broken_links" ]]; then
+        printf "No dangling symlinks in %s\n" "$dir"
+        return 0
+    fi
+    while IFS= read -r link; do
+        [[ -z "$link" ]] && continue
+        if [[ "$DRY_RUN" -eq 1 ]]; then
+            printf "[dry-run] rm %s (dangling symlink)\n" "$link"
+        else
+            run_cmd rm "$link"
+        fi
+    done <<< "$broken_links"
+}
+
 print_colored "$COLOR_BRIGHTYELLOW" "Removing Homebrew and related files..."
 
-# Remove brew installations
+# --- Apple Silicon layout: one self-contained prefix ---
 remove_path "/opt/homebrew"
+
+# --- Intel layout: Homebrew lives inside the shared /usr/local prefix ---
 remove_path "/usr/local/Homebrew"
 remove_path "/usr/local/bin/brew"
-remove_path "/opt/homebrew/bin/brew"
-
-# Remove related directories (common)
 remove_path "/usr/local/Caskroom"
 remove_path "/usr/local/Cellar"
-remove_path "/opt/homebrew/Caskroom"
-remove_path "/opt/homebrew/Cellar"
+remove_path "/usr/local/opt"
+remove_path "/usr/local/var/homebrew"
+remove_path "/usr/local/Frameworks"
 
-# Remove caches and config
+# Homebrew's completion/doc files scattered in shared directories. These are
+# specific known filenames, not whole directories, so nothing else in
+# /usr/local/etc or /usr/local/share is touched.
+remove_path "/usr/local/etc/bash_completion.d/brew"
+remove_path "/usr/local/share/zsh/site-functions/_brew"
+remove_path "/usr/local/share/doc/homebrew"
+remove_path "/usr/local/share/man/man1/brew.1"
+
+print_colored "$COLOR_BRIGHTYELLOW" "Sweeping dangling symlinks left in shared Intel directories..."
+for shared_dir in /usr/local/bin /usr/local/sbin /usr/local/lib /usr/local/include /usr/local/share; do
+    clean_dangling_symlinks "$shared_dir"
+done
+
+# --- Caches and config (both architectures) ---
 remove_path "${HOME}/Library/Caches/Homebrew"
 remove_path "${HOME}/.cache/Homebrew"
 remove_path "${HOME}/.brew"
