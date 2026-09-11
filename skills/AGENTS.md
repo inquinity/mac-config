@@ -51,6 +51,7 @@
 ## Commit messages
 - Use the 'Conventional Commits' standard (e.g., feat:, fix:, chore:, docs:, refactor:, release:, revert:)
 - Merge commits describe what lands, using the type of the change; git's default subject is fine for routine syncs
+- A repository's own conventions or release tooling take precedence over these prefixes.
 - Write in the imperative mood ("Fix bug", NOT "Fixed bug").
 - Subject line should be an overview of the commit (to enable reviewing one-line per commit)
 - Limit the subject line to 72 characters or less.
