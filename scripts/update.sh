@@ -33,8 +33,6 @@ if command -v brew &> /dev/null; then
   brew upgrade
   ~/mac-config/brew-tools/fix-brew-quarantine.sh --yes
   print_colored "${COLOR_GREEN}" "Completed"
-else
-  print_colored "${COLOR_YELLOW}" "Brew is not installed. Skipping brew upgrade."
 fi
 printf "\n"
 
@@ -43,8 +41,6 @@ if command -v grype &> /dev/null; then
   print_colored "${COLOR_BRIGHTYELLOW}" "Updating grype database"
   grype db update
   print_colored "${COLOR_GREEN}" "Completed"
-else
-  print_colored "${COLOR_YELLOW}" "Grype is not installed. Skipping grype database update."
 fi
 printf "\n"
 
@@ -55,8 +51,6 @@ if [[ -d ~/dev/codeql ]]; then
   git pull
   popd
   print_colored "${COLOR_GREEN}" "Completed"
-else
-  print_colored "${COLOR_YELLOW}" "CodeQL directory not found at ~/dev/codeql. Skipping CodeQL update."
 fi
 printf "\n"
 
@@ -67,8 +61,6 @@ if [[ -d ~/dev/skills ]]; then
   ~/dev/pull-all.sh skills
   popd
   print_colored "${COLOR_GREEN}" "Completed"
-else
-  print_colored "${COLOR_YELLOW}" "Skills directory not found at ~/dev/skills. Skipping skills update."
 fi
 printf "\n"
 
@@ -78,11 +70,7 @@ if command -v codex &> /dev/null; then
     print_colored "${COLOR_BRIGHTYELLOW}" "Updating otc-awesome-llm Codex marketplace"
     codex plugin marketplace upgrade otc-awesome-llm
     print_colored "${COLOR_GREEN}" "Completed"
-  else
-    print_colored "${COLOR_YELLOW}" "otc-awesome-llm Codex marketplace is not installed. Skipping Codex plugin update."
   fi
-else
-  print_colored "${COLOR_YELLOW}" "Codex CLI is not installed. Skipping Codex plugin update."
 fi
 printf "\n"
 
