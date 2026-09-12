@@ -7,7 +7,6 @@
 
 ztrace "Loading ${(%):-%x}"
 
-
 #----------------------
 # Startup trace control
 #----------------------
@@ -15,6 +14,12 @@ ztrace "Loading ${(%):-%x}"
 alias zsh-trace-on='touch ~/.zsh_trace && echo "Startup trace: ON (takes effect on next shell)"'
 alias zsh-trace-off='rm -f ~/.zsh_trace && echo "Startup trace: OFF (takes effect on next shell)"'
 alias zsh-trace-status='[[ -f ~/.zsh_trace ]] && echo "Startup trace: ON" || echo "Startup trace: OFF"'
+
+# -------------------
+# Daily update script
+# -------------------
+
+alias update='~/mac-config/scripts/update.sh'
 
 #-----------------
 # Directory / list
