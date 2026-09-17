@@ -17,62 +17,63 @@ print_colored() {
     printf "${color}${message}${COLOR_RESET}\n"
 }
 
-# Load foundational container runtime libraries (if available)
-SCRIPT_DIR="${0:A:h}"
-RUNTIME_LIB_DIR="${SCRIPT_DIR}"
-if [[ ! -f "${RUNTIME_LIB_DIR}/nerdctl.sh" && -d "${HOME}/mac-config/scripts" ]]; then
-  RUNTIME_LIB_DIR="${HOME}/mac-config/scripts"
-fi
-if [[ -f "${RUNTIME_LIB_DIR}/nerdctl.sh" ]]; then source "${RUNTIME_LIB_DIR}/nerdctl.sh"; fi
-if [[ -f "${RUNTIME_LIB_DIR}/dockerdaemon.sh" ]]; then source "${RUNTIME_LIB_DIR}/dockerdaemon.sh"; fi
-
 # Upgrade homebrew formulas and casks
-if command -v brew &> /dev/null; then
-  print_colored "${COLOR_BRIGHTYELLOW}" "Starting brew upgrade"
-  brew update
-  brew upgrade
-  ~/mac-config/brew-tools/fix-brew-quarantine.sh --yes
-  print_colored "${COLOR_GREEN}" "Completed"
-fi
-printf "\n"
-
-# Update grype database
-if command -v grype &> /dev/null; then
-  print_colored "${COLOR_BRIGHTYELLOW}" "Updating grype database"
-  grype db update
-  print_colored "${COLOR_GREEN}" "Completed"
-fi
-printf "\n"
-
-# Update CodeQL test suites
-if [[ -d ~/dev/codeql ]]; then
-  print_colored "${COLOR_BRIGHTYELLOW}" "Updating CodeQL repository"
-  pushd ~/dev/codeql
-  git pull
-  popd
-  print_colored "${COLOR_GREEN}" "Completed"
-fi
-printf "\n"
-
-# Update skills repositories
-if [[ -d ~/dev/skills ]]; then
-  print_colored "${COLOR_BRIGHTYELLOW}" "Updating skills repositories"
-  pushd ~/dev
-  ~/dev/pull-all.sh skills
-  popd
-  print_colored "${COLOR_GREEN}" "Completed"
-fi
-printf "\n"
-
-# Update OTC Awesome LLM Codex marketplace if already configured
-if command -v codex &> /dev/null; then
-  if codex plugin marketplace list 2>/dev/null | grep -q '^otc-awesome-llm[[:space:]]'; then
-    print_colored "${COLOR_BRIGHTYELLOW}" "Updating otc-awesome-llm Codex marketplace"
-    codex plugin marketplace upgrade otc-awesome-llm
+update_brew() {
+  if command -v brew &> /dev/null; then
+    print_colored "${COLOR_BRIGHTYELLOW}" "Starting brew upgrade"
+    brew update
+    brew upgrade
+    ~/mac-config/brew-tools/fix-brew-quarantine.sh --yes
     print_colored "${COLOR_GREEN}" "Completed"
   fi
-fi
-printf "\n"
+  printf "\n"
+}
+
+# Update grype database
+update_grype() {
+  if command -v grype &> /dev/null; then
+    print_colored "${COLOR_BRIGHTYELLOW}" "Updating grype database"
+    grype db update
+    print_colored "${COLOR_GREEN}" "Completed"
+  fi
+  printf "\n"
+}
+
+# Update CodeQL test suites
+update_codeql() {
+  if [[ -d ~/dev/codeql ]]; then
+    print_colored "${COLOR_BRIGHTYELLOW}" "Updating CodeQL repository"
+    pushd ~/dev/codeql
+    git pull
+    popd
+    print_colored "${COLOR_GREEN}" "Completed"
+  fi
+  printf "\n"
+}
+
+# Update skills repositories
+update_skills() {
+  if [[ -d ~/dev/skills ]]; then
+    print_colored "${COLOR_BRIGHTYELLOW}" "Updating skills repositories"
+    pushd ~/dev
+    ~/dev/pull-all.sh skills
+    popd
+    print_colored "${COLOR_GREEN}" "Completed"
+  fi
+  printf "\n"
+}
+
+# Update OTC Awesome LLM Codex marketplace if already configured
+update_codex_marketplace() {
+  if command -v codex &> /dev/null; then
+    if codex plugin marketplace list 2>/dev/null | grep -q '^otc-awesome-llm[[:space:]]'; then
+      print_colored "${COLOR_BRIGHTYELLOW}" "Updating otc-awesome-llm Codex marketplace"
+      codex plugin marketplace upgrade otc-awesome-llm
+      print_colored "${COLOR_GREEN}" "Completed"
+    fi
+  fi
+  printf "\n"
+}
 
 # Clean container images and volumes (Docker + Rancher Desktop)
 cleanup_docker() {
@@ -135,5 +136,23 @@ cleanup_nerdctl() {
   done
 }
 
-cleanup_docker
-cleanup_nerdctl
+main() {
+  # Load foundational container runtime libraries (if available)
+  local script_dir="${0:A:h}"
+  local runtime_lib_dir="${script_dir}"
+  if [[ ! -f "${runtime_lib_dir}/nerdctl.sh" && -d "${HOME}/mac-config/scripts" ]]; then
+    runtime_lib_dir="${HOME}/mac-config/scripts"
+  fi
+  if [[ -f "${runtime_lib_dir}/nerdctl.sh" ]]; then source "${runtime_lib_dir}/nerdctl.sh"; fi
+  if [[ -f "${runtime_lib_dir}/dockerdaemon.sh" ]]; then source "${runtime_lib_dir}/dockerdaemon.sh"; fi
+
+  update_brew
+  update_grype
+  update_codeql
+  update_skills
+  update_codex_marketplace
+  cleanup_docker
+  cleanup_nerdctl
+}
+
+main
