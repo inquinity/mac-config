@@ -156,3 +156,4 @@ main() {
 }
 
 main
+say "Update script completed"
