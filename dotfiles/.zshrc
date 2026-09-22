@@ -75,16 +75,20 @@ precmd() {
 # set the prompt
 PROMPT='%B%F{240}%~%f%b %F{red}%@ %#%f '
 
-if [[ "$TERM_PROGRAM" != "vscode" ]]; then
-    # Not running inside VS Code terminal (this might be preventing the "rich integration")
+# atuin's keybindings/rich UI don't play well inside embedded terminals
+# (VS Code's integrated terminal, Claude Code's shell tool), so skip it there.
+if [[ "$TERM_PROGRAM" != "vscode" && -z "$CLAUDECODE" ]]; then
     RPROMPT='${vcs_info_msg_0_}'
 
     # Added by atuin (shell history magic)
     eval "$(atuin init zsh)"
-else
-    # disable atuin in vscode ?
+fi
+
+# Separately: enable VS Code's own terminal shell integration (command
+# decorations, exit-code markers, cwd detection). Unrelated to atuin above;
+# only meaningful when actually running inside VS Code's integrated terminal.
+if [[ "$TERM_PROGRAM" == "vscode" ]]; then
     source "$(code --locate-shell-integration-path zsh)"
-    #export ATUIN_NOBIND="true"
 fi
 
 source ~/mac-config/zsh/source_first.sh
