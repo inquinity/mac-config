@@ -35,18 +35,16 @@
 
 ;;;; macOS keyboard
 
-;; Left Cmd stays Cmd (super, so Cmd-C/V/Q etc. behave as in other Mac
-;; apps).  Right Cmd is Hyper, a modifier nothing else binds, reserved for
-;; personal bindings.  Option is Meta, Control is Control.
-(setq ns-command-modifier 'super
-      ns-right-command-modifier 'hyper
+;; Both Cmd keys are Hyper, a modifier nothing else binds, reserved for
+;; personal bindings.  Mac Cmd shortcuts (Cmd-C/V/Q) are not available.
+;; Option is Meta, Control is Control.
+(setq ns-command-modifier 'hyper
       ns-option-modifier 'meta
       ns-control-modifier 'control)
 
-;; Undo is Cmd-Z by default; redo on Cmd-Shift-Z and Cmd-Y (replacing the
-;; rarely used ns-paste-secondary).
-(keymap-global-set "s-Z" #'undo-redo)
-(keymap-global-set "s-y" #'undo-redo)
+;; Undo/redo with the built-in linear redo (Emacs 28+).
+(keymap-global-set "H-z" #'undo)
+(keymap-global-set "H-y" #'undo-redo)
 (keymap-global-unset "C-/")
 
 ;; Keyboard macros
