@@ -50,7 +50,17 @@ autoload -Uz vcs_info
 zstyle ':vcs_info:*' enable git cvs
 zstyle ':vcs_info:git:*' formats "%F{green}%b%f branch"
 
+# True inside Claude Code's shell tool (CLAUDECODE) and the Claude desktop
+# app's Terminal panel (TERM_PROGRAM), which don't need the fancy prompt/history.
+_in_claude=0
+[[ -n "$CLAUDECODE" || "$TERM_PROGRAM" == "claude-desktop" ]] && _in_claude=1
+
 precmd() {
+    # This only feeds the RPROMPT branch indicator, which is skipped inside
+    # Claude shells (see below) -- don't spend git subprocess calls on every
+    # prompt for a value that's never displayed there.
+    (( _in_claude )) && return
+
     # check for untracked files; unstaged changes; staged changes
     if [[ `git status --porcelain` ]] 2> /dev/null ; then
 
@@ -75,9 +85,11 @@ precmd() {
 # set the prompt
 PROMPT='%B%F{240}%~%f%b %F{red}%@ %#%f '
 
-# atuin's keybindings/rich UI don't play well inside embedded terminals
-# (VS Code's integrated terminal, Claude Code's shell tool), so skip it there.
-if [[ "$TERM_PROGRAM" != "vscode" && -z "$CLAUDECODE" ]]; then
+# Disable atuin and extended git prompt
+# - atuin's keybindings/rich UI don't play well inside embedded terminals
+# - vscode has its own git integration
+# - the git integration is just distracting inside Claude Code
+if [[ "$TERM_PROGRAM" != "vscode" ]] && (( ! _in_claude )); then
     RPROMPT='${vcs_info_msg_0_}'
 
     # Added by atuin (shell history magic)
