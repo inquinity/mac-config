@@ -46,7 +46,8 @@ print_colored() {
 #
 # Deliberately excluded:
 #   .*-uhg    machine/employer-specific overrides that must never be shared
-#   .emacs.d  a directory tree; use copy-here.sh for that
+#   Emacs     per-port configs live in emacs/<port>/ and are synced by hand;
+#             this script does not handle multiple Emacs ports
 # ---------------------------------------------------------------------------
 MANAGED_DOTFILES=(
     .zshenv
@@ -178,7 +179,8 @@ Managed settings (enforced on write, ignored when comparing):
   .gitconfig  [core] excludesfile  rewritten to ~/... so no username is baked in
 
 Only the files in the hard-coded control list are touched; .*-uhg files and
-.emacs.d are never read or written by this script.
+Emacs configs (emacs/<port>/, ~/.emacs.d) are never read or written by
+this script.
 USAGE
 
     printf '\nThis computer: %s (%s)\n' "$computer_name_value" "$machine_kind"
