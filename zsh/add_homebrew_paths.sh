@@ -7,7 +7,7 @@ add_homebrew_paths() {
     if [[ $CPUTYPE == arm64 ]]; then
         # Apple chips
         if [[ -z "${_BREW_SHELLENV_CACHE:-}" ]]; then
-            export _BREW_SHELLENV_CACHE="$(/opt/homebrew/bin/brew shellenv)"
+            export _BREW_SHELLENV_CACHE="$(cd / && /opt/homebrew/bin/brew shellenv)"
         fi
         # Keg-only formulae go on first so that the brew shellenv eval below, which
         # prepends unconditionally, still leaves /opt/homebrew/bin ahead of them.
