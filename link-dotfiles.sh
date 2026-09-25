@@ -104,11 +104,13 @@ link_one() {
     fi
 
     if [[ -L "$link_path" ]]; then
-        if [[ "$(readlink "$link_path")" == "$source_path" ]]; then
+        # -ef compares the files the paths resolve to, so a relative link or a
+        # different spelling of the same path (symlinked $HOME or repo) is fine.
+        if [[ "$link_path" -ef "$source_path" ]]; then
             print_colored "$COLOR_GREEN" "  ok        $link_path"
             return 0
         fi
-        reason="points elsewhere"
+        reason="points elsewhere: $(readlink "$link_path")"
     elif [[ -e "$link_path" ]]; then
         if cmp -s "$source_path" "$link_path"; then
             reason="identical copy"
