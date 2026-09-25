@@ -48,15 +48,13 @@ print_colored() {
 #   .*-uhg    machine/employer-specific overrides that must never be shared
 #   Emacs     per-port configs live in emacs/<port>/ and are synced by hand;
 #             this script does not handle multiple Emacs ports
+#   git       gitconfig and gitignore_global are symlinked by link-dotfiles.sh
 # ---------------------------------------------------------------------------
 MANAGED_DOTFILES=(
     .zshenv
     .zshrc
     .zprofile
     .zlogin
-    .gitconfig
-    .gitignore
-    .gitignore_global
 )
 
 # ---------------------------------------------------------------------------
