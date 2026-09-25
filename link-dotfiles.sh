@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# link-dotfiles.sh - Symlink the git dotfiles in this repo into $HOME.
+# link-dotfiles.sh - Symlink the dotfiles in this repo into $HOME.
 #
 # The files under dotfiles/ are stored without their leading dot so they are
 # visible in ls and Finder. This script is the only place the dot is added
@@ -40,6 +40,10 @@ print_colored() {
 LINKS=(
     "gitconfig:.gitconfig"
     "gitignore_global:.gitignore_global"
+    "zshenv:.zshenv"
+    "zshrc:.zshrc"
+    "zprofile:.zprofile"
+    "zlogin:.zlogin"
 )
 
 CORPORATE_NAME_PREFIX="LAMU"
@@ -53,7 +57,7 @@ profile=""          # home | work; detected from the hostname unless given
 problem_count=0
 
 usage() {
-    print_colored "$COLOR_YELLOW" "link-dotfiles.sh - symlink git dotfiles from this repo into \$HOME"
+    print_colored "$COLOR_YELLOW" "link-dotfiles.sh - symlink dotfiles from this repo into \$HOME"
     cat <<'USAGE'
 
 Usage:
