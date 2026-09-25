@@ -10,3 +10,5 @@
 	format = ssh
 [gpg "ssh"]
 	allowedSignersFile = ~/.ssh/allowed_signers
+[credential "https://github.com"]
+	username = inquinity
