@@ -102,7 +102,38 @@
   },
   "Open Toolbelt" : false,
   "Keyboard Map" : {
-
+    "0xf728-0x0" : {
+      "Action" : 11,
+      "Text" : "0x4"
+    },
+    "0xf702-0x280000" : {
+      "Action" : 10,
+      "Text" : "b"
+    },
+    "0xf702-0x300000" : {
+      "Action" : 11,
+      "Text" : "0x1"
+    },
+    "0xf703-0x280000" : {
+      "Action" : 10,
+      "Text" : "f"
+    },
+    "0xf728-0x80000" : {
+      "Action" : 10,
+      "Text" : "d"
+    },
+    "0x7f-0x100000" : {
+      "Action" : 11,
+      "Text" : "0x15"
+    },
+    "0xf703-0x300000" : {
+      "Action" : 11,
+      "Text" : "0x5"
+    },
+    "0x7f-0x80000" : {
+      "Action" : 11,
+      "Text" : "0x1b 0x7f"
+    }
   },
   "Ansi 3 Color (Dark)" : {
     "Green Component" : 0.73333334922790527,
@@ -186,6 +217,7 @@
   "BM Growl" : true,
   "Prompt Before Closing 2" : false,
   "Command" : "",
+  "Left Option Key Changeable" : false,
   "Selected Text Color" : {
     "Red Component" : 0,
     "Color Space" : "sRGB",
@@ -412,6 +444,7 @@
     "Red Component" : 1,
     "Blue Component" : 0.3333333432674408
   },
+  "Icon" : 1,
   "Bold Color (Light)" : {
     "Green Component" : 1,
     "Blue Component" : 1,
@@ -442,6 +475,7 @@
     "Alpha Component" : 0.25,
     "Green Component" : 0.77217715978622437
   },
+  "Title Components" : 3,
   "Custom Directory" : "No",
   "Working Directory" : "\/Users\/robert.altman@optum.com",
   "ASCII Anti Aliased" : true,
@@ -530,11 +564,11 @@
             "base: compression resistance" : 1
           },
           "layout advanced configuration dictionary value" : {
-            "algorithm" : 0,
-            "remove empty components" : false,
+            "draw separator between status bar and terminal" : true,
+            "remove empty components" : true,
             "font" : ".SFNS-Regular 12",
-            "auto-rainbow style" : 3,
-            "draw separator between status bar and terminal" : false
+            "algorithm" : 0,
+            "auto-rainbow style" : 3
           }
         }
       },
@@ -544,20 +578,20 @@
           "knobs" : {
             "base: priority" : 5,
             "shared text color" : {
-              "Red Component" : 0.34275767207145691,
+              "Red Component" : 0.49609553813934326,
               "Color Space" : "P3",
-              "Blue Component" : 0.27846461534500122,
+              "Blue Component" : 0.28061807155609131,
               "Alpha Component" : 1,
-              "Green Component" : 0.49482804536819458
+              "Green Component" : 0.47827190160751343
             },
             "base: compression resistance" : 1
           },
           "layout advanced configuration dictionary value" : {
-            "algorithm" : 0,
-            "remove empty components" : false,
+            "draw separator between status bar and terminal" : true,
+            "remove empty components" : true,
             "font" : ".SFNS-Regular 12",
-            "auto-rainbow style" : 3,
-            "draw separator between status bar and terminal" : false
+            "algorithm" : 0,
+            "auto-rainbow style" : 3
           }
         }
       },
@@ -565,6 +599,58 @@
         "class" : "iTermStatusBarSpringComponent",
         "configuration" : {
           "knobs" : {
+            "shared text color" : {
+              "Red Component" : 0.34275767207145691,
+              "Color Space" : "P3",
+              "Blue Component" : 0.27846461534500122,
+              "Alpha Component" : 1,
+              "Green Component" : 0.49482804536819458
+            },
+            "base: priority" : 5,
+            "base: compression resistance" : 1,
+            "iTermStatusBarSpringComponentSpringConstantKey" : 0.01,
+            "iTermStatusBarSpringComponentSizeMultipleKey" : 1
+          },
+          "layout advanced configuration dictionary value" : {
+            "draw separator between status bar and terminal" : true,
+            "remove empty components" : true,
+            "font" : ".SFNS-Regular 12",
+            "algorithm" : 0,
+            "auto-rainbow style" : 3
+          }
+        }
+      },
+      {
+        "class" : "iTermStatusBarGitComponent",
+        "configuration" : {
+          "knobs" : {
+            "maxwidth" : 1.7976931348623157e+308,
+            "iTermStatusBarGitComponentPollingIntervalKey" : 2,
+            "base: priority" : 5,
+            "minwidth" : 0,
+            "base: compression resistance" : 1,
+            "shared text color" : {
+              "Red Component" : 0.31301426887512207,
+              "Color Space" : "P3",
+              "Blue Component" : 0.43551152944564819,
+              "Alpha Component" : 1,
+              "Green Component" : 0.49410122632980347
+            }
+          },
+          "layout advanced configuration dictionary value" : {
+            "remove empty components" : false,
+            "auto-rainbow style" : 0,
+            "draw separator between status bar and terminal" : false,
+            "algorithm" : 0
+          }
+        }
+      },
+      {
+        "class" : "iTermStatusBarSpringComponent",
+        "configuration" : {
+          "knobs" : {
+            "base: priority" : 5,
+            "base: compression resistance" : 1,
             "iTermStatusBarSpringComponentSpringConstantKey" : 0.01,
             "shared text color" : {
               "Red Component" : 0.26861107349395752,
@@ -573,54 +659,71 @@
               "Alpha Component" : 1,
               "Green Component" : 0.33745688199996948
             },
-            "base: compression resistance" : 1,
-            "base: priority" : 5,
             "iTermStatusBarSpringComponentSizeMultipleKey" : 1
           },
           "layout advanced configuration dictionary value" : {
-            "algorithm" : 0,
             "remove empty components" : false,
-            "font" : ".SFNS-Regular 12",
-            "auto-rainbow style" : 3,
-            "draw separator between status bar and terminal" : false
+            "auto-rainbow style" : 0,
+            "draw separator between status bar and terminal" : false,
+            "algorithm" : 0
           }
         }
       },
       {
-        "class" : "iTermStatusBarGitComponent",
+        "class" : "iTermStatusBarFilterComponent",
         "configuration" : {
           "knobs" : {
+            "base: priority" : 5,
+            "shared text color" : {
+              "Red Component" : 0.36754071712493896,
+              "Color Space" : "P3",
+              "Blue Component" : 0.48531460762023926,
+              "Alpha Component" : 1,
+              "Green Component" : 0.25600045919418335
+            },
+            "base: compression resistance" : 1
+          },
+          "layout advanced configuration dictionary value" : {
+            "remove empty components" : false,
+            "auto-rainbow style" : 0,
+            "draw separator between status bar and terminal" : false,
+            "algorithm" : 0
+          }
+        }
+      },
+      {
+        "class" : "iTermStatusBarSearchFieldComponent",
+        "configuration" : {
+          "knobs" : {
+            "base: priority" : 5,
             "base: compression resistance" : 1,
-            "iTermStatusBarGitComponentPollingIntervalKey" : 2,
             "shared text color" : {
               "Red Component" : 0.4673653244972229,
               "Color Space" : "P3",
               "Blue Component" : 0.379524827003479,
               "Alpha Component" : 1,
               "Green Component" : 0.26313775777816772
-            },
-            "minwidth" : 0,
-            "base: priority" : 5,
-            "maxwidth" : 1.7976931348623157e+308
+            }
           },
           "layout advanced configuration dictionary value" : {
-            "algorithm" : 0,
-            "remove empty components" : false,
+            "draw separator between status bar and terminal" : true,
+            "remove empty components" : true,
             "font" : ".SFNS-Regular 12",
-            "auto-rainbow style" : 3,
-            "draw separator between status bar and terminal" : false
+            "algorithm" : 0,
+            "auto-rainbow style" : 3
           }
         }
       }
     ],
     "advanced configuration" : {
+      "draw separator between status bar and terminal" : true,
+      "remove empty components" : true,
+      "font" : ".AppleSystemUIFont 12",
       "algorithm" : 0,
-      "remove empty components" : false,
-      "font" : ".SFNS-Regular 12",
-      "auto-rainbow style" : 3,
-      "draw separator between status bar and terminal" : false
+      "auto-rainbow style" : 3
     }
   },
+  "Timestamps Style" : 2,
   "Background Color (Light)" : {
     "Green Component" : 0,
     "Blue Component" : 0,
@@ -634,6 +737,7 @@
     "Alpha Component" : 1,
     "Green Component" : 0.4927266538143158
   },
+  "Treat Option as Alt" : false,
   "Ansi 5 Color (Light)" : {
     "Green Component" : 0,
     "Red Component" : 0.73333334922790527,
@@ -779,7 +883,38 @@
   },
   "Open Toolbelt" : false,
   "Keyboard Map" : {
-
+    "0xf728-0x0" : {
+      "Action" : 11,
+      "Text" : "0x4"
+    },
+    "0xf702-0x280000" : {
+      "Action" : 10,
+      "Text" : "b"
+    },
+    "0xf702-0x300000" : {
+      "Action" : 11,
+      "Text" : "0x1"
+    },
+    "0xf703-0x280000" : {
+      "Action" : 10,
+      "Text" : "f"
+    },
+    "0xf728-0x80000" : {
+      "Action" : 10,
+      "Text" : "d"
+    },
+    "0x7f-0x100000" : {
+      "Action" : 11,
+      "Text" : "0x15"
+    },
+    "0xf703-0x300000" : {
+      "Action" : 11,
+      "Text" : "0x5"
+    },
+    "0x7f-0x80000" : {
+      "Action" : 11,
+      "Text" : "0x1b 0x7f"
+    }
   },
   "Ansi 3 Color (Dark)" : {
     "Green Component" : 0.73333334922790527,
@@ -1207,11 +1342,11 @@
             "base: compression resistance" : 1
           },
           "layout advanced configuration dictionary value" : {
-            "algorithm" : 0,
+            "draw separator between status bar and terminal" : false,
             "remove empty components" : false,
-            "font" : ".SFNS-Regular 12",
             "auto-rainbow style" : 3,
-            "draw separator between status bar and terminal" : false
+            "algorithm" : 0,
+            "font" : ".SFNS-Regular 12"
           }
         }
       },
@@ -1230,11 +1365,11 @@
             "base: compression resistance" : 1
           },
           "layout advanced configuration dictionary value" : {
-            "algorithm" : 0,
+            "draw separator between status bar and terminal" : false,
             "remove empty components" : false,
-            "font" : ".SFNS-Regular 12",
             "auto-rainbow style" : 3,
-            "draw separator between status bar and terminal" : false
+            "algorithm" : 0,
+            "font" : ".SFNS-Regular 12"
           }
         }
       },
@@ -1242,7 +1377,6 @@
         "class" : "iTermStatusBarSpringComponent",
         "configuration" : {
           "knobs" : {
-            "iTermStatusBarSpringComponentSpringConstantKey" : 0.01,
             "shared text color" : {
               "Red Component" : 0.26861107349395752,
               "Color Space" : "P3",
@@ -1250,16 +1384,17 @@
               "Alpha Component" : 1,
               "Green Component" : 0.33745688199996948
             },
-            "base: compression resistance" : 1,
             "base: priority" : 5,
+            "base: compression resistance" : 1,
+            "iTermStatusBarSpringComponentSpringConstantKey" : 0.01,
             "iTermStatusBarSpringComponentSizeMultipleKey" : 1
           },
           "layout advanced configuration dictionary value" : {
-            "algorithm" : 0,
+            "draw separator between status bar and terminal" : false,
             "remove empty components" : false,
-            "font" : ".SFNS-Regular 12",
             "auto-rainbow style" : 3,
-            "draw separator between status bar and terminal" : false
+            "algorithm" : 0,
+            "font" : ".SFNS-Regular 12"
           }
         }
       },
@@ -1267,8 +1402,10 @@
         "class" : "iTermStatusBarGitComponent",
         "configuration" : {
           "knobs" : {
-            "base: compression resistance" : 1,
+            "minwidth" : 0,
             "iTermStatusBarGitComponentPollingIntervalKey" : 2,
+            "base: priority" : 5,
+            "base: compression resistance" : 1,
             "shared text color" : {
               "Red Component" : 0.4673653244972229,
               "Color Space" : "P3",
@@ -1276,26 +1413,24 @@
               "Alpha Component" : 1,
               "Green Component" : 0.26313775777816772
             },
-            "minwidth" : 0,
-            "base: priority" : 5,
             "maxwidth" : 1.7976931348623157e+308
           },
           "layout advanced configuration dictionary value" : {
-            "algorithm" : 0,
+            "draw separator between status bar and terminal" : false,
             "remove empty components" : false,
-            "font" : ".SFNS-Regular 12",
             "auto-rainbow style" : 3,
-            "draw separator between status bar and terminal" : false
+            "algorithm" : 0,
+            "font" : ".SFNS-Regular 12"
           }
         }
       }
     ],
     "advanced configuration" : {
-      "algorithm" : 0,
+      "draw separator between status bar and terminal" : false,
       "remove empty components" : false,
-      "font" : ".SFNS-Regular 12",
       "auto-rainbow style" : 3,
-      "draw separator between status bar and terminal" : false
+      "algorithm" : 0,
+      "font" : ".SFNS-Regular 12"
     }
   },
   "Background Color (Light)" : {
@@ -1452,7 +1587,38 @@
     "Green Component" : 0.76959484815597534
   },
   "Keyboard Map" : {
-
+    "0xf728-0x0" : {
+      "Action" : 11,
+      "Text" : "0x4"
+    },
+    "0xf702-0x280000" : {
+      "Action" : 10,
+      "Text" : "b"
+    },
+    "0xf702-0x300000" : {
+      "Action" : 11,
+      "Text" : "0x1"
+    },
+    "0xf703-0x280000" : {
+      "Action" : 10,
+      "Text" : "f"
+    },
+    "0xf728-0x80000" : {
+      "Action" : 10,
+      "Text" : "d"
+    },
+    "0x7f-0x100000" : {
+      "Action" : 11,
+      "Text" : "0x15"
+    },
+    "0xf703-0x300000" : {
+      "Action" : 11,
+      "Text" : "0x5"
+    },
+    "0x7f-0x80000" : {
+      "Action" : 11,
+      "Text" : "0x1b 0x7f"
+    }
   },
   "Visual Bell" : true,
   "Cursor Text Color" : {
