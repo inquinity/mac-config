@@ -9,13 +9,6 @@
 #
 # A hard-coded control list below decides which files are managed, so nothing
 # is picked up by accident (notably the machine-specific .*-uhg files).
-#
-# Some settings must differ between the two copies, or must be normalized on
-# the way through. Those are enforced by the policy filter rather than copied
-# verbatim -- see the git email policy below and the excludesfile rule.
-#
-# The git email policy is also machine-dependent: the work address is written
-# only on a corporate computer, one whose short name starts with LAMU.
 
 set -euo pipefail
 
@@ -57,35 +50,6 @@ MANAGED_DOTFILES=(
     .zlogin
 )
 
-# ---------------------------------------------------------------------------
-# Policy: values that are intentionally different per side, or normalized.
-#
-#   .gitconfig [user] email        depends on this computer -- see below
-#   .gitconfig [user] #email       the commented address is removed outright
-#   .gitconfig [core] excludesfile rewritten to ~/... so no username is baked in
-#
-# Which address goes where is decided by the computer, not by the side alone.
-# A corporate machine is one whose short name starts with CORPORATE_NAME_PREFIX;
-# only there does the work address ever get written.
-#
-#                          $HOME copy            dotfiles/ copy
-#   corporate machine      GIT_EMAIL_CORPORATE   GIT_EMAIL_PERSONAL
-#   any other machine      GIT_EMAIL_PERSONAL    GIT_EMAIL_PERSONAL
-#
-# The repo copy is shared between machines, so it is always the personal
-# address. The commented "#email =" line is deleted on both sides either way:
-# the active line is rewritten on every run, so a second address kept in a
-# comment is only one more thing to fall out of date.
-#
-# Because the email can differ by design, comparison is done on a canonical
-# form in which the address is replaced by MANAGED_PLACEHOLDER. That way the
-# two copies still register as "same" when only the managed lines differ.
-# ---------------------------------------------------------------------------
-GIT_EMAIL_CORPORATE="robert.altman@optum.com"
-GIT_EMAIL_PERSONAL="robert@AltmanSoftwareDesign.com"
-CORPORATE_NAME_PREFIX="LAMU"
-MANAGED_PLACEHOLDER="@@managed-by-zupdate@@"
-
 # Globals
 script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 repo_dotfiles_dir="$script_dir/dotfiles"
@@ -95,54 +59,12 @@ dry_run=false
 show_diffs=false
 temp_file=""
 
-# Resolved once by resolve_git_emails() before anything reads them.
-computer_name_value=""   # short name of this machine
-machine_kind=""          # corporate | personal, for display
-git_email_home=""        # active [user] email for the $HOME copy
-git_email_config=""      # active [user] email for the dotfiles/ copy
-
 # Remove any half-written temp file if we exit early.
 cleanup() {
     [[ -n "$temp_file" && -e "$temp_file" ]] && rm -f "$temp_file"
     return 0
 }
 trap cleanup EXIT INT TERM
-
-# ---------------------------------------------------------------------------
-# Which computer is this, and therefore which email policy applies?
-# ---------------------------------------------------------------------------
-
-# Short machine name, with any domain suffix stripped.
-computer_name() {
-    local raw_name
-    raw_name=$(hostname -s 2>/dev/null || uname -n)
-    printf '%s' "${raw_name%%.*}"
-}
-
-# True on a corporate machine, i.e. one whose name begins with
-# CORPORATE_NAME_PREFIX. Compared in lower case so LAMU12345 and lamu12345
-# both match; macOS ships bash 3.2, which has no ${var,,}.
-is_corporate_computer() {
-    local machine_name=$1
-    local lowered_name lowered_prefix
-    lowered_name=$(printf '%s' "$machine_name" | tr '[:upper:]' '[:lower:]')
-    lowered_prefix=$(printf '%s' "$CORPORATE_NAME_PREFIX" | tr '[:upper:]' '[:lower:]')
-    [[ $lowered_name == "$lowered_prefix"* ]]
-}
-
-# Decide, once, which address each side gets on this computer.
-resolve_git_emails() {
-    computer_name_value=$(computer_name)
-    if is_corporate_computer "$computer_name_value"; then
-        machine_kind="corporate"
-        git_email_home=$GIT_EMAIL_CORPORATE
-    else
-        machine_kind="personal"
-        git_email_home=$GIT_EMAIL_PERSONAL
-    fi
-    # The repo copy is shared across machines, so it is always the personal one.
-    git_email_config=$GIT_EMAIL_PERSONAL
-}
 
 usage() {
     cat <<'USAGE'
@@ -161,7 +83,7 @@ Options:
   -h, --help              Show this help text
 
 Status meanings:
-  same            contents match, ignoring the managed settings listed below
+  same            contents match
   home newer      contents differ; the $HOME copy was modified most recently
   repo newer      contents differ; the dotfiles/ copy was modified most recently
   differs         contents differ but both have the same modification time,
@@ -169,21 +91,10 @@ Status meanings:
   home missing    tracked in dotfiles/ but absent from $HOME
   repo missing    present in $HOME but absent from dotfiles/
 
-Managed settings (enforced on write, ignored when comparing):
-  .gitconfig  [user] email         depends on this computer (see below); the
-                                   work address is written only on a machine
-                                   whose name starts with LAMU
-  .gitconfig  [user] #email        the commented address is removed
-  .gitconfig  [core] excludesfile  rewritten to ~/... so no username is baked in
-
 Only the files in the hard-coded control list are touched; .*-uhg files and
 Emacs configs (emacs/<port>/, ~/.emacs.d) are never read or written by
 this script.
 USAGE
-
-    printf '\nThis computer: %s (%s)\n' "$computer_name_value" "$machine_kind"
-    printf '  %-22s email = %s\n' '$HOME/.gitconfig' "$git_email_home"
-    printf '  %-22s email = %s\n' 'dotfiles/.gitconfig' "$git_email_config"
 }
 
 # Modification time in epoch seconds; BSD stat first, GNU stat as fallback.
@@ -214,126 +125,16 @@ print_row() {
         "$COLOR_DIM" "$detail" "$COLOR_RESET"
 }
 
-# Apply the .gitconfig policy to stdin, writing the result to stdout.
-#
-#   $1  address for the active "email =" line
-#
-# The active email line in [user] is rewritten and any commented one is
-# dropped, so the two copies stay structurally identical and carry exactly one
-# address each.
-gitconfig_policy_filter() {
-    local active_email=$1
-
-    awk -v active_email="$active_email" \
-        -v home_dir="$home_dir" '
-        # Track the section so email/excludesfile rules only fire where meant.
-        /^[[:space:]]*\[/ {
-            section = $0
-            sub(/^[[:space:]]+/, "", section)
-            print
-            next
-        }
-
-        # Capture leading whitespace so the original indentation survives.
-        function indent_of(line,   prefix) {
-            prefix = line
-            sub(/[^[:space:]].*$/, "", prefix)
-            return prefix
-        }
-
-        # Checked first so it is not caught by the active-address rule below.
-        # The active line is rewritten on every run, so a second address kept
-        # in a comment has nothing left to say -- drop it.
-        section ~ /^\[user\]/ && /^[[:space:]]*#[[:space:]]*email[[:space:]]*=/ {
-            next
-        }
-
-        section ~ /^\[user\]/ && /^[[:space:]]*email[[:space:]]*=/ {
-            print indent_of($0) "email = " active_email
-            next
-        }
-
-        # Replace an absolute home path with ~ so the value stays portable.
-        # The current $HOME is handled first; the /Users/<name>/ fallback also
-        # catches paths left behind by a different account.
-        section ~ /^\[core\]/ && /^[[:space:]]*excludesfile[[:space:]]*=/ {
-            line = $0
-            home_at = index(line, home_dir "/")
-            if (home_at > 0) {
-                line = substr(line, 1, home_at - 1) "~/" \
-                       substr(line, home_at + length(home_dir) + 1)
-            } else {
-                sub(/\/Users\/[^\/[:space:]]+\//, "~/", line)
-            }
-            print line
-            next
-        }
-
-        { print }
-    '
-}
-
-# The single place that maps a side to the address it should carry.
-#
-#   $1  side: home | config | canonical
-#
-# Prints nothing for an unrecognized side, which callers treat as "no policy".
-git_email_for_side() {
-    local side=$1
-
-    case $side in
-        home)      printf '%s' "$git_email_home" ;;
-        config)    printf '%s' "$git_email_config" ;;
-        canonical) printf '%s' "$MANAGED_PLACEHOLDER" ;;
-    esac
-}
-
-# Apply the policy for a given file and side to stdin -> stdout.
-# Files with no policy pass through untouched.
-#
-#   $1  filename (e.g. .gitconfig)
-#   $2  side: home | config | canonical
-apply_policy() {
-    local filename=$1
-    local side=$2
-    local active_email
-
-    case $filename in
-        .gitconfig)
-            active_email=$(git_email_for_side "$side")
-            if [[ -n $active_email ]]; then
-                gitconfig_policy_filter "$active_email"
-            else
-                cat
-            fi
-            ;;
-        *)
-            cat
-            ;;
-    esac
-}
-
-# True when the two copies differ once the managed settings are neutralized.
+# True when the two files have different contents.
 content_differs() {
-    local repo_path=$1 home_path=$2 filename=$3
-    ! diff -q \
-        <(apply_policy "$filename" canonical <"$repo_path") \
-        <(apply_policy "$filename" canonical <"$home_path") \
-        >/dev/null 2>&1
+    local repo_path=$1 home_path=$2
+    ! cmp -s "$repo_path" "$home_path"
 }
 
-# True when a file does not already satisfy the policy for its side.
-policy_pending() {
-    local target_path=$1 filename=$2 side=$3
-    ! apply_policy "$filename" "$side" <"$target_path" \
-        | diff -q - "$target_path" >/dev/null 2>&1
-}
-
-# Write $1 to $2 with the policy for $4 applied, preserving permissions.
-# Honors --dry-run. Writes via a temp file so a failure cannot truncate the
-# destination.
-write_with_policy() {
-    local source_path=$1 dest_path=$2 filename=$3 side=$4
+# Copy $1 to $2, preserving permissions. Honors --dry-run. Copies via a temp
+# file so a failure cannot truncate the destination.
+copy_file() {
+    local source_path=$1 dest_path=$2
     local dest_dir preserve_mode
 
     if [[ $dry_run == true ]]; then
@@ -350,15 +151,11 @@ write_with_policy() {
     fi
 
     temp_file=$(mktemp "$dest_dir/.zupdate.XXXXXX")
-    apply_policy "$filename" "$side" <"$source_path" >"$temp_file"
+    cat "$source_path" >"$temp_file"
     chmod "$preserve_mode" "$temp_file"
     mv -f "$temp_file" "$dest_path"
     temp_file=""
 }
-
-# Settle the per-computer email policy before anything reads it -- including
-# usage(), which reports the resolved addresses.
-resolve_git_emails
 
 # Argument parsing
 while [[ $# -gt 0 ]]; do
@@ -414,9 +211,8 @@ may_write_config() { [[ $update_target == config || $update_target == all ]]; }
 # Pass 1: compare and report
 # ---------------------------------------------------------------------------
 print_colored "$COLOR_CYAN" "Comparing dotfiles"
-printf '%b      home: %s\n      repo: %s\n  computer: %s (%s) -- $HOME .gitconfig email: %s%b\n\n' \
-    "$COLOR_DIM" "$home_dir" "$repo_dotfiles_dir" \
-    "$computer_name_value" "$machine_kind" "$git_email_home" "$COLOR_RESET"
+printf '%b      home: %s\n      repo: %s%b\n\n' \
+    "$COLOR_DIM" "$home_dir" "$repo_dotfiles_dir" "$COLOR_RESET"
 
 count_same=0
 count_home_newer=0
@@ -453,7 +249,7 @@ for filename in "${MANAGED_DOTFILES[@]}"; do
         continue
     fi
 
-    if ! content_differs "$repo_path" "$home_path" "$filename"; then
+    if ! content_differs "$repo_path" "$home_path"; then
         count_same=$((count_same + 1))
         print_row "$COLOR_GREEN" "=" "same" "$filename"
         continue
@@ -482,11 +278,8 @@ for filename in "${MANAGED_DOTFILES[@]}"; do
 
     if [[ $show_diffs == true ]]; then
         printf '\n'
-        print_colored "$COLOR_YELLOW" "    --- diff $filename (repo -> home, managed settings normalized) ---"
-        # -L keeps the process-substitution paths out of the diff header.
-        diff -u -L "repo/$filename" -L "home/$filename" \
-            <(apply_policy "$filename" canonical <"$repo_path") \
-            <(apply_policy "$filename" canonical <"$home_path") \
+        print_colored "$COLOR_YELLOW" "    --- diff $filename (repo -> home) ---"
+        diff -u -L "repo/$filename" -L "home/$filename" "$repo_path" "$home_path" \
             | sed 's/^/    /' || true
         printf '\n'
     fi
@@ -505,24 +298,7 @@ printf '  %b%d in sync%b, %b%d home newer%b, %b%d repo newer%b, %b%d conflicting
 # Report only: suggest next steps and stop without writing anything.
 # ---------------------------------------------------------------------------
 if [[ -z $update_target ]]; then
-    # Managed settings can drift even when the two copies are otherwise in
-    # sync, so check both sides and mention any pending fixups.
-    policy_notes=()
-    for filename in "${MANAGED_DOTFILES[@]}"; do
-        if [[ -e "$home_dir/$filename" ]] && policy_pending "$home_dir/$filename" "$filename" home; then
-            policy_notes+=("home/$filename")
-        fi
-        if [[ -e "$repo_dotfiles_dir/$filename" ]] && policy_pending "$repo_dotfiles_dir/$filename" "$filename" config; then
-            policy_notes+=("repo/$filename")
-        fi
-    done
-
-    if [[ ${#policy_notes[@]} -gt 0 ]]; then
-        printf '\n'
-        print_colored "$COLOR_BRIGHTYELLOW" "Managed settings need fixing up in: ${policy_notes[*]}"
-    fi
-
-    total_pending=$((count_home_newer + count_repo_newer + count_conflict + count_missing + ${#policy_notes[@]}))
+    total_pending=$((count_home_newer + count_repo_newer + count_conflict + count_missing))
     if [[ $total_pending -eq 0 ]]; then
         printf '\n'
         print_colored "$COLOR_GREEN" "Everything is in sync."
@@ -562,7 +338,7 @@ for action_index in $(seq 0 $(( ${#action_files[@]} - 1 )) ); do
     case $action_kind in
         copy-to-home)
             if may_write_home; then
-                write_with_policy "$repo_path" "$home_path" "$filename" home
+                copy_file "$repo_path" "$home_path"
                 changes_made=$((changes_made + 1))
                 print_row "$COLOR_GREEN" "+" "repo -> home" "$filename" "$action_reason"
             else
@@ -572,7 +348,7 @@ for action_index in $(seq 0 $(( ${#action_files[@]} - 1 )) ); do
             ;;
         copy-to-config)
             if may_write_config; then
-                write_with_policy "$home_path" "$repo_path" "$filename" config
+                copy_file "$home_path" "$repo_path"
                 changes_made=$((changes_made + 1))
                 print_row "$COLOR_GREEN" "+" "home -> repo" "$filename" "$action_reason"
             else
@@ -585,23 +361,6 @@ for action_index in $(seq 0 $(( ${#action_files[@]} - 1 )) ); do
             print_row "$COLOR_RED" "!" "skipped" "$filename" "$action_reason; resolve by hand"
             ;;
     esac
-done
-
-# Managed settings are enforced even when no copy was needed, so a stale value
-# such as an absolute excludesfile path still gets corrected.
-for filename in "${MANAGED_DOTFILES[@]}"; do
-    if may_write_home && [[ -e "$home_dir/$filename" ]] \
-        && policy_pending "$home_dir/$filename" "$filename" home; then
-        write_with_policy "$home_dir/$filename" "$home_dir/$filename" "$filename" home
-        changes_made=$((changes_made + 1))
-        print_row "$COLOR_GREEN" "*" "fixed policy" "$filename" "in \$HOME"
-    fi
-    if may_write_config && [[ -e "$repo_dotfiles_dir/$filename" ]] \
-        && policy_pending "$repo_dotfiles_dir/$filename" "$filename" config; then
-        write_with_policy "$repo_dotfiles_dir/$filename" "$repo_dotfiles_dir/$filename" "$filename" config
-        changes_made=$((changes_made + 1))
-        print_row "$COLOR_GREEN" "*" "fixed policy" "$filename" "in dotfiles/"
-    fi
 done
 
 printf '\n'
