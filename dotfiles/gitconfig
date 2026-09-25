@@ -8,7 +8,6 @@
 	username = inquinity
 [user]
 	name = Robert Altman
-	email = robert@AltmanSoftwareDesign.com
 [core]
 	excludesfile = ~/.gitignore_global
 [diff]
@@ -60,3 +59,7 @@
 	autoSetupRemote = true
 [advice]
 	statusHints = false
+
+# Machine-specific settings (email, signing); symlinked by link-dotfiles.sh
+[include]
+	path = ~/.gitconfig.local

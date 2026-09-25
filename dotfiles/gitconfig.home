@@ -1,0 +1,12 @@
+# Home computers: personal identity and commit/tag signing.
+[user]
+	email = robert@AltmanSoftwareDesign.com
+	signingkey = ~/.ssh/git-signing.pub
+[commit]
+	gpgsign = true
+[tag]
+	gpgsign = true
+[gpg]
+	format = ssh
+[gpg "ssh"]
+	allowedSignersFile = ~/.ssh/allowed_signers
