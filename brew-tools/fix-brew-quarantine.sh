@@ -481,8 +481,10 @@ scan_artifact_root() {
     targets_file="$(mktemp /tmp/brew-quarantine-targets.XXXXXX)"
     reasons_file="$(mktemp /tmp/brew-quarantine-reasons.XXXXXX)"
 
+    # xattr -l dumps binary attribute values (resource forks, signatures); LC_ALL=C
+    # keeps awk from failing multibyte conversion on them.
     /usr/bin/xattr -r -l "$artifact_root" 2>/dev/null \
-        | /usr/bin/awk -F': com.apple.quarantine: ' 'NF > 1 && !seen[$1]++ { print $1 "\t" $NF }' \
+        | LC_ALL=C /usr/bin/awk -F': com.apple.quarantine: ' 'NF > 1 && !seen[$1]++ { print $1 "\t" $NF }' \
         > "$pairs_file" || true
 
     hit_count="$(/usr/bin/wc -l < "$pairs_file" | /usr/bin/tr -d ' ')"
