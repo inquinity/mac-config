@@ -1,14 +1,3 @@
-# Home computers: personal identity and commit/tag signing.
-[user]
-	email = robert@AltmanSoftwareDesign.com
-	signingkey = ~/.ssh/git-signing.pub
-[commit]
-	gpgsign = true
-[tag]
-	gpgsign = true
-[gpg]
-	format = ssh
-[gpg "ssh"]
-	allowedSignersFile = ~/.ssh/allowed_signers
-[credential "https://github.com"]
-	username = inquinity
+# Home computers: personal identity and commit/tag signing for every repo.
+[include]
+	path = ~/.gitconfig.personal

@@ -39,6 +39,7 @@ print_colored() {
 # Repo file (under dotfiles/) and the name it takes in $HOME.
 LINKS=(
     "gitconfig:.gitconfig"
+    "gitconfig.personal:.gitconfig.personal"
     "gitignore_global:.gitignore_global"
     "zshenv:.zshenv"
     "zshrc:.zshrc"
