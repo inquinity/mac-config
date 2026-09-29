@@ -3,16 +3,21 @@
 [core]
 	excludesfile = ~/.gitignore_global
 [diff]
-	tool = bc
+	tool = opendiff
+	guitool = opendiff
+[difftool]
+	prompt = false
 [merge]
-	tool = bc
+	tool = opendiff
+[mergetool]
+	prompt = false
+[mergetool "opendiff"]
+	path = /usr/bin/opendiff
 [difftool "sourcetree"]
 	cmd = opendiff \"$LOCAL\" \"$REMOTE\"
 	path = 
 [mergetool "sourcetree"]
 	cmd = /Applications/Sourcetree.app/Contents/Resources/opendiff-w.sh \"$LOCAL\" \"$REMOTE\" -ancestor \"$BASE\" -merge \"$MERGED\"
-	trustExitCode = true
-[mergetool "bc"]
 	trustExitCode = true
 [commit]
 	template = ~/.stCommitMsg
