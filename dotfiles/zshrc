@@ -112,6 +112,9 @@ source ~/mac-config/zsh/alias_first.sh
 # aliases
 source_first ~/mac-config/zsh/alias.sh
 
+# Machine-local aliases (optional, git-ignored, disposable); loaded last so they can override
+source_first ~/mac-config/zsh/alias.local.sh
+
 # Lines configured by zsh-newuser-install
 #HISTFILE=~/.histfile
 #HISTSIZE=1000

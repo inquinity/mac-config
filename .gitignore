@@ -1,3 +1,4 @@
 air-gapped-install/*
 *.zip
+zsh/alias.local.sh
 
