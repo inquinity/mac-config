@@ -79,7 +79,9 @@ alias timer='command time -h'
 # Command history
 #----------------
 
-if command -v atuin &>/dev/null; then
+# Use atuin only if zshrc actually initialized it in this shell; it is
+# skipped when not installed and inside VS Code / Claude Code terminals
+if (( ${_atuin_active:-0} )); then
     alias h='atuin history list --cmd-only --session'
     alias hh='atuin history list  --cmd-only'
     alias hgrep='atuin search --cmd-only'

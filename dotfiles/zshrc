@@ -92,8 +92,11 @@ PROMPT='%B%F{240}%~%f%b %F{red}%@ %#%f '
 if [[ "$TERM_PROGRAM" != "vscode" ]] && (( ! _in_claude )); then
     RPROMPT='${vcs_info_msg_0_}'
 
-    # Added by atuin (shell history magic)
-    eval "$(atuin init zsh)"
+    # Added by atuin (shell history magic); skip silently if not installed
+    if command -v atuin &>/dev/null; then
+        eval "$(atuin init zsh)"
+        _atuin_active=1  # alias.sh uses this to pick atuin vs. builtin history
+    fi
 fi
 
 # Separately: enable VS Code's own terminal shell integration (command
