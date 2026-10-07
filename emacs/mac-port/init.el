@@ -1,6 +1,9 @@
 ;; Auto-reload changed files
 (global-auto-revert-mode 1)
 
+;; Set the default grep command
+(setq grep-command "grep --color=auto -nHIr -e ")
+
 ;; Add shortcut arrow keys for moving between windows
 ;; Shift-arrow moves in that direction
 (when (fboundp 'windmove-default-keybindings) (windmove-default-keybindings))

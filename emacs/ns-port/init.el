@@ -11,13 +11,16 @@
       auto-save-default nil
       create-lockfiles nil)
 
+;; Set the default grep command
+(setq grep-command "grep --color=auto -nHIr -e ")
+
 ;;;; Packages
 
 (require 'package)
 (add-to-list 'package-archives
              '("melpa-stable" . "https://stable.melpa.org/packages/") t)
 ;; Prefer GNU/NonGNU ELPA; fall back to MELPA Stable for anything else.
-(setq package-archive-priorities '(("gnu" . 10) ("nongnu" . 5) ("melpa-stable" . 0)))
+;; (setq package-archive-priorities '(("gnu" . 10) ("nongnu" . 5) ("melpa-stable" . 0)))
 
 ;;;; Editing and display
 
