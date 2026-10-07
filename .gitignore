@@ -2,3 +2,20 @@ air-gapped-install/*
 *.zip
 zsh/alias.local.sh
 
+
+# Emacs runtime state written into the linked ~/.emacs.d
+emacs/*/auto-save-list/
+emacs/*/eln-cache/
+emacs/*/url/
+emacs/*/transient/
+emacs/*/custom.el
+emacs/*/recentf
+emacs/*/history
+emacs/*/bookmarks
+emacs/*/projects
+emacs/*/tramp
+emacs/*/places
+emacs/*/network-security.data
+# ns-port reinstalls its packages via use-package :ensure; mac-port's elpa
+# stays tracked because its init.el cannot reinstall them
+emacs/ns-port/elpa/
