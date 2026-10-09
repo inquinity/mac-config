@@ -118,6 +118,15 @@ source_first ~/mac-config/zsh/alias.sh
 # Machine-local aliases (optional, git-ignored, disposable); loaded last so they can override
 source_first ~/mac-config/zsh/alias.local.sh
 
+# Route `brew install`/`upgrade`/`reinstall` through brew-safe.sh's cool-off
+# pin, but only on corporate machines -- that's where a curated mirror gates
+# how new a bottle can be. homebrew.sh itself has no idea what a corporate
+# machine is; that check belongs here, not in a file meant to be shareable.
+source ~/mac-config/zsh/profile.sh
+if [[ "$(current_profile)" == work ]]; then
+    source ~/mac-config/brew-tools/homebrew.sh
+fi
+
 # Lines configured by zsh-newuser-install
 #HISTFILE=~/.histfile
 #HISTSIZE=1000

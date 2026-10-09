@@ -9,6 +9,11 @@
 #              PIP_UPLOADED_PRIOR_TO / POETRY_SOLVER_MIN_RELEASE_AGE /
 #              UV_EXCLUDE_NEWER, which apply the same idea to Python tooling.
 #
+#              The cool-off length has no built-in default: it must come from
+#              either --days or the OPTUM_HOMEBREW_MIN_RELEASE_AGE environment
+#              variable. Neither present is treated as a setup error, not a
+#              reason to silently pick a number -- see the --days case below.
+#
 #              The tap is always restored to its original ref, including on
 #              failure or Ctrl-C, via an EXIT trap.
 #
@@ -42,22 +47,26 @@ usage() {
     printf "Usage: %s [--days N] [--dry-run|-n] [--debug] [--help|-h] -- BREW_ARGS...\n" "$(basename "$0")"
     printf "\n"
     printf "Options:\n"
-    printf "  --days N        Cool-off period in days (default: %s)\n" "$DEFAULT_DAYS"
+    printf "  --days N        Cool-off period in days. Overrides \$OPTUM_HOMEBREW_MIN_RELEASE_AGE\n"
+    printf "                  when given; one of the two is required.\n"
     printf "  --dry-run, -n   Show actions without checking out or running brew\n"
     printf "  --debug         Show additional diagnostic output\n"
     printf "  --help, -h      Show this help message\n"
     printf "\n"
+    printf "Environment:\n"
+    printf "  OPTUM_HOMEBREW_MIN_RELEASE_AGE   Cool-off period in days, used when --days is not given.\n"
+    printf "\n"
     printf "${COLOR_YELLOW}Examples:${COLOR_RESET}\n"
-    printf "  %s install jq              # install jq as it existed %s days ago\n" "$(basename "$0")" "$DEFAULT_DAYS"
-    printf "  %s --days 14 upgrade jq    # use a 14-day cool-off\n" "$(basename "$0")"
+    printf "  OPTUM_HOMEBREW_MIN_RELEASE_AGE=6 %s install jq   # install jq as it existed 6 days ago\n" "$(basename "$0")"
+    printf "  %s --days 14 upgrade jq    # one-off override: use a 14-day cool-off\n" "$(basename "$0")"
     printf "  %s -n install jq           # show what would happen\n" "$(basename "$0")"
     printf "\n"
     printf "The first non-option argument and everything after it is passed to brew.\n"
     printf "Use -- if a brew argument would otherwise look like an option.\n"
 }
 
-DEFAULT_DAYS=6
-days="$DEFAULT_DAYS"
+days=""
+days_given=0
 dry_run=0
 debug=0
 brew_args=()
@@ -72,6 +81,7 @@ while [[ $# -gt 0 ]]; do
                 exit 2
             fi
             days=$2
+            days_given=1
             shift 2
             ;;
         --dry-run|-n)
@@ -110,8 +120,19 @@ if [[ "$(uname)" != "Darwin" ]]; then
     exit 1
 fi
 
+days_source="--days"
+if [[ "$days_given" -ne 1 ]]; then
+    days="${OPTUM_HOMEBREW_MIN_RELEASE_AGE:-}"
+    days_source='$OPTUM_HOMEBREW_MIN_RELEASE_AGE'
+    if [[ -z "$days" ]]; then
+        print_colored "$COLOR_RED" "Error: no cool-off period given."
+        print_colored "$COLOR_YELLOW" "Set \$OPTUM_HOMEBREW_MIN_RELEASE_AGE (days) in your environment, or pass --days N."
+        exit 2
+    fi
+fi
+
 if [[ ! "$days" =~ ^[0-9]+$ ]] || [[ "$days" -lt 1 ]]; then
-    print_colored "$COLOR_RED" "Error: --days must be a positive integer (got: $days)."
+    print_colored "$COLOR_RED" "Error: $days_source must be a positive integer (got: $days)."
     exit 2
 fi
 

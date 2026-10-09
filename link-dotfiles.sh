@@ -51,7 +51,6 @@ LINKS=(
     "zlogin:.zlogin"
 )
 
-CORPORATE_NAME_PREFIX="LAMU"
 LOCAL_LINK_NAME=".gitconfig.local"
 EMACS_LINK_NAME=".emacs.d"
 EMACS_PORTS=(mac-port ns-port)
@@ -59,6 +58,8 @@ EMACS_PORTS=(mac-port ns-port)
 script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 repo_dotfiles_dir="$script_dir/dotfiles"
 repo_emacs_dir="$script_dir/emacs"
+# shellcheck source=zsh/profile.sh
+source "$script_dir/zsh/profile.sh"
 dry_run=false
 force=false
 profile=""          # home | work; detected from the hostname unless given
@@ -80,22 +81,6 @@ Options:
                        remove the link (default: auto, detect from Emacs.app)
   -h, --help           Show this help
 USAGE
-}
-
-# Short machine name, with any domain suffix stripped.
-computer_name() {
-    local raw_name
-    raw_name=$(hostname -s 2>/dev/null || uname -n)
-    printf '%s' "${raw_name%%.*}"
-}
-
-# True when the name begins with CORPORATE_NAME_PREFIX (case-insensitive;
-# macOS ships bash 3.2, which has no ${var,,}).
-is_corporate_computer() {
-    local lowered_name lowered_prefix
-    lowered_name=$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')
-    lowered_prefix=$(printf '%s' "$CORPORATE_NAME_PREFIX" | tr '[:upper:]' '[:lower:]')
-    [[ $lowered_name == "$lowered_prefix"* ]]
 }
 
 # Emacs.app bundles on this computer. Spotlight finds them wherever they are
@@ -271,7 +256,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ -z "$profile" ]]; then
-    if is_corporate_computer "$(computer_name)"; then profile=work; else profile=home; fi
+    profile=$(current_profile)
 fi
 case $profile in
     home|work) ;;
