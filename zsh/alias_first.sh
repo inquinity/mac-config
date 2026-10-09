@@ -21,19 +21,3 @@ alias_first() {
 	done
 	return 1
 }
-
-# Create a helper function to alias a command to the first existing file from a list of files
-#alias_first() {
-#	local cmd="$1"
-#	shift || return 1
-#
-#	local f candidate
-#	for f in "$@"; do
-#		candidate=${~:-$f}
-#		[[ -f "$candidate" ]] || continue
-#		alias "$cmd=${(q)candidate}"
-#		return 0
-#	done
-#	return 1 # return quiety
-#}
-
