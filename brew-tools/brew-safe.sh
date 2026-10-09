@@ -182,7 +182,7 @@ if [[ -z "$old_commit" ]]; then
 fi
 
 old_commit_date="$(git -C "$core_repo" log -1 --format='%ci' "$old_commit")"
-print_colored "$COLOR_BRIGHTYELLOW" "Pinning homebrew/core to ${old_commit:0:12} (${old_commit_date}), a ${days}-day cool-off."
+print_colored "$COLOR_BRIGHTYELLOW" "Using Minimum Age of ${days} days: (pinning homebrew/core to ${old_commit:0:12} at ${old_commit_date})."
 
 if [[ "$dry_run" -eq 1 ]]; then
     printf "[dry-run] git -C %s checkout --quiet --detach %s\n" "$core_repo" "$old_commit"
