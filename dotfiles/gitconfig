@@ -43,11 +43,6 @@
 	purge =!git reflog expire --expire=now --all && git gc --prune=now --aggressive
 [init]
 	defaultBranch = main
-[credential]
-	helper = 
-	helper = /usr/local/share/gcm-core/git-credential-manager
-[credential "https://dev.azure.com"]
-	useHttpPath = true
 [http]
 	postBuffer = 524288000
 [filter "lfs"]
@@ -63,3 +58,8 @@
 # Machine-specific settings (email, signing); symlinked by link-dotfiles.sh
 [include]
 	path = ~/.gitconfig.local
+[credential]
+	helper = 
+	helper = /usr/local/share/gcm-core/git-credential-manager
+[credential "https://dev.azure.com"]
+	useHttpPath = true
