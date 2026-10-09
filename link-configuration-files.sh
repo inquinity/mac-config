@@ -1,20 +1,25 @@
 #!/usr/bin/env bash
 #
-# link-dotfiles.sh - Symlink the dotfiles in this repo into $HOME.
+# link-configuration-files.sh - Symlink this repo's configuration into $HOME.
 #
-# The files under dotfiles/ are stored without their leading dot so they are
-# visible in ls and Finder. This script is the only place the dot is added
-# back: each entry in LINKS maps a repo file to the name it has in $HOME.
+# Files under zsh/ and git/ that become dotfiles are stored without their
+# leading dot so they are visible in ls and Finder. This script is the only
+# place the dot is added back: each entry in LINKS maps a repo file to the
+# name it has in $HOME.
 #
 # Machine-specific git settings (email, commit signing) live in
-# dotfiles/gitconfig.home and dotfiles/gitconfig.work. The shared gitconfig
-# includes ~/.gitconfig.local, and this script points that name at the file
-# for this computer. A corporate computer (short name starting with LAMU)
-# gets the work file; any other computer gets the home file.
+# git/gitconfig.home and git/gitconfig.work. The shared gitconfig includes
+# ~/.gitconfig.local, and this script points that name at the file for this
+# computer, based on the profile from zsh/profile.sh (home or work).
 #
 # ~/.emacs.d is linked to one of the configs under emacs/ (mac-port or
 # ns-port). By default the port is detected from the installed Emacs.app;
 # --emacs chooses one, or none to remove the link.
+#
+# ~/.config/eza/theme.yml is linked to eza-themes/default-rda.yml, but only
+# when ~/.config/eza already exists -- this script creates dotfile symlinks,
+# not the directories that hold them, so a machine without eza configured is
+# left alone rather than growing a new, empty ~/.config/eza.
 #
 # Existing files are never overwritten silently: a real file that differs
 # from the repo copy is left alone unless --force is given.
@@ -40,23 +45,24 @@ print_colored() {
     printf '%b%s%b\n' "$color" "$message" "$COLOR_RESET"
 }
 
-# Repo file (under dotfiles/) and the name it takes in $HOME.
+# Repo file (relative to this script) and the name it takes in $HOME.
 LINKS=(
-    "gitconfig:.gitconfig"
-    "gitconfig.personal:.gitconfig.personal"
-    "gitignore_global:.gitignore_global"
-    "zshenv:.zshenv"
-    "zshrc:.zshrc"
-    "zprofile:.zprofile"
-    "zlogin:.zlogin"
+    "git/gitconfig:.gitconfig"
+    "git/gitconfig.personal:.gitconfig.personal"
+    "git/gitignore_global:.gitignore_global"
+    "zsh/zshenv:.zshenv"
+    "zsh/zshrc:.zshrc"
+    "zsh/zprofile:.zprofile"
+    "zsh/zlogin:.zlogin"
 )
 
 LOCAL_LINK_NAME=".gitconfig.local"
 EMACS_LINK_NAME=".emacs.d"
 EMACS_PORTS=(mac-port ns-port)
+EZA_THEME_SOURCE="eza-themes/default-rda.yml"
+EZA_THEME_LINK_NAME=".config/eza/theme.yml"
 
 script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
-repo_dotfiles_dir="$script_dir/dotfiles"
 repo_emacs_dir="$script_dir/emacs"
 # shellcheck source=zsh/profile.sh
 source "$script_dir/zsh/profile.sh"
@@ -67,11 +73,11 @@ emacs_mode=auto     # auto | mac-port | ns-port | none
 problem_count=0
 
 usage() {
-    print_colored "$COLOR_YELLOW" "link-dotfiles.sh - symlink dotfiles from this repo into \$HOME"
+    print_colored "$COLOR_YELLOW" "link-configuration-files.sh - symlink this repo's configuration into \$HOME"
     cat <<'USAGE'
 
 Usage:
-  link-dotfiles.sh [options]
+  link-configuration-files.sh [options]
 
 Options:
   -n, --dry-run        Show what would change without changing anything
@@ -235,6 +241,22 @@ link_emacs_config() {
     fi
 }
 
+# Link ~/.config/eza/theme.yml, but only when ~/.config/eza already exists.
+# This script creates dotfile symlinks, not the directories that hold them --
+# a machine without eza configured should stay that way, not grow a new,
+# empty ~/.config/eza just because this script ran.
+link_eza_theme() {
+    local config_dir="$HOME/.config/eza"
+
+    if [[ -d "$config_dir" ]]; then
+	print_colored "$COLOR_YELLOW" "eza theme:"
+    else
+        print_colored "$COLOR_YELLOW" "eza theme: ~/.config/eza not found; theme not linked"
+        return 0
+    fi
+    link_one "$script_dir/$EZA_THEME_SOURCE" "$HOME/$EZA_THEME_LINK_NAME"
+}
+
 while [[ $# -gt 0 ]]; do
     case $1 in
         -n|--dry-run) dry_run=true ;;
@@ -271,10 +293,11 @@ print_colored "$COLOR_YELLOW" "Profile: $profile ($(computer_name))"
 [[ "$dry_run" == true ]] && print_colored "$COLOR_YELLOW" "Dry run: no changes will be made"
 
 for link_entry in "${LINKS[@]}"; do
-    link_one "$repo_dotfiles_dir/${link_entry%%:*}" "$HOME/${link_entry#*:}"
+    link_one "$script_dir/${link_entry%%:*}" "$HOME/${link_entry#*:}"
 done
-link_one "$repo_dotfiles_dir/gitconfig.$profile" "$HOME/$LOCAL_LINK_NAME"
+link_one "$script_dir/git/gitconfig.$profile" "$HOME/$LOCAL_LINK_NAME"
 link_emacs_config
+link_eza_theme
 
 if [[ $problem_count -gt 0 ]]; then
     print_colored "$COLOR_RED" "$problem_count problem(s); see above"

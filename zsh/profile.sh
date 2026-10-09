@@ -1,10 +1,9 @@
 # profile.sh
 #
 # Detects whether this is a "work" (corporate) or "home" computer, by
-# hostname prefix. Shared between link-dotfiles.sh (for the work/home
-# gitconfig choice) and the interactive shell (for anything -- like brew's
-# JFrog cool-off in homebrew.sh -- that only makes sense on a corporate
-# network), so the two can't drift apart.
+# hostname prefix. Shared between link-configuration-files.sh (for the
+# work/home gitconfig choice) and zshrc (for deciding when to load brew's
+# JFrog cool-off wrapper, homebrew.sh), so the two can't drift apart.
 CORPORATE_NAME_PREFIX="LAMU"
 
 # Short machine name, with any domain suffix stripped.
