@@ -7,7 +7,7 @@
 
 ztrace "Loading ${(%):-%x}"
 
-# History options
+# --- History options ---------------------------------------------------
 # Good source of info: https://zsh.sourceforge.io/Guide/zshguide02.html#l17
 # HISTFILE set in /etc/zshrc
 # HISTSIZE set in /etc/zshrc
@@ -35,6 +35,13 @@ setopt HIST_NO_FUNCTIONS     # tells it not to store function definitions
 
 # Allow interactive comments so that copy/paste with comments will work (same as bash)
 setopt interactivecomments
+
+# --- Completion system ---------------------------------------------------
+autoload -Uz compinit
+# -C skips security check and reuses the dump file; run 'compinit' manually to rebuild
+compinit -C
+
+# --- Prompt and terminal integration --------------------------------------
 
 # Load colors
 #autoload -U colors && colors
@@ -106,17 +113,26 @@ if [[ "$TERM_PROGRAM" == "vscode" ]]; then
     source "$(code --locate-shell-integration-path zsh)"
 fi
 
+# --- Environment configuration ---------------------------------------------
+
+# Configure eza - see https://github.com/eza-community/eza-themes
+export EZA_CONFIG_DIR=~/.config/eza
+
+# set the key folder for age encryption utility
+export AGE_KEY_DIR=~/.config/age
+
+# --- Aliases and helper libraries -------------------------------------------
+
 source ~/mac-config/zsh/source_first.sh
 source ~/mac-config/zsh/alias_first.sh
-
-# Load UHG specific settings (if file exists)
-#. ~/.zshrc-uhg 2> /dev/null
 
 # aliases
 source_first ~/mac-config/zsh/alias.sh
 
 # Machine-local aliases (optional, git-ignored, disposable); loaded last so they can override
 source_first ~/mac-config/zsh/alias.local.sh
+
+# --- Brew cool-off wrapper ---------------------------------------------------
 
 # Route `brew install`/`upgrade`/`reinstall` through brew-safe.sh's cool-off
 # pin, but only on corporate machines -- that's where a curated mirror gates
@@ -127,28 +143,7 @@ if [[ "$(current_profile)" == work ]]; then
     source ~/mac-config/brew-tools/homebrew.sh
 fi
 
-# Lines configured by zsh-newuser-install
-#HISTFILE=~/.histfile
-#HISTSIZE=1000
-#SAVEHIST=1000
-
-#setopt autocd
-#bindkey -e
-# End of lines configured by zsh-newuser-install
-
-# The following lines were added by compinstall
-zstyle :compinstall filename '/Users/raltman2/.zshrc'
-
-autoload -Uz compinit
-# -C skips security check and reuses the dump file; run 'compinit' manually to rebuild
-compinit -C
-# End of lines added by compinstall
-
-# Configure eza - see https://github.com/eza-community/eza-themes
-export EZA_CONFIG_DIR=~/.config/eza
-
-# set the key folder for age encryption utility
-export AGE_KEY_DIR=~/.config/age
+# --- Company overrides (must stay last) -------------------------------------
 
 # Load UHG specific settings (if file exists)
 [[ -f ~/.zshrc-uhg ]] && source ~/.zshrc-uhg
