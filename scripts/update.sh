@@ -17,12 +17,20 @@ print_colored() {
     printf "${color}${message}${COLOR_RESET}\n"
 }
 
-# Upgrade homebrew formulas and casks
+# Upgrade homebrew formulas and casks. brew-safe.sh itself has no notion of
+# "work" vs "home" -- it's generic and shareable -- so that decision is made
+# here, the same way zshrc decides whether to load the brew() wrapper, and
+# with the same source of truth (zsh/profile.sh).
 update_brew() {
   if command -v brew &> /dev/null; then
     print_colored "${COLOR_BRIGHTYELLOW}" "Starting brew upgrade"
     brew update
-    brew upgrade
+    source ~/mac-config/zsh/profile.sh
+    if [[ "$(current_profile)" == work ]]; then
+      ~/mac-config/brew-tools/brew-safe.sh -- upgrade
+    else
+      brew upgrade
+    fi
     ~/mac-config/brew-tools/fix-brew-quarantine.sh --yes
     print_colored "${COLOR_GREEN}" "Completed"
   fi
