@@ -113,14 +113,6 @@ if [[ "$TERM_PROGRAM" == "vscode" ]]; then
     source "$(code --locate-shell-integration-path zsh)"
 fi
 
-# --- Environment configuration ---------------------------------------------
-
-# Configure eza - see https://github.com/eza-community/eza-themes
-export EZA_CONFIG_DIR=~/.config/eza
-
-# set the key folder for age encryption utility
-export AGE_KEY_DIR=~/.config/age
-
 # --- Aliases and helper libraries -------------------------------------------
 
 source ~/mac-config/zsh/source_first.sh
