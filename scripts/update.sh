@@ -31,7 +31,7 @@ update_brew() {
     else
       brew upgrade
     fi
-    ~/mac-config/brew-tools/fix-brew-quarantine.sh --yes
+    ~/mac-config/brew-tools/fix-brew-quarantine.sh --yes --log
     print_colored "${COLOR_GREEN}" "Completed"
   fi
   printf "\n"

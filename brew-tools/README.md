@@ -30,6 +30,85 @@ quarantine bit, plus quarantined executables, app bundles, or packages whose
 code signature verifies as invalid. Informational records are user-approved
 quarantine records and are not removed by default or by `--yes`.
 
+### Stapling, And Why The Assessment Depends On The Artifact Kind
+
+A notarization ticket can only be *stapled* to a bundle, a disk image or an
+installer package. A standalone Mach-O executable has nowhere to carry one, so
+Gatekeeper has nothing to validate it against and `spctl` reports it as rejected
+however well it is signed. Asking anyway is both uninformative and the single
+most expensive check in the script.
+
+Each quarantined path is therefore classified by kind first:
+
+| kind | example | assessment |
+| --- | --- | --- |
+| `app` | `Freelens.app` | `spctl -a -t execute` |
+| `pkg` | `gcm-osx-arm64-3.0.1.pkg` | `spctl -a -t install` |
+| `binary` | `codex`, `dnm`, codeql's `scc` | none; `codesign` only |
+| `data` | a `.ql` query, a licence file | none |
+
+Worth knowing: **a Homebrew-installed bundle usually has no stapled ticket
+either**, even when it arrived in a notarized disk image. Homebrew mounts the
+`.dmg`, copies the payload to `/Applications` and discards the container the
+ticket was stapled to. Surveyed across every `.app` cask on one machine, 15 of
+15 reported "does not have a ticket stapled to it" while `spctl` accepted 12 of
+them — those verdicts come from an online or cached notary check, not a local
+ticket. An accepted verdict therefore means "macOS will let this run", not "this
+is verified offline".
+
+A `.dmg` never appears as an installed artifact for this reason, so there is no
+`dmg` kind: the disk image stays in `~/Library/Caches/Homebrew/downloads`, which
+this script does not scan. The `belvedere` cask is the illustration — it ships
+as a `.dmg`, and what lands in the Caskroom is a symlink to
+`/Applications/Belvedere.app`.
+
+Two consequences worth knowing:
+
+- **The assessment type has to match the artifact.** An installer package
+  probed with `-t execute` reports `no usable signature` even when it is
+  notarized. The `git-credential-manager` cask demonstrates it: `-t execute`
+  rejects the same `.pkg` that `-t install` accepts as
+  `source=Notarized Developer ID`.
+- **`codesign` does not apply to a flat package.** It reads Mach-O code
+  signatures, not the CMS package signature, so it reports any `.pkg` as "not
+  signed at all". That check is skipped for packages rather than reported.
+
+For unstapleable binaries the reason distinguishes the cases that matter, since
+the generic "Gatekeeper rejects this item" covered three different situations:
+
+- signed and valid, but not Gatekeeper-assessable — e.g. `codex`, `dnm`
+- unsigned outright — e.g. codeql's bundled `scc`
+- signature invalid — the only case that suggests tampering
+
+Only `app` and `pkg` targets can be cleared as informational by an accepted
+Gatekeeper verdict, because only there can `spctl` give a meaningful answer.
+
+Cost, measured across the 674 executables of the codeql cask: `spctl` 64s
+versus `codesign` 20s. Restricting `spctl` to stapleable targets means roughly
+one call per cask instead of one per executable, so the full checks run by
+default.
+
+### Keeping A Record With `--log`
+
+`--log` appends one tab-separated line per finding, by default to
+`~/Library/Logs/fix-brew-quarantine.log`, so repeat offenders become visible
+over time. It is opt-in: the script writes nothing anywhere unless asked, which
+keeps it shareable.
+
+Columns are timestamp, mode, type, name, version, kinds, total paths,
+actionable, informational, outcome, distinct reasons. `mode` is one of
+`dry-run`, `prompted` or `assume-yes`; `outcome` is one of `fixed`, `failed`,
+`declined`, `dry-run` or `informational`.
+
+```sh
+./fix-brew-quarantine.sh --yes --log
+./fix-brew-quarantine.sh --dry-run --log /tmp/quarantine-survey.tsv
+column -t -s $'\t' ~/Library/Logs/fix-brew-quarantine.log
+```
+
+`scripts/update.sh` passes `--log` so routine `brew upgrade` runs accumulate the
+history automatically.
+
 If a cask payload is a symlink into another location such as `/Applications`,
 the report shows the resolved real target and the fix operates on that real
 path.
@@ -54,7 +133,8 @@ List and fix without prompting:
 ./fix-brew-quarantine.sh --yes
 ```
 
-Show detailed path-level output:
+Show detailed path-level output, including the kind, signature state and
+Gatekeeper verdict of each path:
 
 ```sh
 ./fix-brew-quarantine.sh --verbose
@@ -108,7 +188,12 @@ run without `sudo` first.
 - It does not launch quarantined executables or run Gatekeeper assessment
   commands that can hang or display dialogs.
 - It uses `codesign --verify` only as a static check for quarantined executable
-  candidates.
+  candidates, with `--deep` only where there is nested code to verify.
+- Quarantine removal is batched through `xargs`, so only the paths the scan
+  classified as actionable are touched; a blanket `xattr -d -r` on the artifact
+  root would also strip the informational user-approved records.
+- Scratch files live in a `mktemp -d` directory removed by an `EXIT`/`INT`/`TERM`
+  trap, so interrupting a long scan does not leave anything in `/tmp`.
 
 ---
 
