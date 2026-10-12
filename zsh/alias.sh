@@ -257,3 +257,6 @@ alias_first gci ~/dev/optum/gcitool/scripts/gcictl.sh
 
 # backup
 alias_first backup ~/Local/mac-backup/backup.command
+
+# bookmarks
+alias_first sync-edge ~/Local/sync-edge-bookmarks.command
