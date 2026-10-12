@@ -246,7 +246,7 @@ source_first ~/dev/GoldenImageCoP/cookbook/apk-search/apk-functions.sh
 alias_first hcc-auth ~/dev/team/scripts/hcc-auth.sh
 
 # codeql
-alias_first codeql ~/dev/codeql.sh
+alias_first codeql ~/mac-config/scripts/codeql.sh
 
 # gcitool
 alias_first gci ~/dev/optum/gcitool/scripts/gcictl.sh
