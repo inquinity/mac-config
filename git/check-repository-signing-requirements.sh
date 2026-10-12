@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Report whether each GitHub repository requires signed commits on its default branch.
+# Report whether a GitHub repository requires signed commits on its default branch:
+# the repository in the current directory by default, or whole owners with --all.
 # Read-only: makes GitHub API calls through the gh CLI, changes nothing.
 set -euo pipefail
 
@@ -20,7 +21,7 @@ print_colored() {
     printf "${color}${message}${COLOR_RESET}\n"
 }
 
-# Owners (users or organizations) to check when none are given on the command line
+# Owners (users or organizations) to check when --all is given without any owner
 DEFAULT_OWNERS=(inquinity Open-Lens)
 
 required_count=0
@@ -28,14 +29,18 @@ missing_count=0
 unknown_count=0
 
 usage() {
-    print_colored "$COLOR_YELLOW" "Usage: ${0##*/} [-h|--help] [owner ...]"
+    print_colored "$COLOR_YELLOW" "Usage: ${0##*/} [-h|--help] [--all] [owner ...]"
     print_colored "$COLOR_YELLOW" ""
-    print_colored "$COLOR_YELLOW" "Checks every non-archived repository of each owner and reports whether signed"
-    print_colored "$COLOR_YELLOW" "commits are required on the default branch, by a ruleset or by classic branch"
-    print_colored "$COLOR_YELLOW" "protection. Default owners: ${DEFAULT_OWNERS[*]}"
+    print_colored "$COLOR_YELLOW" "Reports whether signed commits are required on the default branch by a"
+    print_colored "$COLOR_YELLOW" "repository or organization ruleset."
+    print_colored "$COLOR_YELLOW" "  (no arguments)  check the repository in the current directory"
+    print_colored "$COLOR_YELLOW" "  --all           check every non-archived repository of the default owners:"
+    print_colored "$COLOR_YELLOW" "                  ${DEFAULT_OWNERS[*]}"
+    print_colored "$COLOR_YELLOW" "  owner ...       check every non-archived repository of these owners instead"
+    print_colored "$COLOR_YELLOW" "                  (--all is ignored when owners are given)"
     print_colored "$COLOR_YELLOW" ""
-    print_colored "$COLOR_YELLOW" "Status: REQUIRED, NOT REQUIRED, or UNKNOWN (a check failed, often missing"
-    print_colored "$COLOR_YELLOW" "permission to read branch protection)."
+    print_colored "$COLOR_YELLOW" "Status: REQUIRED, NOT REQUIRED, or UNKNOWN (the ruleset check failed, for"
+    print_colored "$COLOR_YELLOW" "example missing permission to read rules, or an API error)."
     print_colored "$COLOR_YELLOW" "Exit status: 0 if all repositories require signing, 1 if any do not or are"
     print_colored "$COLOR_YELLOW" "unknown, 2 on usage or setup errors."
 }
@@ -84,31 +89,20 @@ check_to_word() {
 check_repo() {
     local repo=$1
     local branch=$2
-    local ruleset_state classic_state status color row
+    local ruleset_state status color row
 
     # Rulesets: the rules that currently apply to this branch
     ruleset_state=$(check_to_word "repos/${repo}/rules/branches/${branch}" \
         'any(.[]; .type == "required_signatures")')
-    # Classic branch protection (needs admin access to read)
-    classic_state=$(check_to_word "repos/${repo}/branches/${branch}/protection/required_signatures" \
-        '.enabled')
 
-    if [[ "$ruleset_state" == "yes" || "$classic_state" == "yes" ]]; then
-        status="REQUIRED"
-        color=$COLOR_GREEN
-        required_count=$((required_count + 1))
-    elif [[ "$ruleset_state" == "no" && "$classic_state" == "no" ]]; then
-        status="NOT REQUIRED"
-        color=$COLOR_RED
-        missing_count=$((missing_count + 1))
-    else
-        status="UNKNOWN"
-        color=$COLOR_BRIGHTYELLOW
-        unknown_count=$((unknown_count + 1))
-    fi
+    case "$ruleset_state" in
+        yes) status="REQUIRED";     color=$COLOR_GREEN;        required_count=$((required_count + 1)) ;;
+        no)  status="NOT REQUIRED"; color=$COLOR_RED;          missing_count=$((missing_count + 1)) ;;
+        *)   status="UNKNOWN";      color=$COLOR_BRIGHTYELLOW; unknown_count=$((unknown_count + 1)) ;;
+    esac
 
-    printf -v row '%-45s %-12s ruleset:%-8s classic:%-8s %s' \
-        "$repo" "$branch" "$ruleset_state" "$classic_state" "$status"
+    printf -v row '%-45s %-12s %s' \
+        "$repo" "$branch" "$status"
     print_colored "$color" "$row"
 }
 
@@ -135,24 +129,55 @@ check_owner() {
     done <<<"$repo_list"
 }
 
+# Check only the repository in the current directory, resolved through its GitHub remote.
+check_current_repo() {
+    local repo_info repo branch
+
+    if ! repo_info=$(gh repo view --json nameWithOwner,defaultBranchRef \
+        --jq '[.nameWithOwner, (.defaultBranchRef.name // "")] | @tsv' 2>&1); then
+        print_colored "$COLOR_RED" "Could not resolve a GitHub repository here: ${repo_info}"
+        print_colored "$COLOR_YELLOW" "Run this inside a clone with a GitHub remote, or name owners, or use --all."
+        exit 2
+    fi
+
+    IFS=$'\t' read -r repo branch <<<"$repo_info"
+    [[ -n "$repo" ]] || {
+        print_colored "$COLOR_RED" "Could not determine the repository for the current directory"
+        exit 2
+    }
+
+    print_colored "$COLOR_CYAN" "== ${repo}"
+    if [[ -z "$branch" ]]; then
+        print_colored "$COLOR_YELLOW" "$(printf '%-45s (empty repository, skipped)' "$repo")"
+        return 0
+    fi
+    check_repo "$repo" "$branch"
+}
+
 main() {
     local owners=()
+    local check_all=false
     local argument
     for argument in "$@"; do
         case "$argument" in
             -h|--help) usage; exit 0 ;;
+            --all) check_all=true ;;
             -*) print_colored "$COLOR_RED" "Unknown option: ${argument}"; usage; exit 2 ;;
             *) owners+=("$argument") ;;
         esac
     done
-    [[ ${#owners[@]} -gt 0 ]] || owners=("${DEFAULT_OWNERS[@]}")
 
     require_commands
 
-    local owner
-    for owner in "${owners[@]}"; do
-        check_owner "$owner"
-    done
+    if [[ ${#owners[@]} -eq 0 && "$check_all" != true ]]; then
+        check_current_repo
+    else
+        [[ ${#owners[@]} -gt 0 ]] || owners=("${DEFAULT_OWNERS[@]}")
+        local owner
+        for owner in "${owners[@]}"; do
+            check_owner "$owner"
+        done
+    fi
 
     printf '\n'
     print_colored "$COLOR_BRIGHTYELLOW" \

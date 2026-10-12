@@ -6,6 +6,9 @@
 # match rules in gitconfig.work). If it is not in effect for this repository, this
 # script adds it as a repository-local include (the same thing `git personal` does),
 # then checks the signing key, allowed signers, and performs a test signature.
+#
+# It also loads the signing key into ssh-agent from the macOS Keychain when the agent
+# does not already hold it, so that commits do not prompt for the key passphrase.
 set -euo pipefail
 
 # Define color codes for terminal output
@@ -43,8 +46,10 @@ usage() {
     print_colored "$COLOR_YELLOW" "current directory), then verifies the key, allowed signers, and a test signature."
     print_colored "$COLOR_YELLOW" "  -n, --dry-run   report and show what would change; do not modify the repository"
     print_colored "$COLOR_YELLOW" ""
-    print_colored "$COLOR_YELLOW" "The only change made is adding a repository-local include of ${PERSONAL_CONFIG_REF}."
+    print_colored "$COLOR_YELLOW" "Changes made: a repository-local include of ${PERSONAL_CONFIG_REF}, only if signing"
+    print_colored "$COLOR_YELLOW" "is not already in effect; and loading the signing key into ssh-agent from the Keychain."
     print_colored "$COLOR_YELLOW" "To undo: git config --local --unset include.path '${PERSONAL_CONFIG_REF}'"
+    print_colored "$COLOR_YELLOW" "         ssh-add -d <key-file>   (the agent is cleared at logout in any case)"
     print_colored "$COLOR_YELLOW" "Exit status: 0 if signing is ready, 1 if any problem was found, 2 on usage errors."
 }
 
@@ -132,6 +137,43 @@ ensure_signing_config() {
     signing_is_effective || note_problem "signing is still not effective after adding the include"
 }
 
+# True if ssh-agent currently holds the key with this public key blob.
+key_in_agent() {
+    ssh-add -L 2>/dev/null | grep -Fq -- "$1"
+}
+
+# Make sure ssh-agent holds the signing key. Without it ssh-keygen falls back to the
+# private key file and prompts for its passphrase on every commit. On macOS,
+# --apple-load-keychain adds the key using the passphrase already in the Keychain: it
+# does not prompt, and re-running it is harmless (the agent keys by fingerprint).
+# Arguments: key_blob key_file
+ensure_key_in_agent() {
+    local key_blob=$1
+    local key_file=$2
+
+    if key_in_agent "$key_blob"; then
+        print_colored "$COLOR_GREEN" "  key is loaded in ssh-agent"
+        return 0
+    fi
+
+    if [[ "$OSTYPE" != darwin* ]]; then
+        print_colored "$COLOR_YELLOW" "  key is not loaded in ssh-agent (signing will prompt for a passphrase)"
+        return 0
+    fi
+
+    if [[ "$dry_run" == true ]]; then
+        print_colored "$COLOR_BRIGHTYELLOW" "  would run: ssh-add --apple-load-keychain"
+        return 0
+    fi
+
+    ssh-add --apple-load-keychain >/dev/null 2>&1 || true
+    if key_in_agent "$key_blob"; then
+        print_colored "$COLOR_GREEN" "  key loaded into ssh-agent from the Keychain"
+    else
+        note_problem "could not load the key into ssh-agent; store its passphrase once with: ssh-add --apple-use-keychain ${key_file}"
+    fi
+}
+
 # Verify the key, the allowed signers file, and that a signature can be made and checked.
 check_signing_key() {
     local key_file signers_file key_blob test_file signature_file
@@ -154,12 +196,7 @@ check_signing_key() {
         print_colored "$COLOR_GREEN" "  key is listed in allowed signers"
     fi
 
-    # A key held by ssh-agent needs no passphrase prompt; otherwise ssh-keygen may ask
-    if ssh-add -L 2>/dev/null | grep -Fq -- "$key_blob"; then
-        print_colored "$COLOR_GREEN" "  key is loaded in ssh-agent"
-    else
-        print_colored "$COLOR_YELLOW" "  key is not loaded in ssh-agent (signing may prompt for a passphrase)"
-    fi
+    ensure_key_in_agent "$key_blob" "$key_file"
 
     # Test signature on a scratch file, outside the repository
     scratch_dir=$(mktemp -d)
