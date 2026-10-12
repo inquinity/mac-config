@@ -117,6 +117,7 @@ fi
 
 source ~/mac-config/zsh/source_first.sh
 source ~/mac-config/zsh/alias_first.sh
+source ~/mac-config/zsh/node-use.sh
 
 # aliases
 source_first ~/mac-config/zsh/alias.sh
