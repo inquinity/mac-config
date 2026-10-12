@@ -9,7 +9,13 @@
 # Personal repos: a clone whose remote matches uses the personal email,
 # signing, and GitHub username from gitconfig.personal. One block per org or
 # repo; these must stay after the defaults above. Requires git 2.36+.
+# Matched twice per org: plain host, and host with an embedded username
+# (https://user@github.com/...), since remotes are cloned both ways.
 [includeIf "hasconfig:remote.*.url:https://github.com/inquinity/**"]
 	path = ~/.gitconfig.personal
+[includeIf "hasconfig:remote.*.url:https://*@github.com/inquinity/**"]
+	path = ~/.gitconfig.personal
 [includeIf "hasconfig:remote.*.url:https://github.com/Open-Lens/**"]
+	path = ~/.gitconfig.personal
+[includeIf "hasconfig:remote.*.url:https://*@github.com/Open-Lens/**"]
 	path = ~/.gitconfig.personal
