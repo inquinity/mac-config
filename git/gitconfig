@@ -27,7 +27,6 @@
 	br = branch
 	ci = commit
 	st = status
-	last = log -l HEAD --
 	alias = config --get-regexp ^alias\\.
 	unstage = restore --staged
 	undo = reset --soft HEAD~1
@@ -43,6 +42,8 @@
 	purge =!git reflog expire --expire=now --all && git gc --prune=now --aggressive
 [init]
 	defaultBranch = main
+[format]
+	pretty = %h %G? %an  %s
 [http]
 	postBuffer = 524288000
 [filter "lfs"]
