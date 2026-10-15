@@ -114,7 +114,8 @@ ffe () { find . -name '*'"$@" ; }
 # Development
 # -----------
 
-alias killdoc='killall -KILL Dock'
+# load custom node version selector (to set brew links for specific version)
+source ~/mac-config/zsh/node-use.sh
 
 alias python=python3
 alias py=python3
@@ -130,6 +131,11 @@ alias py=python3
 # ------------------------
 # Mac OS & iOS Development
 # ------------------------
+
+# brew quarantine fix (removes quarantine attributes)
+alias_first fix-brew-quarantine ~/mac-config/brew-tools/fix-brew-quarantine.sh
+
+alias killdoc='killall -KILL Dock'
 
 # Change Mac terminal name
 term() { echo -n -e "\033]0;$@\007" ; }
@@ -168,23 +174,7 @@ fi
 # Convert Video
 # -------------
 
-convert-video() {
-  video_name="${1%.*}"
-  source_file="${1}"
-  destination_file="${video_name}".mp4
-
-  # Check if source_file exists
-  if [ ! -f "${source_file}" ]; then
-     echo "Error: Source file '${source_file}' does not exist."
-     exit 1
-   fi
-
-   echo Converting "${source_file}" to "${destination_file}"
-   ffmpeg -i "${source_file}" -vcodec h264 -acodec aac "${destination_file}"
-}
-
-# brew quarantine fix (removes quarantine attributes)
-alias_first fix-brew-quarantine ~/mac-config/brew-tools/fix-brew-quarantine.sh
+source ~/mac_config/zsh/convert-video.sh
 
 # ----------
 # Encryption
