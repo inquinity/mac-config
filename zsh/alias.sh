@@ -45,6 +45,9 @@ lr () { for pattern in "$@"; do find . -name "$pattern" -type f ; done ; }
 # ls for resources MacOS fork
 lsr () { ls -lh "$@"/..namedfork/rsrc ; }
 
+# Mac version of treed
+source ~/mac-config/zsh/treed.sh
+
 #----------------
 # Markdown viewer
 #----------------
