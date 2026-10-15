@@ -177,7 +177,7 @@ fi
 # Convert Video
 # -------------
 
-source ~/mac_config/zsh/convert-video.sh
+source ~/mac_config/scripts/convert-video.sh
 
 # ----------
 # Encryption
