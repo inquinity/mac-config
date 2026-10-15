@@ -2,6 +2,7 @@
 	name = Robert Altman
 [core]
 	excludesfile = ~/.gitignore_global
+	editor = vim
 [diff]
 	tool = opendiff
 	guitool = opendiff
