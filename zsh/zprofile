@@ -27,3 +27,7 @@ addpath --move ~/mac-config/bin
 export HOMEBREW_API_DOMAIN="https://mesh.s3api-core.optum.com/legion/homebrew"
 export HOMEBREW_NO_AUTO_UPDATE="1"
 export HOMEBREW_NO_VERIFY_ATTESTATIONS="1"
+
+# Load SSH keys whose passphrases are in the keychain (git commit signing).
+# Added by git/configure-keychain-signing.sh; quiet and safe to run repeatedly.
+/usr/bin/ssh-add --apple-load-keychain >/dev/null 2>&1
