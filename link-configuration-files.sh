@@ -54,6 +54,7 @@ LINKS=(
     "zsh/zshrc:.zshrc"
     "zsh/zprofile:.zprofile"
     "zsh/zlogin:.zlogin"
+    "vim/vimrc:.vimrc"
 )
 
 LOCAL_LINK_NAME=".gitconfig.local"
