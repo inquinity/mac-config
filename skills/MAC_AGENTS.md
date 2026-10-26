@@ -60,6 +60,37 @@
 - Use bullet points in the body to detail the internal structural changes
 - Wrap body text at 72 characters.
 
+## Python dependencies for agent tooling
+- Homebrew's `python3` is PEP 668 `EXTERNALLY-MANAGED`. Never `pip install` into it and never pass
+  `--break-system-packages`; a `python@3.x` bump would orphan anything installed there.
+- One-off need: `uv run --with <pkg> -- python3 script.py`. Leaves nothing behind and honours
+  `UV_EXCLUDE_NEWER` automatically.
+- Recurring need: use the documented venv below. Treat the directory as disposable — `pyvenv.cfg`
+  pins an interpreter, so rebuild it after a Homebrew Python upgrade rather than repairing it. The
+  recipe is the durable artifact, not the venv.
+
+### Documented allowlist: `~/.claude/venvs/doc-tools`
+Covers document and skill tooling (the `pptx` skill's `office/validate.py` needs `defusedxml`;
+skill-creator's `package_skill.py` needs `pyyaml`; `pillow` avoids hand-rolling font metrics).
+Treat these packages as pre-approved — no need to ask per package.
+
+```bash
+uv venv ~/.claude/venvs/doc-tools
+uv pip install --python ~/.claude/venvs/doc-tools/bin/python \
+  python-pptx defusedxml pyyaml pillow
+```
+
+Run tools with that interpreter explicitly rather than activating:
+`~/.claude/venvs/doc-tools/bin/python -m scripts.package_skill <skill-dir>`
+
+Namespace additional purposes as siblings (`~/.claude/venvs/<purpose>`) instead of growing one
+shared env, so unrelated pins never have to be resolved together.
+
+## Announce completion
+- When finishing a long task (over one minute), run `say "<project or folder> <session> is ready for your review"` via the
+  CLI — fill in the actual project/folder name and a short description of what the session did,
+  e.g. `say "Belvedere containment port is ready for your review"`.
+  
 ## Using live control
 - Always request permission before using live control
 - Use "say" to announce the request: "Requesting lyve control" (typing error is intention to resolve hominym pronunciation error)
