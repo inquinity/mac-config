@@ -48,6 +48,13 @@
 - Use `.gitignore` for shared rules and `.git/info/exclude` for personal machine-only ignores.
 - Do not commit caches, build outputs, logs, temp files, local credentials, sensitive data, or broad ignore patterns that could hide required files. Add worktrees to the project `.gitignore` if it is needed.
 
+## Worktrees
+- Create worktrees under the project's `.worktree/` directory.
+- Before creating a worktree, ensure `.worktree/` is ignored. If it is not already covered by the project's `.gitignore`, add `.worktree/` to `.git/info/exclude`.
+- Use a dedicated worktree for project work to avoid collisions with other active work. Keep the primary checkout available for coordination.
+- After work is complete, check for uncommitted changes, then clean up and remove its worktree.
+- Repository-specific worktree guidance takes precedence over these rules.
+
 ## Commit messages
 - Use the 'Conventional Commits' standard (e.g., feat:, fix:, chore:, docs:, refactor:, release:, revert:)
 - Merge commits describe what lands, using the type of the change; git's default subject is fine for routine syncs

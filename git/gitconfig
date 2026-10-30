@@ -27,7 +27,7 @@
 	sw = switch
 	br = branch
 	ci = commit
-	st = status
+	st = !~/mac-config/git/git-status-worktrees.zsh
 	alias = config --get-regexp ^alias\\.
 	unstage = restore --staged
 	undo = reset --soft HEAD~1
