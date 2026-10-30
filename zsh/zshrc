@@ -135,6 +135,14 @@ if [[ "$(current_profile)" == work ]]; then
     source ~/mac-config/brew-tools/homebrew.sh
 fi
 
+# --- Brew receipt audit -----------------------------------------------------
+
+# After `brew upgrade`, find formulae whose install receipt still records a
+# dependency they no longer need and offer to reinstall them, so an unused keg
+# (icu4c@78, openssl@3) can be removed. On every machine, and after homebrew.sh
+# so it wraps the cool-off routing rather than replacing it.
+source ~/mac-config/brew-tools/brew-receipt-hook.sh
+
 # --- Company overrides (must stay last) -------------------------------------
 
 # Load UHG specific settings (if file exists)

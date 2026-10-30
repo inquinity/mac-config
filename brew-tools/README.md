@@ -307,6 +307,117 @@ when the cool-off should apply.
 
 ---
 
+# brew-receipt-audit.sh
+
+Finds formulae whose install receipt (`INSTALL_RECEIPT.json`) still records a
+runtime dependency they no longer need, reinstalls them so the receipt is
+rewritten, and offers to uninstall dependencies that nothing needs any more.
+
+## Why
+
+A receipt's `runtime_dependencies` are written once, at install time, and are
+only rewritten when that formula itself is reinstalled. When a dependency
+changes underneath it, the dependents keep the old entry. `brew uses
+--installed`, `brew autoremove` and `brew doctor` all read receipts, so the old
+keg stays "in use" and can't be cleaned up.
+
+The case that prompted this: `brew doctor` reported `icu4c@78` as deprecated
+and in use by `ada-url` and `merve`. Neither linked against it. Both had been
+installed while `simdutf` depended on `icu4c@78`, and `simdutf` had since
+moved to `icu4c@79`. `brew reinstall ada-url merve` rewrote the receipts and
+`icu4c@78` could be removed.
+
+## What counts as stale
+
+A recorded dependency is reported only when all of these hold:
+
+- it is not in the formula's declared dependency tree (current formula
+  definitions, followed recursively),
+- it is not in the receipt of any of the formula's direct dependencies,
+- the formula's keg does not link against it (`brew linkage`), and
+- it is still installed.
+
+The linkage check matters when the formula API comes from a mirror
+(`HOMEBREW_API_DOMAIN`). A mirror's JSON can leave out a dependency the
+formula really has. On one machine it dropped `webp`'s `libtiff`, which `webp`
+links against. Without the check, that dependency would be reported, and
+later removed, by mistake.
+
+`brew reinstall` doesn't stop at the formula it is given. It installs the
+newest version of that formula, upgrades any outdated dependencies, and by
+default also upgrades outdated formulae that depend on it. Any of these would
+skip `brew-safe.sh`'s cool-off, so:
+
+- an outdated formula is reported but not reinstalled,
+- a formula whose receipt names an outdated dependency is reported but not
+  reinstalled, and
+- reinstalls run with `HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=1`.
+
+Skipped formulae are left for the next upgrade.
+
+A dependency is offered for uninstall only if all of these are true:
+
+- it was installed as a dependency, not on request,
+- no other installed formula's receipt or declared dependencies name it,
+- no installed cask depends on it, and
+- no other keg links against it.
+
+Receipts and linkage can't see everything a dependency is used for, such as
+an interpreter a virtualenv points at, so uninstalling always asks.
+
+## Usage
+
+```sh
+./brew-receipt-audit.sh            # report, then prompt to reinstall / uninstall
+./brew-receipt-audit.sh --dry-run  # report and show the commands, change nothing
+./brew-receipt-audit.sh --yes      # reinstall without prompting
+./brew-receipt-audit.sh --quiet    # print nothing when there is nothing to do
+./brew-receipt-audit.sh --log      # append to ~/Library/Logs/brew-receipt-audit.log
+```
+
+The reinstall prompt defaults to yes. The uninstall prompt defaults to no.
+Ctrl-D answers no to either one. `--yes` covers reinstalling only; freed
+dependencies are still listed but are never uninstalled without a prompt.
+Without a terminal and without `--yes`, nothing changes.
+
+Exit status:
+
+- `0`: no stale receipts remain.
+- `1`: some remain (declined, outdated, failed, or a dry run).
+- `2`: a usage or environment error, or `brew`/`jq` output the script
+  couldn't read. Bad output is never reported as all-clear.
+
+The `--log` columns are timestamp, mode (`dry-run`, `prompted`, `assume-yes`),
+kind (`receipt` or `removal`), formula, stale dependencies, and outcome
+(`reported`, `reinstalled`, `failed`, `declined`, `dry-run`,
+`skipped-outdated`, `skipped-outdated-dep`, `still-stale`, `removed`).
+
+## Running After Every Upgrade
+
+`brew-receipt-hook.sh` (zsh only) wraps `brew` so the audit runs with
+`--quiet --log` after each `brew upgrade`. It does not run for `--dry-run`,
+`-n` or `--cask`, or after an upgrade interrupted with Ctrl-C. It still runs
+when the upgrade fails part-way, and it returns brew's own exit status. It wraps whatever `brew` is already defined,
+so source it after `homebrew.sh`. Sourcing it twice does nothing the second
+time.
+
+```sh
+source /path/to/brew-tools/brew-receipt-hook.sh
+```
+
+`zsh/zshrc` sources it on every machine. `scripts/update.sh` calls the audit
+directly after its upgrade, because a script doesn't get the shell function.
+
+## Tests
+
+`test-brew-receipt-audit.sh` runs both scripts against a stub `brew` on
+`PATH`. The stub serves canned JSON and linkage output and records every
+reinstall and uninstall instead of running it, so the test never touches the
+real installation. Prompts are answered through `expect` (included with
+macOS), because the script asks only when stdin is a terminal.
+
+---
+
 # reset-brew.sh
 
 Fully removes a Homebrew installation on macOS, on both layouts:
