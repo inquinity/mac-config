@@ -138,6 +138,9 @@ alias py=python3
 # brew quarantine fix (removes quarantine attributes)
 alias_first fix-brew-quarantine ~/mac-config/brew-tools/fix-brew-quarantine.sh
 
+# brew receipt audit (reinstalls formulae whose receipts record unneeded dependencies)
+alias_first brew-receipt-audit ~/mac-config/brew-tools/brew-receipt-audit.sh
+
 alias killdoc='killall -KILL Dock'
 
 # Change Mac terminal name

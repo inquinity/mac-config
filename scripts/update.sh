@@ -31,6 +31,8 @@ update_brew() {
     else
       brew upgrade
     fi
+    # A script does not get zshrc's brew() hook, so run the audit explicitly.
+    ~/mac-config/brew-tools/brew-receipt-audit.sh --log
     ~/mac-config/brew-tools/fix-brew-quarantine.sh --yes --log
     print_colored "${COLOR_GREEN}" "Completed"
   fi
