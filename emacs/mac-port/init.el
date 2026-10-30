@@ -1,128 +1,121 @@
-;; Auto-reload changed files
-(global-auto-revert-mode 1)
+;;; init.el --- Personal configuration -*- lexical-binding: t -*-
+
+;;;; Housekeeping
+
+;; Keep Customize output out of this file.
+(setq custom-file (locate-user-emacs-file "custom.el"))
+(load custom-file 'noerror 'nomessage)
+
+;; No filename~ backups, #file# auto-saves, or .#file lock files.
+(setq make-backup-files nil
+      auto-save-default nil
+      create-lockfiles nil)
 
 ;; Set the default grep command
 (setq grep-command "grep --color=auto -nHIr -e ")
 
-;; Add shortcut arrow keys for moving between windows
-;; Shift-arrow moves in that direction
-(when (fboundp 'windmove-default-keybindings) (windmove-default-keybindings))
+;;;; Packages
 
-;; Stop creating filename~ files
-(setq make-backup-files nil)
+(require 'package)
+(add-to-list 'package-archives
+             '("melpa-stable" . "https://stable.melpa.org/packages/") t)
+;; Prefer GNU/NonGNU ELPA; fall back to MELPA Stable for anything else.
+;; (setq package-archive-priorities '(("gnu" . 10) ("nongnu" . 5) ("melpa-stable" . 0)))
 
-;; Stop creating #file# backups
-(setq auto-save-default nil)
+;;;; Editing and display
 
-;; Turn off .#files
-(setq create-lockfiles nil)
-
-;; Display line numbers
+(global-auto-revert-mode 1)
 (global-display-line-numbers-mode 1)
-
-;; show cursor position within line
 (column-number-mode 1)
 
-;; Turn off display line wrapping
-;; C-x x t to toggle this ad hoc
-(setq-default truncate-lines 1)
+;; No line wrapping; C-x x t toggles it ad hoc.
+(setq-default truncate-lines t)
 
-;; Add undo/redo capability
-;; https://www.emacswiki.org/emacs/UndoTree
-(require 'undo-tree)
-(global-undo-tree-mode)
-(setq-default undo-tree-auto-save-history nil)
-
-;; Bookmarks
-(add-to-list 'load-path "~/.emacs.d/el/bm/")
-(require 'bm)
-(keymap-global-set "H-b" 'bm-toggle)
-(keymap-global-set "H-n" 'bm-next)
-(keymap-global-set "H-p" 'bm-previous)
-
-;; Hide the toolbar at the top of the window
-;;(tool-bar-mode -1)
-
-;; Adjust JSON indent level
 (setq js-indent-level 2)
 
-;; Markdown mode
-;; https://jblevins.org/projects/markdown-mode/
-(require 'package)
-(add-to-list 'package-archives '("melpa-stable" . "https://stable.melpa.org/packages/"))
-(package-initialize)
-;; then: M-x package-install RET markdown-mode RET
+;; Shift-<arrow> moves between windows.
+(windmove-default-keybindings)
 
-;; mac keyb mapping
-;; default -- (setq mac-command-modifier 'meta)
-;; default -- (setq mac-option-modifier (:function alt :mouse alt))
+;;;; macOS keyboard
 
-(setq mac-option-modifier 'meta)
-(setq mac-command-modifier 'hyper)
+;; Both Cmd keys are Hyper, a modifier nothing else binds, reserved for
+;; personal bindings.  Mac Cmd shortcuts (Cmd-C/V/Q) are not available.
+;; Option is Meta, Control is Control.
+(setq mac-command-modifier 'hyper
+      mac-option-modifier 'meta
+      mac-control-modifier 'control)
 
-;; Add Mac-friendly keyboard mappings
-(keymap-global-set "H-z" 'undo-tree-undo)
-(keymap-global-set "H-y" 'undo-tree-redo)
-(keymap-global-set "C-/" nil)
+;; Undo/redo with the built-in linear redo (Emacs 28+).
+(keymap-global-set "H-z" #'undo)
+(keymap-global-set "H-y" #'undo-redo)
+(keymap-global-unset "C-/")
 
-;; macro shortcuts
-(keymap-global-set "H-1" 'kmacro-start-macro)
-(keymap-global-set "H-2" 'kmacro-end-macro)
-(keymap-global-set "H-3" 'kmacro-end-and-call-macro)
+;; Keyboard macros
+(keymap-global-set "H-1" #'kmacro-start-macro)
+(keymap-global-set "H-2" #'kmacro-end-macro)
+(keymap-global-set "H-3" #'kmacro-end-and-call-macro)
 
-;; Compare
-(keymap-global-set "H-4" 'compare-windows)
+(keymap-global-set "H-4" #'compare-windows)
 
-;; Window-sizing commands
-(keymap-global-set "H-[" 'shrink-window-horizontally)
-(keymap-global-set "H-]" 'enlarge-window-horizontally)
+;; Window sizing
+(keymap-global-set "H-[" #'shrink-window-horizontally)
+(keymap-global-set "H-]" #'enlarge-window-horizontally)
 
-;; sort-buffer
-(defun sort-buffer ()
-  "Select all text in the buffer and sort it."
-  (interactive)
-  (save-excursion
-    (mark-whole-buffer)
-    (sort-lines nil (point-min) (point-max))))
-
-(keymap-global-set "H-5" 'sort-buffer)
-
-(defun sort-region ()
-  "Sort all lines in the selected region."
-  (interactive)
-  (if (use-region-p)
-      (let ((start (region-beginning))
-            (end (region-end)))
-        (goto-char start)
-        (beginning-of-line)
-        (set-mark (point))
-        (goto-char end)
-        (end-of-line)
-        (sort-lines nil (region-beginning) (region-end)))
-    (message "No region selected")))
-
-(keymap-global-set "H-6" 'sort-region)
-
-;; Unmap Meta-delete (use Control-backspace for backward-kill-word)
+;; Use C-<backspace> for backward-kill-word instead.
 (keymap-global-unset "M-<delete>")
 (keymap-global-unset "M-DEL")
 
+;;;; Sorting
 
-;; Comments - Not working the way it should
-;;(keymap-global-set "H-." 'uncomment-region)
-;;(keymap-global-set "H-/" 'comment-region)
+(defun sort-buffer ()
+  "Sort all lines in the buffer."
+  (interactive)
+  (sort-lines nil (point-min) (point-max)))
 
-;; using ls-lisp with these settings gives case-insensitive sorting on MacOS
-(require 'ls-lisp)
+(defun sort-region ()
+  "Sort the lines touched by the active region, extended to whole lines."
+  (interactive)
+  (if (use-region-p)
+      (let ((start (save-excursion (goto-char (region-beginning)) (line-beginning-position)))
+            (end (save-excursion (goto-char (region-end)) (line-end-position))))
+        (sort-lines nil start end))
+    (message "No region selected")))
+
+(keymap-global-set "H-5" #'sort-buffer)
+(keymap-global-set "H-6" #'sort-region)
+
+;;;; Third-party packages
+
+;; Visible, toggleable line bookmarks.
+(use-package bm
+  :ensure t
+  :bind (("H-b" . bm-toggle)
+         ("H-n" . bm-next)
+         ("H-p" . bm-previous)))
+
+;; Autoloads register .md/.markdown, so nothing loads until one is opened.
+(use-package markdown-mode
+  :ensure t
+  :defer t)
+
+;;;; Dired
+
+;; ls-lisp gives case-insensitive sorting on macOS (BSD ls cannot).
+(use-package ls-lisp
+  :custom
+  (ls-lisp-use-insert-directory-program nil)
+  (ls-lisp-ignore-case t)
+  (ls-lisp-use-string-collate nil)
+  (ls-lisp-verbosity '(links uid))
+  (ls-lisp-format-time-list '("%b %e %H:%M" "%b %e  %Y"))
+  (ls-lisp-use-localized-time-format t))
+
 (setq dired-listing-switches "-alhG")
-(setq ls-lisp-use-insert-directory-program nil)
-(setq ls-lisp-ignore-case t)
-(setq ls-lisp-use-string-collate nil)
-;; customise the appearance of the listing
-(setq ls-lisp-verbosity '(links uid))
-(setq ls-lisp-format-time-list '("%b %e %H:%M" "%b %e  %Y"))
-(setq ls-lisp-use-localized-time-format t)
 
-;;========================================
-;; start the emacsserver that listens to emacsclient
-(server-start)
+;;;; Server for emacsclient
+
+(require 'server)
+(unless (server-running-p)
+  (server-start))
+
+;;; init.el ends here

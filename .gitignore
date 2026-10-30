@@ -16,6 +16,5 @@ emacs/*/projects
 emacs/*/tramp
 emacs/*/places
 emacs/*/network-security.data
-# ns-port reinstalls its packages via use-package :ensure; mac-port's elpa
-# stays tracked because its init.el cannot reinstall them
-emacs/ns-port/elpa/
+# Both ports reinstall their packages via use-package :ensure
+emacs/*/elpa/
