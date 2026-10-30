@@ -16,10 +16,11 @@ Always browse or otherwise verify current information before writing a report. N
 1. Establish the report window. Default to the last 7 calendar days unless the user gives another range. For "daily news," still scan the last week and prioritize the most important recent items. State the exact dates covered.
 2. Review the source registry in `references/source-registry.md`.
 3. Scan the primary sources first. Use site search, RSS feeds, section pages, or web search constrained to the source domains when available.
-4. Expand only when needed. If a story appears important but the listed sources are thin, use additional reputable primary or specialist sources and record them.
-5. Select a small set of important items. Prefer fewer strong stories over many shallow entries.
-6. Cross-check significant claims across at least two sources when practical, especially for security incidents, vulnerabilities, model releases, acquisitions, legal/regulatory actions, and financial claims.
-7. Write the report using the required format below.
+4. Run a targeted developer-tool and software supply chain scan using the topics and discovery sources in the registry. Check for newly compromised IDE extensions, package registries, build tools, CI/CD systems, and AI coding tools, including incidents without a CVE. Search by incident and affected product, not only by publication name.
+5. Expand only when needed. If a story appears important but the listed sources are thin, use additional reputable primary or specialist sources and record them.
+6. Select a small set of important items. Prefer fewer strong stories over many shallow entries. Recheck same-day security disclosures before finalizing a daily briefing.
+7. Cross-check significant claims across at least two sources when practical, especially for security incidents, vulnerabilities, model releases, acquisitions, legal/regulatory actions, and financial claims. For supply chain incidents, verify the affected artifact, version, distribution channel, exposure window, and observed impact separately; distinguish confirmed facts from disputed or unverified claims.
+8. Write the report using the required format below.
 
 ## Topic Scope
 
@@ -38,6 +39,7 @@ Omit a section if there are no important recent items. Add a short `Other Notabl
 Include an item when it has meaningful impact for technology leaders, builders, defenders, researchers, or operators. Strong signals include:
 
 - A material security vulnerability, campaign, breach, malware family, exploit technique, or defensive guidance.
+- An active compromise of a developer tool or its distribution channel, especially when a malicious artifact reached users or the report provides concrete indicators and response guidance.
 - A major AI model, product, research result, policy, infrastructure change, safety issue, or ecosystem shift.
 - A quantum computing milestone, credible research advance, standards update, or commercialization signal.
 - A cloud platform launch, outage, pricing/licensing shift, architecture pattern, or operational/security impact.
@@ -94,12 +96,16 @@ Prefer primary sources for official announcements, standards, research papers, a
 
 For security stories, prioritize original advisories, vendor research, CVE/NVD records, CISA KEV, CERT/CC, or affected vendor statements when available. Use news coverage to explain significance and timeline.
 
+For developer-tool supply chain stories, consult the discoverer, affected vendor, registry or marketplace operator, and independent artifact or registry analysis when available. Do not infer that a vendor's build system or every marketplace was compromised merely because one distributed artifact was malicious. State the confirmed affected product and channel, and flag disputed scope. Include specific detection or response guidance only when supported by a primary source.
+
 ## Quality Checks
 
 Before finalizing:
 
 - Confirm the report covers the requested date range.
 - Confirm each story belongs in its section and meets the importance threshold.
+- Confirm the targeted developer-tool and supply chain scan was completed, including a final same-day check for daily briefings.
+- For a supply chain incident, confirm that artifact, version, channel, and impact claims match the cited evidence; mark unresolved scope explicitly.
 - Confirm every summary has a `sources:` list.
 - Confirm any recommended source is not already in the main source registry.
 - Confirm copied language is minimal and summaries are original synthesis.

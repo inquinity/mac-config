@@ -40,3 +40,9 @@ Use these sources as the baseline scan list for daily technology news briefings.
 Consider additional sources when they provide primary evidence, stronger technical detail, or material coverage missing from the baseline. Examples include vendor advisories, project release notes, research labs, standards bodies, CISA, NIST, CERT/CC, cloud provider blogs, academic papers, and high-quality specialist publications.
 
 Do not recommend a source merely because it was used once. Recommend it when it appears likely to improve future daily reports for one of the skill's topic areas.
+
+## Developer-Tool and Supply Chain Discovery
+
+During the targeted security scan, search for incidents involving IDE extensions, AI coding tools, package registries, build and release pipelines, CI/CD systems, and developer credentials. Use terms such as `compromised extension`, `trojanized package`, `malicious update`, `registry compromise`, and the names of widely used tools. Check publication and incident dates separately.
+
+Consult original research and affected-party notices when a lead appears. Useful discovery sources include Phorion (https://phorion.io/blog/), Socket Research (https://socket.dev/blog), and StepSecurity (https://www.stepsecurity.io/blog/); these are leads to verify, not a standing endorsement of every post or a replacement for the primary scan list. Check the affected vendor and marketplace or registry operator for scope and remediation. Promote a discovery source to the main list only after repeated reliable contributions.
