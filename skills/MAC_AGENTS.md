@@ -48,6 +48,10 @@
 - Use `.gitignore` for shared rules and `.git/info/exclude` for personal machine-only ignores.
 - Do not commit caches, build outputs, logs, temp files, local credentials, sensitive data, or broad ignore patterns that could hide required files. Add worktrees to the project `.gitignore` if it is needed.
 
+## Shell commands (Mac)
+- Prefer single-line command when generating shell commands for copy and pasting in place of using multi-line strings and line continuations; this makes command history easier to use.
+- Prefer zsh command syntax over bash
+
 ## Worktrees
 - Create worktrees under the project's `.worktree/` directory.
 - Before creating a worktree, ensure `.worktree/` is ignored. If it is not already covered by the project's `.gitignore`, add `.worktree/` to `.git/info/exclude`.
