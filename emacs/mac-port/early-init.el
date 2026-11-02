@@ -11,4 +11,9 @@
                       (string-trim
                        (shell-command-to-string "sw_vers -productVersion"))))))
 
+;; Resize frames by pixel rather than by character cell.  Testing whether
+;; this fixes the stalled, janky live-resize drag on macOS 27.2 (see
+;; jdtsmith/emacs-mac PR #157).  Set here so the first frame has it.
+(setq frame-resize-pixelwise t)
+
 ;;; early-init.el ends here
