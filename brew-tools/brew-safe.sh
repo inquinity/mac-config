@@ -48,7 +48,8 @@ usage() {
     printf "\n"
     printf "Options:\n"
     printf "  --days N        Cool-off period in days. Overrides \$OPTUM_HOMEBREW_MIN_RELEASE_AGE\n"
-    printf "                  when given; one of the two is required.\n"
+    printf "                  when given; one of the two is required. 0 means no cool-off:\n"
+    printf "                  brew runs against the current tap without a pin.\n"
     printf "  --dry-run, -n   Show actions without checking out or running brew\n"
     printf "  --debug         Show additional diagnostic output\n"
     printf "  --help, -h      Show this help message\n"
@@ -59,6 +60,7 @@ usage() {
     printf "${COLOR_YELLOW}Examples:${COLOR_RESET}\n"
     printf "  OPTUM_HOMEBREW_MIN_RELEASE_AGE=6 %s install jq   # install jq as it existed 6 days ago\n" "$(basename "$0")"
     printf "  %s --days 14 upgrade jq    # one-off override: use a 14-day cool-off\n" "$(basename "$0")"
+    printf "  %s --days 0 upgrade node@24 # no cool-off: run against the current tap\n" "$(basename "$0")"
     printf "  %s -n install jq           # show what would happen\n" "$(basename "$0")"
     printf "\n"
     printf "The first non-option argument and everything after it is passed to brew.\n"
@@ -131,8 +133,8 @@ if [[ "$days_given" -ne 1 ]]; then
     fi
 fi
 
-if [[ ! "$days" =~ ^[0-9]+$ ]] || [[ "$days" -lt 1 ]]; then
-    print_colored "$COLOR_RED" "Error: $days_source must be a positive integer (got: $days)."
+if [[ ! "$days" =~ ^[0-9]+$ ]]; then
+    print_colored "$COLOR_RED" "Error: $days_source must be a non-negative integer (got: $days)."
     exit 2
 fi
 
@@ -146,6 +148,29 @@ fi
 if ! command -v brew >/dev/null 2>&1; then
     print_colored "$COLOR_RED" "Error: brew not found on PATH."
     exit 1
+fi
+
+# --- No cool-off (--days 0) ---------------------------------------------------
+# Zero days means no pin: brew sees the current tap and nothing is checked out
+# or restored, so the trap and tap checks below do not apply.
+if [[ "$days" -eq 0 ]]; then
+    print_colored "$COLOR_RED" "No cool-off (${days_source} 0): brew runs against the current homebrew/core tap."
+    if [[ "$dry_run" -eq 1 ]]; then
+        printf "[dry-run] brew %s\n" "${brew_args[*]}"
+        print_colored "$COLOR_GREEN" "Dry run complete. Nothing was changed."
+        exit 0
+    fi
+    print_colored "$COLOR_BRIGHTYELLOW" "Running: brew ${brew_args[*]}"
+    set +e
+    brew "${brew_args[@]}"
+    brew_rc=$?
+    set -e
+    if [[ "$brew_rc" -eq 0 ]]; then
+        print_colored "$COLOR_GREEN" "brew ${brew_args[*]} succeeded (no cool-off)."
+    else
+        print_colored "$COLOR_RED" "brew ${brew_args[*]} exited with status ${brew_rc}."
+    fi
+    exit "$brew_rc"
 fi
 
 core_repo="$(brew --repo homebrew/core 2>/dev/null || true)"
