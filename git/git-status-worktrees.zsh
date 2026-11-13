@@ -16,12 +16,53 @@ fi
 worktrees=$(git worktree list --porcelain) || exit $?
 current_path=$(git rev-parse --show-toplevel) || exit $?
 
+# Git always lists the main worktree first. It anchors the relative paths below
+# and is excluded from both the listing and the count, which report only the
+# linked worktrees.
+main_path=''
 worktree_count=0
 while IFS= read -r line; do
-    [[ $line == worktree\ * ]] && (( ++worktree_count ))
+    [[ $line == worktree\ * ]] || continue
+    if [[ -z $main_path ]]; then
+        main_path=${line#worktree }
+    else
+        (( ++worktree_count ))
+    fi
 done <<< "$worktrees"
 
-printf '\nWorktrees (%d):\n' "$worktree_count"
+if (( worktree_count == 0 )); then
+    printf '\nWorktrees:\n  none\n'
+    exit 0
+fi
+
+printf '\nWorktrees (%d):\n%s\n' "$worktree_count" "$main_path"
+
+# Render an absolute path relative to the main worktree root, walking up with
+# '..' segments for worktrees that live outside it.
+relative_to_main() {
+    local target=$1 base=$2
+    local -a target_parts base_parts relative_parts
+    local common=0 index
+
+    [[ $target == "$base" ]] && { printf '.'; return 0; }
+
+    target_parts=(${(s:/:)target})
+    base_parts=(${(s:/:)base})
+
+    # Compare whole path components so a sibling such as 'mac-backup-other' is
+    # never mistaken for a child of 'mac-backup'.
+    while (( common < ${#target_parts} && common < ${#base_parts} )) &&
+          [[ ${target_parts[common+1]} == ${base_parts[common+1]} ]]; do
+        (( ++common ))
+    done
+
+    for (( index = common + 1; index <= ${#base_parts}; index++ )); do
+        relative_parts+=('..')
+    done
+    relative_parts+=(${target_parts[common+1,-1]})
+
+    printf '%s' "${(j:/:)relative_parts}"
+}
 
 print_worktree() {
     local worktree_path=$1 head=$2 branch=$3
@@ -61,7 +102,17 @@ print_worktree() {
         fi
     fi
 
-    printf '  %s %-32s %-8s %-24s %s\n' "$marker" "$branch" "${head[1,7]}" "$worktree_status" "$worktree_path"
+    printf '  %s %-32s %-8s %-24s %s\n' "$marker" "$branch" "${head[1,7]}" "$worktree_status" \
+        "$(relative_to_main "$worktree_path" "$main_path")"
+}
+
+# Emit a parsed record unless it describes the main worktree, which the header
+# above already reports.
+flush_worktree() {
+    local worktree_path=$1 head=$2 branch=$3
+
+    [[ -z $worktree_path || $worktree_path == "$main_path" ]] && return 0
+    print_worktree "$worktree_path" "$head" "${branch:-(unknown)}"
 }
 
 worktree_path='' head='' branch=''
@@ -74,11 +125,9 @@ while IFS= read -r line; do
         'bare') branch='(bare)' ;;
         'prunable '*) branch='(prunable)' ;;
         '')
-            if [[ -n $worktree_path ]]; then
-                print_worktree "$worktree_path" "$head" "${branch:-(unknown)}"
-                worktree_path='' head='' branch=''
-            fi
+            flush_worktree "$worktree_path" "$head" "$branch"
+            worktree_path='' head='' branch=''
             ;;
     esac
 done <<< "$worktrees"
-[[ -n $worktree_path ]] && print_worktree "$worktree_path" "$head" "${branch:-(unknown)}"
+flush_worktree "$worktree_path" "$head" "$branch"
