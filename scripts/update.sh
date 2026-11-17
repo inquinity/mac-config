@@ -165,5 +165,29 @@ main() {
   cleanup_nerdctl
 }
 
+usage() {
+  # $0 is the function name inside zsh functions; ZSH_ARGZERO is the script.
+  print_colored "${COLOR_YELLOW}" "Usage: ${ZSH_ARGZERO:t} [--quiet|-q] [--help|-h]"
+  print_colored "${COLOR_YELLOW}" "  -q, --quiet  Skip the spoken completion announcement"
+  print_colored "${COLOR_YELLOW}" "  -h, --help   Show this help text"
+}
+
+# Parse arguments before doing any work so a typo fails fast.
+quiet_mode=false
+while (( $# > 0 )); do
+  case "$1" in
+    -q|--quiet) quiet_mode=true ;;
+    -h|--help) usage; exit 0 ;;
+    *)
+      print_colored "${COLOR_RED}" "Unknown option: $1"
+      usage
+      exit 1
+      ;;
+  esac
+  shift
+done
+
 main
-say "Update script completed"
+if [[ "${quiet_mode}" != true ]]; then
+  say "Update script completed"
+fi
