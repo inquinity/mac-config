@@ -18,6 +18,9 @@ addpath --move /opt/homebrew/bin
 addpath --move /opt/bin
 addpath --move ~/mac-config/bin
 
+# Android SDK platform-tools (adb, fastboot)
+addpath ~/Library/Android/sdk/platform-tools
+
 #kubectl autocompletion
 #autoload -Uz compinit
 #compinit
