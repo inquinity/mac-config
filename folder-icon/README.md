@@ -1,14 +1,15 @@
-# Finder folder and sidebar icon assets
+# Finder icon groups
 
-The SharePoint concept pairs two documents with a three-node sharing mark. Its blue folder, rounded shape, and line weight follow the existing `macOS-dev-folder-icon.png`. The dev sidebar glyph simplifies the existing stacked Git artwork to a branch inside a folder.
+These are the inputs for the **Xcode available** workflow in [icon-specification.md](icon-specification.md). Import each `glyph.svg` into the sidebar icon wizard, enter its glyph name, and optionally import its `icon.png` as folder art.
 
-| Folder | Finder icon | Sidebar icon |
-| --- | --- | --- |
-| `~/dev` | `dev-folder.png`, `dev-folder.icns` | `dev-sidebar.svg`, `dev-sidebar.png` |
-| `~/SharePoint` | `sharepoint-folder.png`, `sharepoint-folder.icns` | `sharepoint-sidebar.svg`, `sharepoint-sidebar.png` |
+| Folder | Glyph name | Filled-path sidebar SVG | 1024 px folder master |
+| --- | --- | --- | --- |
+| `~/dev` | `dev.folder` | [`dev/glyph.svg`](dev/glyph.svg) | [`dev/icon.png`](dev/icon.png) |
+| `~/SharePoint` | `sharepoint.folder` | [`sharepoint/glyph.svg`](sharepoint/glyph.svg) | [`sharepoint/icon.png`](sharepoint/icon.png) |
+| `~/mac-config` | `mac.settings` | [`mac-settings/glyph.svg`](mac-settings/glyph.svg) | [`mac-settings/icon.png`](mac-settings/icon.png) |
 
-The 1024 × 1024 folder PNGs have transparent padding. Each `.icns` contains 16, 32, 128, 256, 512, and 1024 pixel representations. Sidebar PNGs are 256 × 256 pixels with transparent backgrounds; SVGs are the editable vector sources. Both sidebar glyphs use `#0875ec`, which a Finder Sync extension can also treat as template artwork if it controls tinting.
+Each SVG contains only filled paths in a square viewBox. Its colour is a placeholder; Finder supplies the blue sidebar tint. The optional 16 and 32 pt folder images are omitted because the wizard renders them from each master.
 
-To apply the normal Finder folder icons, run `swift apply-folder-icons.swift --dry-run` here, then `swift apply-folder-icons.swift`. macOS creates or updates the special invisible `Icon\r` file and custom-icon Finder metadata inside each target folder. That file is per-folder metadata and should not be copied into this Git repository. The script does not change Favorites sidebar icons.
+The SharePoint master follows the folder already shown by Finder: a blue folder with the `cloud.fill` symbol. Finder stores that customization in `com.apple.icon.folder#S`, so there is no original image file to copy. The earlier linked-documents concept is preserved as `sharepoint-documents-*` in this directory. The older `dev-sidebar.svg` and `sharepoint-documents-sidebar.svg` files are previews from the first concept and are **not** the filled-path wizard inputs.
 
-The separate Favorites icons belong in the Finder Sync extension described in `Finder_Sidebar_Custom_Icons_Utility.md`. macOS does not automatically use the folder's custom icon in Favorites, so `.icns` and `Icon\r` alone cannot guarantee the requested sidebar appearance.
+The supplied `apply-folder-icons.swift` tool is separate from the icon-group wizard. It applies the root-level `.icns` files to normal Finder folder views; it does not set Favorites sidebar icons. It now skips folders with existing custom icon metadata unless run with `--replace-existing`. Run `swift apply-folder-icons.swift --dry-run` to preview its action. The wizard should be used for the sidebar glyphs.
