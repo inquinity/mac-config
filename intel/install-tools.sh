@@ -37,11 +37,12 @@ TAP_BASE="${INTEL_TOOLS_TAP_BASE:-https://raw.githubusercontent.com/inquinity/ho
 APP_DIR="${INTEL_TOOLS_APP_DIR:-/Applications}"
 STATE_FILE="${INTEL_TOOLS_STATE_FILE:-${HOME}/.config/mac-config/intel-tools.state}"
 
-# Expected Developer ID Team ID per cask. Empty means "not pinned": the app must
-# still be validly signed and notarized, and its Team ID is printed.
+# Expected Developer ID Team ID per cask (Altman Software Design, LLC). Empty
+# means "not pinned": the app must still be validly signed and notarized, and
+# its Team ID is printed.
 expected_team_id() {
     case "$1" in
-        yatu|qltextview|belvedere) printf '45GJWJVQN2' ;;
+        yatu|openinterminal-lite-inquinity|qltextview|belvedere) printf '45GJWJVQN2' ;;
         *)         printf '' ;;
     esac
 }

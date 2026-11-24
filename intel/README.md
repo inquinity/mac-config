@@ -39,11 +39,10 @@ The script refuses to run on Apple Silicon; use brew there.
 2. The app has an x86_64 slice (`file`, because `lipo` needs the command line tools).
 3. `codesign --verify --deep --strict` passes.
 4. `spctl` reports a notarized Developer ID build.
-5. The Team ID matches the pinned value, where one is pinned. `yatu`,
-   `qltextview` and `belvedere` are pinned to `45GJWJVQN2`. The
-   `openinterminal-lite-inquinity` fork is not pinned, because its signing
-   identity is unconfirmed; its Team ID is printed on install. Add it to
-   `expected_team_id` in the script once known.
+5. The Team ID matches the pinned value. All four casks are pinned to
+   `45GJWJVQN2` (Altman Software Design, LLC). The OpenInTerminal fork was
+   confirmed by inspecting its published v1.2.8-inquinity.1 zip: hash matches
+   the cask, signed with that Developer ID, notarized, universal x86_64/arm64.
 
 A failure at any step leaves the existing install untouched and the state file
 unchanged. Installed versions are recorded in
