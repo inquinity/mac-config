@@ -420,22 +420,13 @@ macOS), because the script asks only when stdin is a terminal.
 
 # reset-brew.sh
 
-Fully removes a Homebrew installation on macOS, on both layouts:
+Fully removes a Homebrew installation on an Apple Silicon Mac. Everything
+lives under `/opt/homebrew`, so removing that directory plus the caches under
+`~/Library/Caches/Homebrew`, `~/.cache/Homebrew`, and `~/.brew` is a complete
+removal.
 
-- **Apple Silicon** — everything lives under `/opt/homebrew`, so removing that
-  one directory is a complete, clean removal.
-- **Intel** — Homebrew installs into `/usr/local`, a directory shared with the
-  rest of the system. The script only removes paths Homebrew itself owns there
-  (`Cellar`, `Caskroom`, `opt`, `var/homebrew`, `Frameworks`, the brew repo,
-  a short list of known completion/doc files) plus symlinks in `bin`, `sbin`,
-  `lib`, `include`, and `share` that have gone dangling because the Cellar
-  entry they pointed to is already removed. It never deletes a symlink that
-  still resolves, and never touches a non-symlink file in those shared
-  directories.
-
-Both prefixes are checked regardless of the detected architecture, in case of
-a mismatched or migrated install. Caches under `~/Library/Caches/Homebrew`,
-`~/.cache/Homebrew`, and `~/.brew` are removed on both architectures.
+Homebrew 7 no longer supports Intel Macs. For those, use
+`remove-brew-intel.sh` below.
 
 ## Usage
 
@@ -446,3 +437,34 @@ a mismatched or migrated install. Caches under `~/Library/Caches/Homebrew`,
 
 This is destructive and not reversible — always run `--dry-run` first on a
 machine you care about.
+
+---
+
+# remove-brew-intel.sh
+
+Removes every trace of Homebrew from an Intel Mac. Homebrew 7 dropped Intel
+support and `brew.rb` is unreliable there, so the script never runs `brew`;
+it deletes Homebrew's files directly.
+
+It removes:
+
+- `/usr/local/{Homebrew,Cellar,Caskroom,opt,Frameworks,var/homebrew,bin/brew}`
+  (and `/opt/homebrew` if a migrated install left one behind)
+- symlinks in `/usr/local/{bin,sbin,lib,include,share,etc,Frameworks}`,
+  `/Applications` and `~/Applications` that point into the Cellar, Caskroom
+  or Homebrew
+- known completion, doc and man files, and `homebrew.mxcl.*` launchd services
+- `~/Library/Caches/Homebrew`, `~/Library/Logs/Homebrew`, `~/.cache/Homebrew`,
+  `~/.config/homebrew`, `~/.homebrew`, `~/.brew`
+
+Everything else in `/usr/local` is left alone, and apps that casks copied into
+`/Applications` are kept. The script refuses to run on Apple Silicon (checked
+with `sysctl hw.optional.arm64`, so a Rosetta shell is not fooled).
+
+```sh
+./remove-brew-intel.sh --dry-run   # show what would be removed
+./remove-brew-intel.sh             # asks for confirmation, then removes
+./remove-brew-intel.sh --yes       # no prompt
+```
+
+This is destructive and not reversible — always run `--dry-run` first.

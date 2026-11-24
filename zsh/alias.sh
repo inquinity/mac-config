@@ -118,16 +118,12 @@ ffe () { find . -name '*'"$@" ; }
 # -----------
 
 # load custom node version selector (to set brew links for specific version)
-source ~/mac-config/zsh/node-use.sh
+[[ $CPUTYPE == arm64 ]] && source ~/mac-config/zsh/node-use.sh   # brew-based; no brew on Intel
 
 alias python=python3
 alias py=python3
 
-# python-311() { alias python3 >/dev/null 2>&1 || if [[ $(uname -m) == 'arm64' ]]; then
-#     alias python3=/opt/homebrew/bin/python3.11 ; export npm_config_python=/opt/homebrew/bin/python3.11
-# else
-#     alias python3=/usr/local/bin/python3.11 ; export npm_config_python=/usr/local/bin/python3.11
-# fi; eval 'python3 --version' ; }
+# python-311() { alias python3 >/dev/null 2>&1 || { alias python3=/opt/homebrew/bin/python3.11 ; export npm_config_python=/opt/homebrew/bin/python3.11 ; } ; eval 'python3 --version' ; }
 
 # python-312() { alias python3 >/dev/null 2>&1 && unalias python3 ; unset npm_config_python ; eval 'python3 --version' ; }
 
@@ -135,11 +131,13 @@ alias py=python3
 # Mac OS & iOS Development
 # ------------------------
 
-# brew quarantine fix (removes quarantine attributes)
-alias_first fix-brew-quarantine ~/mac-config/brew-tools/fix-brew-quarantine.sh
+if [[ $CPUTYPE == arm64 ]]; then   # brew tools are Apple Silicon only
+    # brew quarantine fix (removes quarantine attributes)
+    alias_first fix-brew-quarantine ~/mac-config/brew-tools/fix-brew-quarantine.sh
 
-# brew receipt audit (reinstalls formulae whose receipts record unneeded dependencies)
-alias_first brew-receipt-audit ~/mac-config/brew-tools/brew-receipt-audit.sh
+    # brew receipt audit (reinstalls formulae whose receipts record unneeded dependencies)
+    alias_first brew-receipt-audit ~/mac-config/brew-tools/brew-receipt-audit.sh
+fi
 
 alias killdoc='killall -KILL Dock'
 

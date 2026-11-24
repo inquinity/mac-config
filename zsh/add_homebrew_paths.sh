@@ -15,8 +15,6 @@ add_homebrew_paths() {
             addpath --move "/opt/homebrew/opt/mysql-client/bin"
         fi
         eval "$_BREW_SHELLENV_CACHE"
-    else
-        # Intel chips
-        addpath --move "/usr/local/sbin"
     fi
+    # Intel Macs: Homebrew 7 dropped support, so nothing is added.
 }

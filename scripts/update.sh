@@ -22,6 +22,12 @@ print_colored() {
 # here, the same way zshrc decides whether to load the brew() wrapper, and
 # with the same source of truth (zsh/profile.sh).
 update_brew() {
+  # Homebrew 7 dropped Intel support; never touch brew on an Intel Mac.
+  if [[ "$(uname -m)" != "arm64" ]]; then
+    print_colored "${COLOR_YELLOW}" "Skipping brew (Intel Mac: not supported by Homebrew 7)"
+    printf "\n"
+    return 0
+  fi
   if command -v brew &> /dev/null; then
     print_colored "${COLOR_BRIGHTYELLOW}" "Starting brew upgrade"
     brew update

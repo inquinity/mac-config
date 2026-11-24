@@ -73,6 +73,8 @@ export AGE_KEY_DIR=~/.config/age
 # Lowest priority first, since each --move lands at the front of $PATH.
 # .zprofile repeats this for login shells, where /etc/zprofile's path_helper
 # reshuffles $PATH after this file has already run.
-addpath --move /opt/homebrew/sbin
-addpath --move /opt/homebrew/bin
+if [[ $CPUTYPE == arm64 ]]; then   # Homebrew 7 dropped Intel support
+    addpath --move /opt/homebrew/sbin
+    addpath --move /opt/homebrew/bin
+fi
 addpath --move ~/mac-config/bin

@@ -13,8 +13,10 @@ ztrace "Loading ${(%):-%x}"
 # .zshenv added to below /usr/bin. Re-assert the entries whose precedence
 # actually matters, lowest priority first, since each --move lands at the front.
 add_homebrew_paths
-addpath --move /opt/homebrew/sbin
-addpath --move /opt/homebrew/bin
+if [[ $CPUTYPE == arm64 ]]; then   # Homebrew 7 dropped Intel support
+    addpath --move /opt/homebrew/sbin
+    addpath --move /opt/homebrew/bin
+fi
 addpath --move /opt/bin
 addpath --move ~/mac-config/bin
 

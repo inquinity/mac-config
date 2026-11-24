@@ -131,7 +131,8 @@ source_first ~/mac-config/zsh/alias.local.sh
 # how new a bottle can be. homebrew.sh itself has no idea what a corporate
 # machine is; that check belongs here, not in a file meant to be shareable.
 source ~/mac-config/zsh/profile.sh
-if [[ "$(current_profile)" == work ]]; then
+# Intel Macs never load brew tooling: Homebrew 7 dropped Intel support.
+if [[ $CPUTYPE == arm64 && "$(current_profile)" == work ]]; then
     source ~/mac-config/brew-tools/homebrew.sh
 fi
 
@@ -141,7 +142,7 @@ fi
 # dependency they no longer need and offer to reinstall them, so an unused keg
 # (icu4c@78, openssl@3) can be removed. On every machine, and after homebrew.sh
 # so it wraps the cool-off routing rather than replacing it.
-source ~/mac-config/brew-tools/brew-receipt-hook.sh
+[[ $CPUTYPE == arm64 ]] && source ~/mac-config/brew-tools/brew-receipt-hook.sh
 
 # --- Company overrides (must stay last) -------------------------------------
 
