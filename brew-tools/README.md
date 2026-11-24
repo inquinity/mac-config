@@ -444,7 +444,9 @@ machine you care about.
 
 Removes every trace of Homebrew from an Intel Mac. Homebrew 7 dropped Intel
 support and `brew.rb` is unreliable there, so the script never runs `brew`;
-it deletes Homebrew's files directly.
+it deletes Homebrew's files directly. Before removing anything it lists the
+installed formulae and casks (read from the Cellar and Caskroom directories,
+with versions), so you have a record of what to reinstall elsewhere.
 
 It removes:
 

@@ -116,7 +116,33 @@ remove_homebrew_symlinks() {
     done < <(find "$dir" -maxdepth 1 -type l -print0)
 }
 
+# List what is installed under a Cellar or Caskroom by reading the directory
+# layout (<root>/<name>/<version>...), since brew itself is never run.
+list_installed() {
+    local label=$1 root=$2 entry name versions count=0
+    [[ -d "$root" ]] || return 0
+    local lines=()
+    for entry in "$root"/*/; do
+        [[ -d "$entry" ]] || continue
+        name=$(basename "$entry")
+        versions=$(find "$entry" -mindepth 1 -maxdepth 1 -not -name '.*' -exec basename {} \; | sort | paste -sd, - | sed 's/,/, /g')
+        lines+=("  ${name}${versions:+ (${versions})}")
+        count=$((count + 1))
+    done
+    print_colored "$COLOR_YELLOW" "${label} in ${root}: ${count}"
+    if [[ "$count" -gt 0 ]]; then
+        printf "%s\n" "${lines[@]}"
+    fi
+}
+
 print_colored "$COLOR_CYAN" "Intel Mac detected. Homebrew will be removed manually; brew is not run."
+
+print_colored "$COLOR_BRIGHTYELLOW" "Installed Homebrew packages that will be removed:"
+list_installed "Formulae" /usr/local/Cellar
+list_installed "Casks" /usr/local/Caskroom
+list_installed "Formulae" /opt/homebrew/Cellar
+list_installed "Casks" /opt/homebrew/Caskroom
+printf "\n"
 
 if [[ "$DRY_RUN" -eq 0 && "$ASSUME_YES" -eq 0 ]]; then
     print_colored "$COLOR_YELLOW" "This permanently deletes Homebrew, all formulae and casks under it, and its caches."
