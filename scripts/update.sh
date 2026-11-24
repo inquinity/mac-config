@@ -23,8 +23,11 @@ print_colored() {
 # with the same source of truth (zsh/profile.sh).
 update_brew() {
   # Homebrew 7 dropped Intel support; never touch brew on an Intel Mac.
+  # intel/install-tools.sh installs and updates our own utilities there instead.
   if [[ "$(uname -m)" != "arm64" ]]; then
     print_colored "${COLOR_YELLOW}" "Skipping brew (Intel Mac: not supported by Homebrew 7)"
+    print_colored "${COLOR_BRIGHTYELLOW}" "Updating inquinity utilities (intel/install-tools.sh)"
+    ~/mac-config/intel/install-tools.sh --yes || print_colored "${COLOR_RED}" "intel/install-tools.sh reported a failure"
     printf "\n"
     return 0
   fi
