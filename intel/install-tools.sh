@@ -41,7 +41,7 @@ STATE_FILE="${INTEL_TOOLS_STATE_FILE:-${HOME}/.config/mac-config/intel-tools.sta
 # still be validly signed and notarized, and its Team ID is printed.
 expected_team_id() {
     case "$1" in
-        belvedere) printf '45GJWJVQN2' ;;
+        yatu|qltextview|belvedere) printf '45GJWJVQN2' ;;
         *)         printf '' ;;
     esac
 }
