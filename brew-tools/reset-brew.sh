@@ -20,7 +20,7 @@ print_colored() {
 }
 
 usage() {
-    printf "${COLOR_YELLOW}Reset Homebrew (macOS)${COLOR_RESET}\n"
+    printf "${COLOR_YELLOW}Reset Homebrew (macOS, Apple Silicon)${COLOR_RESET}\n"
     printf "Usage: %s [--dry-run|-n] [--help|-h]\n" "$(basename "$0")"
     printf "\n"
     printf "Options:\n"
@@ -53,6 +53,12 @@ if [[ "$(uname)" != "Darwin" ]]; then
     exit 1
 fi
 
+# Homebrew 7 dropped Intel support; Intel Macs use remove-brew-intel.sh.
+if [[ "$(sysctl -n hw.optional.arm64 2>/dev/null || true)" != "1" ]]; then
+    print_colored "$COLOR_RED" "Not an Apple Silicon Mac. Use remove-brew-intel.sh instead."
+    exit 1
+fi
+
 run_cmd() {
     if [[ "$DRY_RUN" -eq 1 ]]; then
         printf "[dry-run] %s\n" "$*"
@@ -80,17 +86,8 @@ remove_path() {
 
 print_colored "$COLOR_BRIGHTYELLOW" "Removing Homebrew and related files..."
 
-# Remove brew installations
+# Remove brew installation (Apple Silicon: one self-contained prefix)
 remove_path "/opt/homebrew"
-remove_path "/usr/local/Homebrew"
-remove_path "/usr/local/bin/brew"
-remove_path "/opt/homebrew/bin/brew"
-
-# Remove related directories (common)
-remove_path "/usr/local/Caskroom"
-remove_path "/usr/local/Cellar"
-remove_path "/opt/homebrew/Caskroom"
-remove_path "/opt/homebrew/Cellar"
 
 # Remove caches and config
 remove_path "${HOME}/Library/Caches/Homebrew"
